@@ -144,7 +144,9 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
       }
       
       const lines = [
+        `> [Chaos] Fault Engine Engaged: ${fault === 'latency' ? 'Latency Injection' : `HTTP ${fault}`}`,
         `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
+        `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'} (Anycast)`,
         `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
       ];
       if (data.status >= 400 && data.responseBody) {
@@ -164,6 +166,9 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
         lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
         lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
       }
+      
+      lines.push('');
+      lines.push(`[System] Total Round-Trip Time: ${Math.round(data.totalLatency)}ms`);
 
       // Simulate line by line stream
       for (const line of lines) {
@@ -196,10 +201,13 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
         <div className={styles.testLogContainer}>
           {testLogs.map((l, i) => {
             let color = 'var(--text-secondary)';
-            if (l.startsWith('< HTTP/1.1 5')) color = '#ef4444';
+            if (l.startsWith('< HTTP/1.1 5') || l.includes('ABORTED') || l.includes('TIMEOUT_EXCEEDED') || l.includes('Target Unreachable') || l.startsWith('< Error')) color = '#ef4444';
             else if (l.startsWith('< HTTP/1.1 2')) color = '#10b981';
             else if (l.startsWith('< HTTP/1.1 4')) color = '#f59e0b';
-            else if (l.startsWith('[System]')) color = '#3b82f6';
+            else if (l.startsWith('[System]')) color = '#38bdf8';
+            else if (l.startsWith('[Telemetry]')) color = '#10b981';
+            else if (l.startsWith('> [Chaos]')) color = '#eab308';
+            else if (l.startsWith('>')) color = '#38bdf8';
             
             return <div key={i} style={{ marginBottom: '4px', color }}>{l}</div>;
           })}
@@ -763,6 +771,7 @@ export default function Dashboard() {
                       t1={telemetryData ? telemetryData.t1 : 0}
                       t2={telemetryData ? telemetryData.t2 : 0}
                       t3={telemetryData ? telemetryData.t3 : 0}
+                      colo={telemetryData ? telemetryData.colo : 'UNKNOWN'}
                       fault={fault || 'latency'}
                       targetHost={targetHost}
                       latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
