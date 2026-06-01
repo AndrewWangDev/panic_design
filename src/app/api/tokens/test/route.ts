@@ -4,7 +4,7 @@ export const runtime = 'edge';
 
 export async function POST(req: Request) {
   try {
-    const { token } = await req.json();
+    const { token } = await req.json() as any;
     if (!token) {
       return NextResponse.json({ error: 'Missing token' }, { status: 400 });
     }
