@@ -131,7 +131,7 @@ export default function UserDropdown({ user }: UserDropdownProps) {
             <button 
               className={styles.revokeBtn} 
               onClick={handleRevokeAllClick}
-              disabled={isRevoking || stats.tokens === 0}
+              disabled={isRevoking}
             >
               <ShieldAlert size={14} /> {isRevoking ? 'Revoking...' : 'Revoke All'}
             </button>
