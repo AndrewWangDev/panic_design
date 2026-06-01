@@ -67,7 +67,7 @@ const RollingLogs = () => {
   );
 };
 
-const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: () => void }) => {
+const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart, fault, t1, t2, t3 }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: () => void, fault: string, t1: number, t2: number, t3: number }) => {
   const [text, setText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [testState, setTestState] = useState<'idle' | 'testing' | 'done'>('idle');
@@ -149,8 +149,20 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
         }
         
         logs.push('');
-        logs.push(`[System] Target Host: ${targetHost || 'extracted from JWT'}`);
-        logs.push(`[System] Latency Recorded: ${data.latency}ms (Includes network round-trip & chaos delay)`);
+        
+        if (fault === 'latency') {
+          logs.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
+          logs.push(`[Telemetry] Injected Latency: ${t2}ms`);
+          logs.push(`[Telemetry] Upstream Backhaul: ${t3}ms`);
+          logs.push(`[System] Target Host: ${targetHost || 'extracted from JWT'}`);
+        } else if (fault === '502') {
+          logs.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
+          logs.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
+          logs.push(`[System] Target Unreachable. Edge payload delivered.`);
+        } else if (fault === '504') {
+          logs.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
+          logs.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
+        }
         
         return logs;
       });
@@ -738,9 +750,12 @@ export default function Dashboard() {
                       w1={[-122.3933, 37.7697]} // Mock Control Plane (SF)
                       w2={[8.5706, 50.0333]} // Mock Data Plane (FRA)
                       w3={[114.1694, 22.3193]} // Mock Target (HKG)
-                      t1={140}
-                      t2={latency}
-                      t3={28}
+                      t1={24}
+                      t2={fault === 'latency' ? latency : 400} // Mock t2
+                      t3={18}
+                      fault={fault}
+                      targetHost={targetHost}
+                      latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
                     />
                   )}
                 </div>
@@ -761,6 +776,10 @@ export default function Dashboard() {
                       targetHost={targetHost} 
                       isSimulating={isSimulating}
                       onSimulationStart={() => setIsSimulating(true)}
+                      fault={fault}
+                      t1={24}
+                      t2={latency}
+                      t3={18}
                     />
                   ) : (
                     <RollingLogs />
