@@ -14,6 +14,8 @@ interface WorldMapProps {
   fault?: string;
   targetHost?: string;
   latencyParams?: { base: number, jitter: number, distribution: string };
+  isPending?: boolean;
+  animKey?: number;
 }
 
 function getLatencyColor(ms: number) {
@@ -22,7 +24,7 @@ function getLatencyColor(ms: number) {
   return "#ef4444"; // red
 }
 
-export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams }: WorldMapProps) {
+export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, isPending = false, animKey = 0 }: WorldMapProps) {
   const [geographies, setGeographies] = useState<any[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -187,7 +189,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const p1End = 0.4; // 800 / 2000
   const p2Start = 0.6; // 1200 / 2000
 
-  const t1Color = getLatencyColor(t1 || 0);
+  const t1Color = isPending ? "#cbd5e1" : getLatencyColor(t1 || 0);
   const t3Color = getLatencyColor(t3 || 0);
   const pinColor = "#cbd5e1"; // Neutral slate-300
 
@@ -233,13 +235,13 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           ))}
         </g>
         
-        <g className="routes">
+        <g className="routes" key={`routes-${animKey}`}>
           {/* Direct logical route (dashed) */}
-          {w1 && w3 && renderCurve(w1, w3, "rgba(255,255,255,0.2)", "route-direct", true)}
+          {!isPending && w1 && w3 && renderCurve(w1, w3, "rgba(255,255,255,0.2)", "route-direct", true)}
           
           {/* Actual physical route */}
-          {w1 && w2 && renderCurve(w1, w2, t1Color, "route-1")}
-          {w2 && w3 && !isAbort && renderCurve(w2, w3, t3Color, "route-2")}
+          {!isPending && w1 && w2 && renderCurve(w1, w2, t1Color, "route-1")}
+          {!isPending && w2 && w3 && !isAbort && renderCurve(w2, w3, t3Color, "route-2")}
           
           {/* Abort Wall Route */}
           {isAbort && abortPath && (
@@ -259,21 +261,21 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           )}
         </g>
 
-        <g className="labels">
-          {w1 && w2 && t1 !== undefined && renderCurveLabel(w1, w2, t1, t1Color)}
-          {w2 && w3 && t3 !== undefined && !isAbort && renderCurveLabel(w2, w3, t3, t3Color, 12)}
+        <g className="labels" key={`labels-${animKey}`}>
+          {!isPending && w1 && w2 && t1 !== undefined && renderCurveLabel(w1, w2, t1, t1Color)}
+          {!isPending && w2 && w3 && t3 !== undefined && !isAbort && renderCurveLabel(w2, w3, t3, t3Color, 12)}
         </g>
 
         {/* Packets and W2 Pulse */}
-        <g className="packets">
-          {w2 && (
+        <g className="packets" key={`packets-${animKey}`}>
+          {!isPending && w2 && (
             <circle cx={projection(w2)?.[0]} cy={projection(w2)?.[1]} r={8} fill={isAbort ? "#ef4444" : "#eab308"} opacity="0">
               <animate attributeName="opacity" values="0;0;0.6;0;0" keyTimes={`0;0.39;0.4;0.6;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
               <animate attributeName="r" values="8;8;40;40;8" keyTimes={`0;0.39;0.4;0.6;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
             </circle>
           )}
 
-          {w1 && w2 && (
+          {!isPending && w1 && w2 && (
             <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px ${t1Color})`}>
               <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;1;1;1" keyTimes={`0;${p1End};${p2Start};1`} calcMode="linear">
                 <mpath href="#route-1" />
@@ -282,7 +284,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
             </circle>
           )}
 
-          {w2 && w3 && !isAbort && (
+          {!isPending && w2 && w3 && !isAbort && (
             <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px ${t3Color})`}>
               <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};1;1`} calcMode="linear">
                 <mpath href="#route-2" />
@@ -308,10 +310,18 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           )}
         </g>
 
-        <g className="points">
+        <g className="points" key={`points-${animKey}`}>
           {w1 && renderPin(w1, "Cloud Runner", pinColor)}
-          {w2 && renderPin(w2, "Edge Gateway", pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : '504 Gateway Timeout')}
-          {w3 && renderPin(w3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
+          
+          {isPending && w1 && projection(w1) && (
+            <circle cx={projection(w1)?.[0]} cy={projection(w1)?.[1]} r={20} fill="none" stroke="#10b981" strokeWidth={1.5} opacity="0">
+              <animate attributeName="r" values="0;40" dur="1.5s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
+            </circle>
+          )}
+
+          {!isPending && w2 && renderPin(w2, "Edge Gateway", pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : '504 Gateway Timeout')}
+          {!isPending && w3 && renderPin(w3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
         </g>
       </svg>
       
