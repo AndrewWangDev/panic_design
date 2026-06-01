@@ -60,8 +60,14 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     }
 
     // Normal vector
-    const nx = -dy / dist;
-    const ny = dx / dist;
+    let nx = -dy / dist;
+    let ny = dx / dist;
+
+    // Force the normal vector to point UP in SVG (negative Y)
+    if (ny > 0) {
+      nx = -nx;
+      ny = -ny;
+    }
 
     // Arc height (15% of distance)
     const arcHeight = dist * 0.15;
@@ -310,30 +316,24 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
       </svg>
       
       {/* Top HUD */}
-      <div style={{ position: 'absolute', top: 24, left: 24, right: 24, background: 'rgba(0,0,0,0.6)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backdropFilter: 'blur(4px)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, paddingRight: '16px' }}>
+      <div style={{ position: 'absolute', top: 24, left: 24, right: 24, background: 'rgba(0,0,0,0.6)', padding: '16px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'flex-start', backdropFilter: 'blur(4px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 200px', minWidth: 0 }}>
           <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>TARGET HOSTNAME</div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', wordBreak: 'break-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{targetHost || 'N/A'}</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{targetHost || 'N/A'}</div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          <div style={{ width: '1px', height: '32px', background: 'rgba(255,255,255,0.2)', margin: '0 24px' }}></div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: fault === 'latency' ? '#eab308' : '#ef4444', whiteSpace: 'nowrap' }}>
-              {fault === 'latency' ? 'Latency Injection' : fault === '502' ? 'Bad Gateway (502)' : 'Gateway Timeout (504)'}
-            </div>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: fault === 'latency' ? '#eab308' : '#ef4444', whiteSpace: 'nowrap' }}>
+            {fault === 'latency' ? 'Latency Injection' : fault === '502' ? 'Bad Gateway (502)' : 'Gateway Timeout (504)'}
           </div>
         </div>
 
         {fault === 'latency' && latencyParams && (
-          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <div style={{ width: '1px', height: '32px', background: 'rgba(255,255,255,0.2)', margin: '0 24px' }}></div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>PARAMS</div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
-                Base: {latencyParams.base}ms | Jitter: {latencyParams.jitter}ms {latencyParams.distribution ? `| Dist: ${latencyParams.distribution}` : ''}
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>PARAMS</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+              Base: {latencyParams.base}ms | Jitter: {latencyParams.jitter}ms {latencyParams.distribution ? `| Dist: ${latencyParams.distribution}` : ''}
             </div>
           </div>
         )}
