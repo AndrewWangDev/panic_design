@@ -11,12 +11,16 @@
   "dependencies": {
     "@prisma/adapter-d1": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@types/d3-geo": "^3.1.0",
+    "@types/topojson-client": "^3.1.5",
+    "d3-geo": "^3.1.1",
     "jose": "^6.2.3",
     "lucide-react": "^1.17.0",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.31",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "topojson-client": "^3.1.0"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.19.11",
