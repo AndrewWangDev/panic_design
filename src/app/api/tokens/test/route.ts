@@ -8,7 +8,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing token' }, { status: 400 });
     }
 
-    const baseUrl = process.env.DATA_PLANE_URL || 'https://panic-data-plane.andrewwangdev.workers.dev';
+    const baseUrl = process.env.DATA_PLANE_URL || 'https://gateway.andrewwangdev.com';
     const gatewayUrl = `${baseUrl.replace(/\/$/, '')}/?token=${token}`;
     
     const startTime = Date.now();

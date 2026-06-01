@@ -403,7 +403,31 @@ export default function Dashboard() {
     localStorage.setItem('panic-dashboard-state', JSON.stringify(state));
   }, [targetHost, fault, latency, jitter, distribution, ttl, customTtl]);
 
-  const isFormValid = targetHost.length > 0 && fault !== null;
+  const [targetHostError, setTargetHostError] = useState('');
+
+  const handleTargetHostChange = (val: string) => {
+    let host = val.trim();
+    
+    // Auto-extract hostname if URL was pasted
+    if (host.startsWith('http://') || host.startsWith('https://')) {
+      try {
+        const url = new URL(host);
+        host = url.hostname;
+      } catch(e) {}
+    } else if (host.includes('/')) {
+      host = host.split('/')[0];
+    }
+    
+    setTargetHost(host);
+    
+    if (host && !/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(host)) {
+      setTargetHostError('Invalid hostname format');
+    } else {
+      setTargetHostError('');
+    }
+  };
+
+  const isFormValid = targetHost.length > 0 && fault !== null && !targetHostError;
 
   const handleGenerate = async () => {
     if (!isFormValid) return;
@@ -504,11 +528,16 @@ export default function Dashboard() {
                   </div>
                   <input 
                     type="text" 
-                    className={styles.inputField} 
+                    className={`${styles.inputField} ${targetHostError ? styles.inputError : ''}`} 
                     placeholder="api.your-production.com"
                     value={targetHost}
-                    onChange={(e) => setTargetHost(e.target.value)}
+                    onChange={(e) => handleTargetHostChange(e.target.value)}
                   />
+                  {targetHostError && (
+                    <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                      {targetHostError}
+                    </div>
+                  )}
                 </div>
 
                 <div className={styles.ttlWrap}>
