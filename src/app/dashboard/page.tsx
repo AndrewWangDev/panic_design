@@ -83,7 +83,7 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
       }
     }
   }, [testLogs, testState]);
-  
+
   // If simulation is cancelled from parent, reset testState
   useEffect(() => {
     if (!isSimulating && testState === 'testing') {
@@ -91,7 +91,7 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
       setTestLogs(prev => [...prev, '', '< Simulation Cancelled']);
     }
   }, [isSimulating, testState]);
-
+  
   const tokenDisplay = fullToken.length > 12 
     ? fullToken.substring(0, 8) + '...' + fullToken.slice(-4) 
     : fullToken;
@@ -320,7 +320,7 @@ export default function Dashboard() {
   const [jitter, setJitter] = useState(0);
   const [distribution, setDistribution] = useState<'Uniform' | 'Normal' | 'Spikes'>('Uniform');
   const [ttl, setTtl] = useState('15m');
-  const [customTtl, setCustomTtl] = useState<number>(0.25);
+  const [customTtl, setCustomTtl] = useState(24);
 
   const [isSimulating, setIsSimulating] = useState(false);
 
@@ -559,13 +559,12 @@ export default function Dashboard() {
             </div>
 
             <div className={styles.inputGroup}>
-              <div className={styles.labelRow}>
-                <div className={styles.label}>Target Scope</div>
-              </div>
               <div className={styles.targetRow}>
                 <div className={styles.targetHostWrap}>
-                  <div className={styles.inputIconWrap}>
-                    <div className={styles.iconProtocol}>https://</div>
+                  <div className={styles.labelRow}>
+                    <span className={styles.label}>Target Hostname</span>
+                    <span className={styles.labelHint}>HTTPS or HTTP2 Only</span>
+                  </div>
                   <input 
                     type="text" 
                     className={`${styles.inputField} ${targetHostError ? styles.inputError : ''}`} 
@@ -580,27 +579,34 @@ export default function Dashboard() {
                       {targetHostError}
                     </div>
                   )}
-                  </div>
                 </div>
+
                 <div className={styles.ttlWrap}>
+                  <div className={styles.labelRow}>
+                    <span className={styles.label}>Token TTL</span>
+                  </div>
                   <div className={styles.ttlControl}>
-                    <CustomSelect 
-                      options={ttlOptions} 
-                      value={ttl} 
-                      onChange={setTtl} 
-                    />
+                    <div style={{ flex: 1 }}>
+                      <CustomSelect 
+                        options={ttlOptions}
+                        value={ttl}
+                        onChange={(val) => setTtl(val)}
+                      />
+                    </div>
                     {ttl === 'custom' && (
-                      <div className={styles.customTtlInput}>
-                        <input 
-                          type="number" 
-                          min="0.1" 
-                          step="0.1"
-                          value={customTtl || ''}
-                          onChange={(e) => setCustomTtl(Number(e.target.value))}
-                          placeholder="24"
-                        />
-                        <span>hrs</span>
-                      </div>
+                      <input 
+                        type="number" 
+                        min="1" max="168"
+                        value={customTtl}
+                        onChange={(e) => {
+                          let val = Number(e.target.value);
+                          if (val > 168) val = 168;
+                          if (val < 1) val = 1;
+                          setCustomTtl(val);
+                        }}
+                        className={styles.ttlCustomInput}
+                        title="Hours (1-168)"
+                      />
                     )}
                   </div>
                 </div>
@@ -609,36 +615,34 @@ export default function Dashboard() {
 
             <div className={styles.inputGroup}>
               <div className={styles.labelRow}>
-                <div className={styles.label}>Chaos Policy</div>
+                <span className={styles.label}>Blast Radius and Faults</span>
               </div>
-              
-              {/* Capsule Toggles */}
               <div className={styles.capsuleGroup}>
                 <button 
-                  className={`${styles.capsuleBtn} ${fault === 'latency' ? styles.capsuleActive : ''}`}
+                  className={`${styles.capsuleBtn} ${fault === '502' ? styles.active : ''}`}
+                  onClick={() => setFault('502')}
+                >
+                  502 Bad Gateway
+                </button>
+                <button 
+                  className={`${styles.capsuleBtn} ${fault === '504' ? styles.active : ''}`}
+                  onClick={() => setFault('504')}
+                >
+                  504 Gateway Timeout
+                </button>
+                <button 
+                  className={`${styles.capsuleBtn} ${fault === 'latency' ? styles.active : ''}`}
                   onClick={() => setFault('latency')}
                 >
                   Latency Injection
                 </button>
-                <button 
-                  className={`${styles.capsuleBtn} ${fault === '502' ? styles.capsuleActive : ''}`}
-                  onClick={() => setFault('502')}
-                >
-                  Bad Gateway (502)
-                </button>
-                <button 
-                  className={`${styles.capsuleBtn} ${fault === '504' ? styles.capsuleActive : ''}`}
-                  onClick={() => setFault('504')}
-                >
-                  Gateway Timeout (504)
-                </button>
               </div>
 
               {fault === 'latency' && (
-                <div className={styles.latencyConfig}>
-                  <div className={styles.latencyConfigInner}>
+                <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px dashed var(--dash-input-border)', animation: enableAnimation ? 'slideDown 0.3s ease-out' : 'none' }}>
+                    <div className={styles.latencyPanel}>
                       <div className={styles.latencyCol}>
-                        <div className={styles.latencyTitle}>Latency Parameters</div>
+                        <div className={styles.latencyTitle}>Algorithm & Parameters</div>
                         
                         <div className={styles.latencyControlRow} style={{ alignItems: 'center' }}>
                           <div className={styles.latencyLabel}>Distribution</div>
@@ -652,7 +656,7 @@ export default function Dashboard() {
                           </div>
                         </div>
 
-                        <div className={styles.latencyControlRow}>
+                        <div className={styles.latencyControlRow} style={{ '--slider-color': getSliderColor(latency) } as React.CSSProperties}>
                           <div className={styles.latencyLabel}>Base Latency</div>
                           <div className={styles.latencySliderWrap}>
                             <input 
