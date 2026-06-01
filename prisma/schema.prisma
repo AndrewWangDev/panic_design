@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String     @id @default(cuid())
+  githubId      Int?       @unique  // GitHub ID is integer
+  username      String?
+  email         String?    @unique
+  avatarUrl     String?
+  
+  // For stateless JWT instant "Revoke All"
+  jwtSalt       Int        @default(0) 
+
+  tokens        Token[]
+  usages        Usage[]
+  logs          ChaosLog[]
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Token {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  targetHost    String
+  config        String    // Extensible JSON string storing fault, latency, jitter, distribution, ttl etc.
+  
+  tokenHint     String    // First 8 and last 4 chars for UI display
+  isRevoked     Boolean   @default(false)
+  issuedWithSalt Int      // Tied to User.jwtSalt for instantaneous global revocation
+
+  createdAt     DateTime  @default(now())
+  lastUsedAt    DateTime?
+}
+
+model Usage {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month         String    // Format: YYYY-MM
+  requestCount  Int       @default(0)
+  limit         Int       @default(10000)
+
+  @@unique([userId, month])
+}
+
+model ChaosLog {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  targetUrl     String    
+  injectedFault String    
+  
+  executedAt    DateTime  @default(now())
+  
+  @@index([userId, executedAt]) 
+}

@@ -1,0 +1,88 @@
+.selectContainer {
+  position: relative;
+  width: 100%;
+  font-family: var(--font-sans);
+  user-select: none;
+}
+
+.selectTrigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--dash-input-bg);
+  border: 1px solid var(--dash-input-border);
+  border-radius: 100px;
+  color: var(--dash-input-text);
+  padding: 12px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.selectTrigger:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Light mode overrides logic (assuming globals has these vars correctly set) */
+[data-theme='light'] .selectTrigger:hover {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.selectTrigger.open {
+  border-color: var(--dash-input-focus);
+}
+
+.icon {
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.iconOpen {
+  transform: rotate(180deg);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--dash-bg); /* Use dashboard bg for the menu */
+  border: 1px solid var(--dash-card-border);
+  border-radius: 16px;
+  overflow: hidden;
+  z-index: 50;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  animation: dropdownFade 0.2s ease-out;
+}
+
+[data-theme='light'] .dropdownMenu {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.option {
+  padding: 12px 20px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.option:hover {
+  background: var(--dash-card-border);
+}
+
+.option.selected {
+  background: var(--dash-input-bg);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
