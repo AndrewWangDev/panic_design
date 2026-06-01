@@ -67,7 +67,7 @@ const RollingLogs = () => {
   );
 };
 
-const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart, fault, t1, t2, t3 }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: () => void, fault: string, t1: number, t2: number, t3: number }) => {
+const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart, onTelemetryReceived, fault, t1, t2, t3 }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: () => void, onTelemetryReceived?: (data: any) => void, fault: string, t1: number, t2: number, t3: number }) => {
   const [text, setText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [testState, setTestState] = useState<'idle' | 'testing' | 'done'>('idle');
@@ -98,25 +98,24 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
     : fullToken;
     
   const fullContent = `# Edge Token issued successfully.
+# Scope: ${targetHost || 'extracted from JWT'}
+# Token Hint: ${tokenDisplay}
+# Ready for edge network injection.
 
-export PANIC_TOKEN="${tokenDisplay}"
-
-curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
+[System] Awaiting trigger...`;
 
   useEffect(() => {
-    let i = 0;
     setText('');
     setTypingDone(false);
-    setTestState('idle');
-    setTestLogs([]);
+    let i = 0;
     const interval = setInterval(() => {
-      setText(fullContent.substring(0, i));
+      setText(fullContent.slice(0, i));
       i++;
       if (i > fullContent.length) {
         clearInterval(interval);
         setTypingDone(true);
       }
-    }, 10);
+    }, 15);
     return () => clearInterval(interval);
   }, [fullContent]);
 
@@ -138,6 +137,12 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
       });
       const data = await res.json() as any;
       
+      const realTelemetry = data.telemetry || { t1: t1, t2: t2, t3: t3 };
+      
+      if (onTelemetryReceived && data.telemetry) {
+        onTelemetryReceived(data.telemetry);
+      }
+      
       const lines = [
         `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
         `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
@@ -148,15 +153,15 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
       lines.push('');
       
       if (fault === 'latency') {
-        lines.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
-        lines.push(`[Telemetry] Injected Latency: ${t2}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul: ${t3}ms`);
+        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
+        lines.push(`[Telemetry] Injected Latency: ${Math.round(realTelemetry.t2)}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul: ${Math.round(realTelemetry.t3)}ms`);
       } else if (fault === '502') {
-        lines.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
+        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
         lines.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
         lines.push(`[System] Target Unreachable. Edge payload delivered.`);
       } else if (fault === '504') {
-        lines.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
+        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
         lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
       }
 
@@ -361,6 +366,8 @@ export default function Dashboard() {
   const [activeTokens, setActiveTokens] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
+
+  const [telemetryData, setTelemetryData] = useState<any>(null);
 
   const [isMounted, setIsMounted] = useState(false);
   const [enableAnimation, setEnableAnimation] = useState(false);
@@ -749,12 +756,12 @@ export default function Dashboard() {
                   {isSimulating && (
                     <WorldMap 
                       key={simulationKey}
-                      w1={[-122.3933, 37.7697]} // Mock Control Plane (SF)
-                      w2={[8.5706, 50.0333]} // Mock Data Plane (FRA)
-                      w3={[114.1694, 22.3193]} // Mock Target (HKG)
-                      t1={24}
-                      t2={fault === 'latency' ? latency : 400} // Mock t2
-                      t3={18}
+                      w1={telemetryData ? telemetryData.w1 : [-122.3933, 37.7697]}
+                      w2={telemetryData ? telemetryData.w2 : [8.5706, 50.0333]}
+                      w3={telemetryData ? telemetryData.w3 : [114.1694, 22.3193]}
+                      t1={telemetryData ? telemetryData.t1 : 24}
+                      t2={telemetryData ? telemetryData.t2 : (fault === 'latency' ? latency : 400)}
+                      t3={telemetryData ? telemetryData.t3 : 18}
                       fault={fault || 'latency'}
                       targetHost={targetHost}
                       latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
@@ -779,7 +786,12 @@ export default function Dashboard() {
                       isSimulating={isSimulating}
                       onSimulationStart={() => {
                         setIsSimulating(true);
+                        setTelemetryData(null); // Clear previous telemetry
                         setSimulationKey(prev => prev + 1);
+                      }}
+                      onTelemetryReceived={(data) => {
+                        setTelemetryData(data);
+                        setSimulationKey(prev => prev + 1); // Force map re-mount to play animation with real data
                       }}
                       fault={fault || 'latency'}
                       t1={24}
