@@ -146,7 +146,7 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
       const lines = [
         `> [Chaos] Fault Engine Engaged: ${fault === 'latency' ? 'Latency Injection' : `HTTP ${fault}`}`,
         `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
-        `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'} (Anycast)`,
+        `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'}`,
         `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
       ];
       if (data.status >= 400 && data.responseBody) {
@@ -814,6 +814,19 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            {/* AIOps Sandbox UI */}
+            <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--dash-card-border)' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '16px' }}>
+                AIOps What-If Simulation
+              </div>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <button className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}>BGP Route Leak</button>
+                <button className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}>Edge Node Outage</button>
+                <button className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}>Trans-Pacific Congestion</button>
+              </div>
+            </div>
+            
           </div>
           
         </div>

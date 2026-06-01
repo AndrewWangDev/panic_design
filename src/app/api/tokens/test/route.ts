@@ -95,14 +95,14 @@ export async function POST(req: Request) {
     const dist2 = (a: number[], b: number[]) => Math.sqrt(Math.pow(a[0]-b[0], 2) + Math.pow(a[1]-b[1], 2));
     
     // Spread W1 and W2
-    if (dist2(w1, w2) < 5) {
-      w2[0] += 8;
-      w2[1] -= 4; // Shift W2 diagonally
+    if (dist2(w1, w2) < 15) {
+      w2[0] += 12;
+      w2[1] -= 8; // Shift W2 diagonally
     }
     // Spread W2 and W3
-    if (dist2(w2, w3) < 5) {
-      w3[0] += 12; // Shift W3 further right
-      w3[1] += 4;
+    if (dist2(w2, w3) < 15) {
+      w3[0] += 15; // Shift W3 further right
+      w3[1] += 8;
     }
 
     // Calculate Final Timings
