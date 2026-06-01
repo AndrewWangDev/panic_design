@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getPrisma } from '@/lib/prisma';
 
-export const runtime = 'edge';
 
 export async function POST(req: Request) {
   try {
