@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause } from 'lucide-react';
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
+import WorldMap from '@/components/WorldMap';
 
 const MOCK_LOGS = [
   "[SYSTEM] Initiating global telemetry stream...",
@@ -732,7 +733,16 @@ export default function Dashboard() {
               {/* Map Container (Expands when simulating) */}
               <div className={`${styles.mapContainer} ${isSimulating ? styles.mapActive : ''}`}>
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ fontSize: '24px', color: 'var(--text-secondary)' }}>🌍 Map Area</div>
+                  {isSimulating && (
+                    <WorldMap 
+                      w1={[-122.3933, 37.7697]} // Mock Control Plane (SF)
+                      w2={[8.5706, 50.0333]} // Mock Data Plane (FRA)
+                      w3={[114.1694, 22.3193]} // Mock Target (HKG)
+                      t1={140}
+                      t2={latency}
+                      t3={28}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -786,9 +796,11 @@ export default function Dashboard() {
                       <tr key={token.id} className={token.isRevoked ? styles.rowRevoked : ''}>
                         <td className={styles.tokenCell}>
                           {token.tokenHint}
-                          {/* Copy icon removed for Show Once behavior */}
                         </td>
-                        <td>{token.target}</td>
+                        <td className={styles.tokenCell} style={{ cursor: 'pointer' }} onClick={() => handleCopy(token.target, false)} title="Click to copy target">
+                          {token.target}
+                          <Copy size={12} style={{ opacity: 0.5, marginLeft: '6px' }} />
+                        </td>
                         <td className={styles.faultCell}>{token.fault}</td>
                         <td title={`Last used: ${token.issuedAtFull}`}>{token.issuedAt}</td>
                         <td>
