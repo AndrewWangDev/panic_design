@@ -88,6 +88,7 @@ function getAuthInstance() {
       }
       return session;
     }
+  }
   })
   return nextAuthInstance;
 }
