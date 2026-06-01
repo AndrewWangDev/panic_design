@@ -753,7 +753,7 @@ export default function Dashboard() {
                       t1={24}
                       t2={fault === 'latency' ? latency : 400} // Mock t2
                       t3={18}
-                      fault={fault}
+                      fault={fault || 'latency'}
                       targetHost={targetHost}
                       latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
                     />
@@ -776,7 +776,7 @@ export default function Dashboard() {
                       targetHost={targetHost} 
                       isSimulating={isSimulating}
                       onSimulationStart={() => setIsSimulating(true)}
-                      fault={fault}
+                      fault={fault || 'latency'}
                       t1={24}
                       t2={latency}
                       t3={18}
