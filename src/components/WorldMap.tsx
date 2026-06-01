@@ -27,6 +27,7 @@ function getLatencyColor(ms: number) {
 
 export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, isPending = false, animKey = 0, colo = 'UNKNOWN' }: WorldMapProps) {
   const [geographies, setGeographies] = useState<any[]>([]);
+  const [viewport, setViewport] = useState({ x: 0, y: 0, k: 1 });
   const containerRef = useRef<HTMLDivElement>(null);
   
   const width = 800;
@@ -50,6 +51,52 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const projection = d3Geo.geoEquirectangular()
     .scale(140)
     .translate([width / 2 - 30, height / 2 + 70]);
+
+  useEffect(() => {
+    if (!isPending && w1 && w2 && visualW3) {
+      const p1 = projection(w1);
+      const p2 = projection(w2);
+      const p3 = projection(visualW3);
+      if (p1 && p2 && p3) {
+        const xs = [p1[0], p2[0], p3[0]];
+        const ys = [p1[1], p2[1], p3[1]];
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+
+        const dx = maxX - minX;
+        const dy = maxY - minY;
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+
+        const padX = 150;
+        const padY = 100;
+        const targetW = width - padX * 2;
+        const targetH = height - padY * 2;
+
+        let k = 1;
+        if (dx > 0 && dy > 0) {
+          k = Math.min(targetW / dx, targetH / dy);
+        } else if (dx > 0) {
+          k = targetW / dx;
+        } else if (dy > 0) {
+          k = targetH / dy;
+        } else {
+          k = 3.5;
+        }
+
+        k = Math.max(1, Math.min(k, 3.5)); // max zoom 3.5x
+
+        const tx = width / 2 - cx * k;
+        const ty = height / 2 - cy * k;
+
+        setViewport({ x: tx, y: ty, k });
+      }
+    } else {
+      setViewport({ x: 0, y: 0, k: 1 });
+    }
+  }, [isPending, w1, w2, visualW3]);
 
   const pathGenerator = d3Geo.geoPath().projection(projection);
 
@@ -100,6 +147,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         stroke={color} 
         strokeWidth={dash ? 1.5 : 2.5}
         strokeDasharray={dash ? "4,4" : "none"}
+        vectorEffect="non-scaling-stroke"
         className="map-curve"
         style={{ filter: dash ? 'none' : `drop-shadow(0px 0px 4px ${color})` }}
       />
@@ -120,10 +168,10 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     const height = 20;
 
     return (
-      <g>
+      <g style={{ transform: `translate(${midX}px, ${midY}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
         <rect 
-          x={midX - width/2} 
-          y={midY + dy - 14} 
+          x={-width/2} 
+          y={dy - 14} 
           width={width} 
           height={height} 
           rx={height/2} 
@@ -132,15 +180,14 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
         />
         <text 
-          x={midX} y={midY + dy} 
+          x={0}
+          y={dy} 
           textAnchor="middle" 
           fill={color} 
           fontSize="12px" 
           fontWeight="bold"
           fontFamily="var(--font-mono)"
-        >
-          {text}
-        </text>
+        >{text}</text>
       </g>
     );
   };
@@ -195,7 +242,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     }
 
     return (
-      <g transform={`translate(${x},${y})`} style={{ opacity: isDimmed ? 0.4 : 1 }}>
+      <g style={{ transform: `translate(${x}px,${y}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)', opacity: isDimmed ? 0.4 : 1 }}>
         <path 
           d="M0 -24 C -6 -24, -10 -19.5, -10 -14 C -10 -6, 0 0, 0 0 C 0 0, 10 -6, 10 -14 C 10 -19.5, 6 -24, 0 -24 Z"
           fill={color}
@@ -238,26 +285,22 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
       abortPath = `M ${p1[0]},${p1[1]} Q ${cx1},${cy1} ${wallX},${wallY}`;
     }
   }
-
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-      <svg 
-        viewBox={`0 0 ${width} ${height}`} 
-        style={{ width: '100%', height: '100%', display: 'block', color: 'var(--text-primary, #fff)' }}
-      >
-        <g className="countries">
-          {geographies.map((geo, i) => (
-            <path
-              key={`geo-${i}`}
-              d={pathGenerator(geo) || ''}
-              fill="currentColor"
-              fillOpacity={0.15}
-              stroke="currentColor"
-              strokeOpacity={0.3}
-              strokeWidth={0.5}
-            />
-          ))}
-        </g>
+    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <svg width="100%" height="100%" viewBox="0 0 800 450" style={{ display: 'block', pointerEvents: 'none' }}>
+        <g style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+          <g className="geographies">
+            {geographies.map((geo, i) => (
+              <path
+                key={`geo-${i}`}
+                d={pathGenerator(geo) || ''}
+                fill="#333"
+                stroke="rgba(255,255,255,0.1)"
+                strokeWidth={0.5}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+          </g>
         
         <g className="routes" key={`routes-${animKey}`}>
           {/* Actual physical route */}
@@ -272,12 +315,22 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
                 d={abortPath} 
                 fill="none" 
                 stroke="#ef4444" 
-                strokeWidth={2}
+                strokeWidth={2} 
                 strokeDasharray="4,4"
-                opacity="0"
-              >
-                <animate attributeName="opacity" values="0;0;0.6;0;0" keyTimes={`0;0.59;0.6;0.8;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
-              </path>
+                vectorEffect="non-scaling-stroke"
+                style={{ filter: `drop-shadow(0px 0px 4px #ef4444)` }}
+              />
+              <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
+                  <mpath href="#route-abort" />
+                </animateMotion>
+              </circle>
+              {wallX && wallY && (
+                <g style={{ transform: `translate(${wallX}px, ${wallY}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                  <line x1="-10" y1="-10" x2="10" y2="10" stroke="#ef4444" strokeWidth={3} />
+                  <line x1="-10" y1="10" x2="10" y2="-10" stroke="#ef4444" strokeWidth={3} />
+                </g>
+              )}
             </g>
           )}
         </g>
@@ -289,43 +342,63 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
         {/* Packets and W2 Pulse */}
         <g className="packets" key={`packets-${animKey}`}>
-          {!isPending && w2 && (
-            <circle cx={projection(w2)?.[0]} cy={projection(w2)?.[1]} r={8} fill={isAbort ? "#ef4444" : "#eab308"} opacity="0">
-              <animate attributeName="opacity" values="0;0;0.6;0;0" keyTimes={`0;0.39;0.4;0.6;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
-              <animate attributeName="r" values="8;8;40;40;8" keyTimes={`0;0.39;0.4;0.6;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
-            </circle>
-          )}
-
+          {/* Packet 1 */}
           {!isPending && w1 && w2 && (
-            <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px ${t1Color})`}>
-              <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;1;1;1" keyTimes={`0;${p1End};${p2Start};1`} calcMode="linear">
-                <mpath href="#route-1" />
-              </animateMotion>
-              <animate attributeName="opacity" values={`1;1;0;0`} keyTimes={`0;${p1End};${p1End+0.01};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
-            </circle>
+            <g>
+              <circle r={3} fill="#fff" filter={`drop-shadow(0 0 6px ${t1Color})`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                <animateMotion dur="1s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+                  <mpath href="#route-1" />
+                </animateMotion>
+              </circle>
+            </g>
           )}
-
-          {!isPending && w2 && w3 && !isAbort && (
-            <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px ${t3Color})`}>
-              <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};1;1`} calcMode="linear">
-                <mpath href="#route-2" />
-              </animateMotion>
-              <animate attributeName="opacity" values={`0;0;1;1`} keyTimes={`0;${p2Start-0.01};${p2Start};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
-            </circle>
+          {/* Packet 2 */}
+          {!isPending && w2 && visualW3 && !isAbort && (
+            <g>
+              <circle r={3} fill="#fff" filter={`drop-shadow(0 0 6px ${t3Color})`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
+                  <mpath href="#route-2" />
+                </animateMotion>
+              </circle>
+            </g>
           )}
           
           {isAbort && abortPath && (
             <g>
-              <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`}>
+              <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                 <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
                   <mpath href="#route-abort" />
                 </animateMotion>
                 <animate attributeName="opacity" values={`0;0;1;0;0`} keyTimes={`0;${p2Start-0.01};${p2Start};0.8;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
               </circle>
               {/* Shatter effect */}
-              <circle cx={wallX} cy={wallY} r={2} fill="#ef4444" opacity="0">
-                <animate attributeName="opacity" values="0;0;1;0;0" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
-                <animate attributeName="r" values="2;2;16;16;2" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+              {wallX && wallY && (
+                <g style={{ transform: `translate(${wallX}px, ${wallY}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                  <circle cx={0} cy={0} r={2} fill="#ef4444" opacity="0">
+                    <animate attributeName="opacity" values="0;0;1;0;0" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+                    <animate attributeName="r" values="2;2;16;16;2" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+                  </circle>
+                </g>
+              )}
+            </g>
+          )}
+          
+          {/* W2 processing pulse */}
+          {!isPending && w2 && !isAbort && projection(w2) && (
+            <g style={{ transform: `translate(${projection(w2)?.[0]}px, ${projection(w2)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <circle cx={0} cy={0} r={5} fill="none" stroke={t3Color} strokeWidth={2}>
+                <animate attributeName="r" values="0;25" dur="1.5s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="1;0" dur="1.5s" repeatCount="indefinite" />
+              </circle>
+            </g>
+          )}
+          
+          {/* Abort Pulse */}
+          {!isPending && w2 && isAbort && projection(w2) && (
+            <g style={{ transform: `translate(${projection(w2)?.[0]}px, ${projection(w2)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <circle cx={0} cy={0} r={5} fill="none" stroke="#ef4444" strokeWidth={2}>
+                <animate attributeName="r" values="0;40" dur={`${totalCycle}ms`} repeatCount="indefinite" />
+                <animate attributeName="opacity" values="1;0" dur={`${totalCycle}ms`} repeatCount="indefinite" />
               </circle>
             </g>
           )}
@@ -350,10 +423,12 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
                 {w1 && renderPin(w1, "Cloud Runner", pinColor, false, undefined, anchorW1)}
                 
                 {isPending && w1 && projection(w1) && (
-                  <circle cx={projection(w1)?.[0]} cy={projection(w1)?.[1]} r={20} fill="none" stroke="#10b981" strokeWidth={1.5} opacity="0">
-                    <animate attributeName="r" values="0;40" dur="1.5s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
-                  </circle>
+                  <g style={{ transform: `translate(${projection(w1)?.[0]}px, ${projection(w1)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                    <circle cx={0} cy={0} r={20} fill="none" stroke="#10b981" strokeWidth={1.5} opacity="0">
+                      <animate attributeName="r" values="0;40" dur="1.5s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
+                    </circle>
+                  </g>
                 )}
 
                 {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : '504 Gateway Timeout', anchorW2)}
@@ -361,6 +436,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
               </>
             );
           })()}
+        </g>
         </g>
       </svg>
       
