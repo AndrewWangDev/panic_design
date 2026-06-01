@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     // Generate JWT
     // Generate JWT
     const { env } = getRequestContext();
-    const authSecret = env?.AUTH_SECRET || process.env.AUTH_SECRET;
+    const authSecret = (env as any)?.AUTH_SECRET || process.env.AUTH_SECRET;
 
     if (!authSecret) {
       console.error('Missing AUTH_SECRET in environment');
