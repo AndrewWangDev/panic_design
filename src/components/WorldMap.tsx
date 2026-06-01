@@ -11,13 +11,21 @@ interface WorldMapProps {
   t1?: number;
   t2?: number;
   t3?: number;
+  fault?: string;
+  targetHost?: string;
+  latencyParams?: { base: number, jitter: number, distribution: string };
 }
 
-export default function WorldMap({ w1, w2, w3, t1, t2, t3 }: WorldMapProps) {
+function getLatencyColor(ms: number) {
+  if (ms < 50) return "#10b981"; // green
+  if (ms < 150) return "#eab308"; // yellow
+  return "#ef4444"; // red
+}
+
+export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams }: WorldMapProps) {
   const [geographies, setGeographies] = useState<any[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Dimensions for SVG viewBox. It scales responsively while preserving aspect ratio.
   const width = 800;
   const height = 450;
 
@@ -25,21 +33,18 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3 }: WorldMapProps) {
     fetch('/world-110m.json')
       .then(res => res.json())
       .then((data: any) => {
-        // We use objects.countries for 110m map
         const parsed = topojson.feature(data, data.objects.countries) as any;
         setGeographies(parsed.features);
       })
       .catch(err => console.error("Failed to load map data", err));
   }, []);
 
-  // geoEquirectangular or geoMercator work well for dashboards
   const projection = d3Geo.geoEquirectangular()
     .scale(140)
     .translate([width / 2, height / 2 + 20]);
 
   const pathGenerator = d3Geo.geoPath().projection(projection);
 
-  // Generate curves using LineString
   const renderCurve = (start: [number, number], end: [number, number], color: string, id: string, dash?: boolean) => {
     const lineString: any = { type: 'LineString', coordinates: [start, end] };
     const d = pathGenerator(lineString);
@@ -53,36 +58,47 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3 }: WorldMapProps) {
         strokeWidth={dash ? 1.5 : 2.5}
         strokeDasharray={dash ? "4,4" : "none"}
         className="map-curve"
-        style={{ filter: `drop-shadow(0px 0px 4px ${color})` }}
+        style={{ filter: dash ? 'none' : `drop-shadow(0px 0px 4px ${color})` }}
       />
     );
   };
 
-  const renderPin = (coords: [number, number], label: string, color: string) => {
+  const renderCurveLabel = (start: [number, number], end: [number, number], ms: number, color: string, dy: number = -8) => {
+    const midGeo = d3Geo.geoInterpolate(start, end)(0.5);
+    const proj = projection(midGeo);
+    if (!proj) return null;
+    const [x, y] = proj;
+    return (
+      <text 
+        x={x} y={y + dy} 
+        textAnchor="middle" 
+        fill={color} 
+        fontSize="12px" 
+        fontWeight="bold"
+        fontFamily="var(--font-mono)"
+        style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.8)' }}
+      >
+        {ms} ms
+      </text>
+    );
+  };
+
+  const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false) => {
     const projected = projection(coords);
     if (!projected) return null;
     const [x, y] = projected;
     return (
-      <g transform={`translate(${x},${y})`}>
-        {/* Map Pin SVG (centered at bottom tip) */}
+      <g transform={`translate(${x},${y})`} style={{ opacity: isDimmed ? 0.4 : 1 }}>
         <path 
           d="M0 -24 C -6 -24, -10 -19.5, -10 -14 C -10 -6, 0 0, 0 0 C 0 0, 10 -6, 10 -14 C 10 -19.5, 6 -24, 0 -24 Z"
           fill={color}
           style={{ filter: `drop-shadow(0px 4px 4px rgba(0,0,0,0.5))` }}
         />
-        <circle cx="0" cy="-14" r="3" fill="#fff" />
-        
-        {/* Ripple effect at the base */}
-        <circle r={16} fill={color} opacity={0.2}>
-          <animate attributeName="r" values="8;24" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.4;0" dur="2s" repeatCount="indefinite" />
-        </circle>
-        
-        {/* Label */}
+        <circle cx="0" cy="-14" r="3" fill={isDimmed ? "#888" : "#fff"} />
         <text 
           y={-30} 
           textAnchor="middle" 
-          fill="var(--text-primary, #fff)" 
+          fill={isDimmed ? "#aaa" : "var(--text-primary, #fff)"} 
           fontSize="11px" 
           fontFamily="var(--font-mono)"
           fontWeight={600}
@@ -92,12 +108,18 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3 }: WorldMapProps) {
     );
   };
 
-  const totalRealTime = (t1 || 0) + (t2 || 0) + (t3 || 0);
-  const visualMultiplier = totalRealTime > 0 ? Math.max(2, 4000 / totalRealTime) : 1;
-  const cycleTime = totalRealTime > 0 ? totalRealTime * visualMultiplier : 4000;
-  
-  const p1_end = totalRealTime > 0 ? (t1 || 0) / totalRealTime : 0.3;
-  const p2_start = totalRealTime > 0 ? ((t1 || 0) + (t2 || 0)) / totalRealTime : 0.7;
+  // Fixed visual timings
+  const totalCycle = 2000; // 800ms + 400ms + 800ms
+  const p1End = 0.4; // 800 / 2000
+  const p2Start = 0.6; // 1200 / 2000
+
+  const t1Color = getLatencyColor(t1 || 0);
+  const t3Color = getLatencyColor(t3 || 0);
+  const pinColor = "#cbd5e1"; // Neutral slate-300
+
+  const isAbort = fault === '502' || fault === '504';
+  const wallPoint = (w2 && w3) ? d3Geo.geoInterpolate(w2, w3)(0.33) : null;
+  const [wallX, wallY] = wallPoint ? projection(wallPoint) || [0,0] : [0,0];
 
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
@@ -121,74 +143,112 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3 }: WorldMapProps) {
         
         <g className="routes">
           {/* Direct logical route (dashed) */}
-          {w1 && w3 && renderCurve(w1, w3, "rgba(255,255,255,0.3)", "route-direct", true)}
+          {w1 && w3 && renderCurve(w1, w3, "rgba(255,255,255,0.2)", "route-direct", true)}
           
           {/* Actual physical route */}
-          {w1 && w2 && renderCurve(w1, w2, "#3b82f6", "route-1")}
-          {w2 && w3 && renderCurve(w2, w3, "#ef4444", "route-2")}
+          {w1 && w2 && renderCurve(w1, w2, t1Color, "route-1")}
+          {w2 && w3 && !isAbort && renderCurve(w2, w3, t3Color, "route-2")}
+          
+          {/* Abort Wall Route */}
+          {w2 && wallPoint && isAbort && (
+            <g>
+              <path 
+                id="route-abort"
+                d={pathGenerator({ type: 'LineString', coordinates: [w2, wallPoint] }) || ''} 
+                fill="none" 
+                stroke="#ef4444" 
+                strokeWidth={2}
+                strokeDasharray="4,4"
+                opacity="0"
+              >
+                <animate attributeName="opacity" values="0;0;0.6;0;0" keyTimes={`0;0.59;0.6;0.8;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+              </path>
+            </g>
+          )}
         </g>
 
-        {/* Packets */}
+        <g className="labels">
+          {w1 && w2 && t1 !== undefined && renderCurveLabel(w1, w2, t1, t1Color)}
+          {w2 && w3 && t3 !== undefined && !isAbort && renderCurveLabel(w2, w3, t3, t3Color, 12)}
+        </g>
+
+        {/* Packets and W2 Pulse */}
         <g className="packets">
-          {w1 && w2 && t1 !== undefined && (
-            <circle r={5} fill="#fff" filter="drop-shadow(0 0 6px #3b82f6)">
-              <animateMotion 
-                dur={`${cycleTime}ms`} 
-                repeatCount="indefinite"
-                keyPoints="0;1;1;1"
-                keyTimes={`0;${p1_end};${p2_start};1`}
-                calcMode="linear"
-              >
-                <mpath href="#route-1" />
-              </animateMotion>
-              <animate attributeName="opacity" values={`1;1;0;0`} keyTimes={`0;${p1_end};${Math.min(p1_end+0.01, 1)};1`} dur={`${cycleTime}ms`} repeatCount="indefinite" />
+          {w2 && (
+            <circle cx={projection(w2)?.[0]} cy={projection(w2)?.[1]} r={8} fill={isAbort ? "#ef4444" : "#eab308"} opacity="0">
+              <animate attributeName="opacity" values="0;0;0.6;0;0" keyTimes={`0;0.39;0.4;0.6;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+              <animate attributeName="r" values="8;8;40;40;8" keyTimes={`0;0.39;0.4;0.6;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
             </circle>
           )}
 
-          {w2 && w3 && t3 !== undefined && (
-            <circle r={5} fill="#fff" filter="drop-shadow(0 0 6px #ef4444)">
-              <animateMotion 
-                dur={`${cycleTime}ms`} 
-                repeatCount="indefinite"
-                keyPoints="0;0;1"
-                keyTimes={`0;${p2_start};1`}
-                calcMode="linear"
-              >
+          {w1 && w2 && (
+            <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px ${t1Color})`}>
+              <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;1;1;1" keyTimes={`0;${p1End};${p2Start};1`} calcMode="linear">
+                <mpath href="#route-1" />
+              </animateMotion>
+              <animate attributeName="opacity" values={`1;1;0;0`} keyTimes={`0;${p1End};${p1End+0.01};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+            </circle>
+          )}
+
+          {w2 && w3 && !isAbort && (
+            <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px ${t3Color})`}>
+              <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};1;1`} calcMode="linear">
                 <mpath href="#route-2" />
               </animateMotion>
-              <animate attributeName="opacity" values={`0;0;1;1`} keyTimes={`0;${Math.max(p2_start-0.01, 0)};${p2_start};1`} dur={`${cycleTime}ms`} repeatCount="indefinite" />
+              <animate attributeName="opacity" values={`0;0;1;1`} keyTimes={`0;${p2Start-0.01};${p2Start};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
             </circle>
+          )}
+          
+          {w2 && wallPoint && isAbort && (
+            <g>
+              <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`}>
+                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
+                  <mpath href="#route-abort" />
+                </animateMotion>
+                <animate attributeName="opacity" values={`0;0;1;0;0`} keyTimes={`0;${p2Start-0.01};${p2Start};0.8;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+              </circle>
+              {/* Shatter effect */}
+              <circle cx={wallX} cy={wallY} r={2} fill="#ef4444" opacity="0">
+                <animate attributeName="opacity" values="0;0;1;0;0" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+                <animate attributeName="r" values="2;2;16;16;2" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+              </circle>
+            </g>
           )}
         </g>
 
         <g className="points">
-          {w1 && renderPin(w1, "W1 (Control)", "#3b82f6")}
-          {w2 && renderPin(w2, "W2 (Data)", "#10b981")}
-          {w3 && renderPin(w3, "W3 (Target)", "#ef4444")}
+          {w1 && renderPin(w1, "Cloud Runner", pinColor)}
+          {w2 && renderPin(w2, "Edge Gateway", pinColor)}
+          {w3 && renderPin(w3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
         </g>
       </svg>
       
-      {/* Legend overlay */}
-      {(t1 !== undefined || t2 !== undefined || t3 !== undefined) && (
-        <div style={{ 
-          position: 'absolute', 
-          bottom: 24, 
-          left: 24, 
-          background: 'rgba(0,0,0,0.6)', 
-          padding: '16px', 
-          borderRadius: '8px', 
-          border: '1px solid rgba(255,255,255,0.1)', 
-          fontSize: '12px',
-          fontFamily: 'var(--font-mono)'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ color: '#fff', fontWeight: 'bold', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '6px', marginBottom: '4px' }}>TELEMETRY</div>
-            {t1 !== undefined && <div style={{ color: '#3b82f6' }}>T1 (W1→W2): {t1}ms</div>}
-            {t2 !== undefined && <div style={{ color: '#10b981' }}>T2 (Injected): {t2}ms</div>}
-            {t3 !== undefined && <div style={{ color: '#ef4444' }}>T3 (W2→W3): {t3}ms</div>}
+      {/* Top HUD */}
+      <div style={{ position: 'absolute', top: 24, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.6)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '32px', alignItems: 'center', backdropFilter: 'blur(4px)' }}>
+        <div>
+          <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>TARGET HOSTNAME</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)' }}>{targetHost || 'N/A'}</div>
+        </div>
+        <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)' }}></div>
+        <div>
+          <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>CHAOS POLICY</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: fault === 'latency' ? '#eab308' : '#ef4444' }}>
+            {fault === 'latency' ? 'Latency Injection' : fault === '502' ? 'Bad Gateway (502)' : 'Gateway Timeout (504)'}
           </div>
         </div>
-      )}
+        {fault === 'latency' && latencyParams && (
+          <>
+            <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)' }}></div>
+            <div>
+              <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>PARAMS</div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)' }}>
+                Base: {latencyParams.base}ms | Jitter: {latencyParams.jitter}ms
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
     </div>
   );
 }
