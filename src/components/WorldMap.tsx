@@ -42,9 +42,14 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
       .catch(err => console.error("Failed to load map data", err));
   }, []);
 
+  // Mock Anycast W3 to central US if it's placed near Equator [0,0]
+  const visualW3 = w3 && Math.abs(w3[0]) < 1 && Math.abs(w3[1]) < 1 
+    ? [-97.822, 37.751] as [number, number] 
+    : w3;
+
   const projection = d3Geo.geoEquirectangular()
     .scale(140)
-    .translate([width / 2, height / 2 + 60]);
+    .translate([width / 2 - 30, height / 2 + 70]);
 
   const pathGenerator = d3Geo.geoPath().projection(projection);
 
@@ -217,8 +222,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   let wallX = 0, wallY = 0;
   let abortPath = '';
   
-  if (isAbort && w2 && w3) {
-    const params = getBezierParams(w2, w3);
+  if (isAbort && w2 && visualW3) {
+    const params = getBezierParams(w2, visualW3);
     if (params) {
       const { p1, p2, cx, cy } = params;
       const t = 0.33;
@@ -257,7 +262,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         <g className="routes" key={`routes-${animKey}`}>
           {/* Actual physical route */}
           {!isPending && w1 && w2 && renderCurve(w1, w2, t1Color, "route-1")}
-          {!isPending && w2 && w3 && !isAbort && renderCurve(w2, w3, t3Color, "route-2")}
+          {!isPending && w2 && visualW3 && !isAbort && renderCurve(w2, visualW3, t3Color, "route-2")}
           
           {/* Abort Wall Route */}
           {isAbort && abortPath && (
@@ -279,7 +284,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
         <g className="labels" key={`labels-${animKey}`}>
           {!isPending && w1 && w2 && t1 !== undefined && renderCurveLabel(w1, w2, t1, t1Color, -16)}
-          {!isPending && w2 && w3 && t3 !== undefined && !isAbort && renderCurveLabel(w2, w3, t3, t3Color, -16)}
+          {!isPending && w2 && visualW3 && t3 !== undefined && !isAbort && renderCurveLabel(w2, visualW3, t3, t3Color, -16)}
         </g>
 
         {/* Packets and W2 Pulse */}
@@ -338,12 +343,6 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
                 anchorW1 = 'top-left';
                 anchorW2 = 'bottom-right';
               }
-            }
-            
-            // Mock Anycast W3 to central US if it's placed near Equator [0,0]
-            let visualW3 = w3;
-            if (w3 && Math.abs(w3[0]) < 1 && Math.abs(w3[1]) < 1) {
-              visualW3 = [-97.822, 37.751]; // Central US (Wichita)
             }
 
             return (
