@@ -233,12 +233,12 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     let subDy = 20;
 
     if (anchor === 'top-left') {
-      lblDx = -25;
-      lblDy = -35;
+      lblDx = -55;
+      lblDy = -40;
     } else if (anchor === 'bottom-right') {
-      lblDx = 30;
-      lblDy = -15;
-      subDy = 25; // Push sublabel lower
+      lblDx = 55;
+      lblDy = 15;
+      subDy = 35; // Push sublabel lower
     }
 
     return (
@@ -289,7 +289,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     <div ref={containerRef} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       
       {/* Top HUD */}
-      <div style={{ padding: '24px 24px 8px 24px', display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'flex-start' }}>
+      <div style={{ padding: '24px 24px 24px 24px', display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'flex-start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 200px', minWidth: 0 }}>
           <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>TARGET HOSTNAME</div>
           <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{targetHost || 'N/A'}</div>
@@ -438,7 +438,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
               const dx = w1[0] - w2[0];
               const dy = w1[1] - w2[1];
               const dist = Math.sqrt(dx*dx + dy*dy);
-              if (dist < 20) {
+              if (dist < 2) {
                 anchorW1 = 'top-left';
                 anchorW2 = 'bottom-right';
               }

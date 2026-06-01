@@ -119,6 +119,13 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
     return () => clearInterval(interval);
   }, [fullContent]);
 
+  useEffect(() => {
+    if (!isSimulating) {
+      setTestState('idle');
+      setTestLogs([]);
+    }
+  }, [isSimulating]);
+
   const handleTest = async () => {
     onSimulationStart();
     setTestState('testing');
@@ -186,7 +193,7 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
   return (
     <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', display: 'flex', flexDirection: 'column' }}>
       <div>{text}</div>
-      {typingDone && (
+      {typingDone && testState !== 'done' && (
         <div style={{ marginTop: '24px' }}>
           <button 
             className={styles.runTestBtn} 
@@ -211,6 +218,16 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
             
             return <div key={i} style={{ marginBottom: '4px', color }}>{l}</div>;
           })}
+        </div>
+      )}
+      {testState === 'done' && (
+        <div style={{ marginTop: '24px' }}>
+          <button 
+            className={styles.runTestBtn} 
+            onClick={handleTest} 
+          >
+            <Activity size={14} /> RUN INJECTION AGAIN
+          </button>
         </div>
       )}
       <div ref={bottomRef} />
