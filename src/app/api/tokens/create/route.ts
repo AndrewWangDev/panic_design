@@ -3,9 +3,8 @@ import { auth } from '@/auth';
 import { getPrisma } from '@/lib/prisma';
 import { SignJWT } from 'jose';
 
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-export const runtime = 'edge';
 
 export async function POST(req: Request) {
   try {
@@ -58,7 +57,7 @@ export async function POST(req: Request) {
 
     // Generate JWT
     // Generate JWT
-    const { env } = getRequestContext();
+    const { env } = getCloudflareContext();
     const authSecret = (env as any)?.AUTH_SECRET || process.env.AUTH_SECRET;
 
     if (!authSecret) {
