@@ -3,6 +3,8 @@ import GitHub from "next-auth/providers/github"
 import { getPrisma } from "@/lib/prisma"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
+  secret: process.env.AUTH_SECRET,
   providers: [
     GitHub({
       clientId: process.env.AUTH_CLIENT_ID,
