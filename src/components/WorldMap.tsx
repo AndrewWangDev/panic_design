@@ -50,7 +50,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
   const projection = d3Geo.geoEquirectangular()
     .scale(140)
-    .translate([width / 2 - 30, height / 2 + 70]);
+    .translate([width / 2 - 45, height / 2 + 70]);
 
   useEffect(() => {
     if (!isPending && w1 && w2 && visualW3) {
@@ -273,7 +273,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     const params = getBezierParams(w2, visualW3);
     if (params) {
       const { p1, p2, cx, cy } = params;
-      const t = 0.33;
+      const t = 0.66;
       const mt = 1 - t;
       // End point of partial curve
       wallX = mt*mt*p1[0] + 2*mt*t*cx + t*t*p2[0];
@@ -286,9 +286,35 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     }
   }
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <svg width="100%" height="100%" viewBox="0 0 800 450" style={{ display: 'block', pointerEvents: 'none' }}>
-        <g style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+    <div ref={containerRef} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      
+      {/* Top HUD */}
+      <div style={{ padding: '24px 24px 8px 24px', display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 200px', minWidth: 0 }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>TARGET HOSTNAME</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{targetHost || 'N/A'}</div>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: fault === 'latency' ? '#eab308' : '#ef4444', whiteSpace: 'nowrap' }}>
+            {fault === 'latency' ? 'Latency Injection' : fault === '502' ? 'Bad Gateway (502)' : 'Gateway Timeout (504)'}
+          </div>
+        </div>
+
+        {fault === 'latency' && latencyParams && (
+          <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>PARAMS</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+              Base: {latencyParams.base}ms | Jitter: {latencyParams.jitter}ms {latencyParams.distribution ? `| Dist: ${latencyParams.distribution}` : ''}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <svg width="100%" height="100%" viewBox="0 0 800 450" style={{ display: 'block', pointerEvents: 'none', position: 'absolute', inset: 0 }}>
+          <g style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
           <g className="geographies">
             {geographies.map((geo, i) => (
               <path
@@ -439,31 +465,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         </g>
         </g>
       </svg>
-      
-      {/* Top HUD */}
-      <div style={{ position: 'absolute', top: 24, left: 24, right: 24, background: 'rgba(0,0,0,0.6)', padding: '16px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'flex-start', backdropFilter: 'blur(4px)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 200px', minWidth: 0 }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>TARGET HOSTNAME</div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{targetHost || 'N/A'}</div>
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: fault === 'latency' ? '#eab308' : '#ef4444', whiteSpace: 'nowrap' }}>
-            {fault === 'latency' ? 'Latency Injection' : fault === '502' ? 'Bad Gateway (502)' : 'Gateway Timeout (504)'}
-          </div>
-        </div>
-
-        {fault === 'latency' && latencyParams && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>PARAMS</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
-              Base: {latencyParams.base}ms | Jitter: {latencyParams.jitter}ms {latencyParams.distribution ? `| Dist: ${latencyParams.distribution}` : ''}
-            </div>
-          </div>
-        )}
       </div>
-
     </div>
   );
 }
