@@ -66,7 +66,7 @@ const RollingLogs = () => {
   );
 };
 
-const TypewriterPayload = ({ fullToken }: { fullToken: string }) => {
+const TypewriterPayload = ({ fullToken, targetHost }: { fullToken: string, targetHost: string }) => {
   const [text, setText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [testState, setTestState] = useState<'idle' | 'testing' | 'done'>('idle');
@@ -133,7 +133,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
           ...prev,
           `< HTTP/1.1 ${data.status} ${data.statusText || ''}`,
           '',
-          `[System] Target Host: ${tokenData.target || 'extracted from JWT'}`,
+          `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
           `[System] Latency Recorded: ${data.latency}ms (Includes network round-trip & chaos delay)`
         ];
         return logs;
@@ -660,7 +660,7 @@ export default function Dashboard() {
               )}
               
               {generatedToken ? (
-                <TypewriterPayload fullToken={generatedToken} />
+                <TypewriterPayload fullToken={generatedToken} targetHost={targetHost} />
               ) : (
                 <RollingLogs />
               )}
