@@ -3,22 +3,37 @@ export let lastAuthError = "";
 
 import GitHub from "next-auth/providers/github"
 import { getPrisma } from "@/lib/prisma"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  logger: {
-    error(error) {
-      lastAuthError = String(error?.message || error?.name || error);
-    }
-  },
-  trustHost: true,
-  secret: process.env.AUTH_SECRET,
-  providers: [
-    GitHub({
-      clientId: process.env.AUTH_CLIENT_ID,
-      clientSecret: process.env.AUTH_CLIENT_SECRET,
-    })
-  ],
-  callbacks: {
+// Lazy initialization so Cloudflare context is available
+let nextAuthInstance: any = null;
+
+function getAuthInstance() {
+  if (nextAuthInstance) return nextAuthInstance;
+
+  // In Cloudflare OpenNext, env is injected here per-request or at startup
+  let env: any = process.env;
+  try {
+    env = getCloudflareContext().env || process.env;
+  } catch (e) {
+    // Fallback to process.env if not in Cloudflare context
+  }
+
+  nextAuthInstance = NextAuth({
+    logger: {
+      error(error) {
+        lastAuthError = String(error?.message || error?.name || error);
+      }
+    },
+    trustHost: true,
+    secret: env.AUTH_SECRET || env.NEXTAUTH_SECRET,
+    providers: [
+      GitHub({
+        clientId: env.AUTH_CLIENT_ID,
+        clientSecret: env.AUTH_CLIENT_SECRET,
+      })
+    ],
+    callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === "github") {
         if (!profile?.id) return false;
@@ -73,5 +88,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     }
-  }
-})
+  })
+  return nextAuthInstance;
+}
+
+export const handlers = {
+  GET: (req: any) => getAuthInstance().handlers.GET(req),
+  POST: (req: any) => getAuthInstance().handlers.POST(req),
+};
+export const signIn = (...args: any[]) => getAuthInstance().signIn(...args);
+export const signOut = (...args: any[]) => getAuthInstance().signOut(...args);
+export const auth = (...args: any[]) => getAuthInstance().auth(...args);
+
