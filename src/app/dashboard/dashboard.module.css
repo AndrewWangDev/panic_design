@@ -94,10 +94,10 @@
 
 /* 网格布局 */
 .gridTop {
-  display: grid;
-  grid-template-columns: 6fr 4fr;
+  display: flex;
+  width: 100%;
   gap: 24px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .gridBottom {
@@ -113,6 +113,91 @@
   display: flex;
   flex-direction: column;
 }
+
+.controlPlaneCard {
+  width: 60%;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.controlPlaneCardSimulating {
+  width: 0%;
+  opacity: 0;
+  padding-left: 0;
+  padding-right: 0;
+  margin: 0;
+  border: none;
+}
+
+.edgePayloadCard {
+  width: 40%;
+  flex-grow: 1;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.edgePayloadCardSimulating {
+  width: 100%;
+}
+
+.payloadContent {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mapContainer {
+  width: 0%;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.mapActive {
+  width: 100%;
+  opacity: 1;
+  border-right: 1px solid var(--dash-card-border);
+  margin-right: 24px;
+  padding-right: 24px;
+}
+
+.terminalContainer {
+  flex-shrink: 0;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.terminalContainerNormal {
+  width: 100%;
+}
+
+.terminalContainerSimulating {
+  width: 400px;
+}
+
+.cancelBtn {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.cancelBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
 
 .cardHeader {
   display: flex;
