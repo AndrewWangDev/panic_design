@@ -39,7 +39,7 @@ export default function UserDropdown({ user }: UserDropdownProps) {
     if (isOpen) {
       fetch('/api/user/stats')
         .then(res => res.ok ? res.json() : null)
-        .then(data => {
+        .then((data: any) => {
           if (data) setStats({ tokens: data.tokens, usage: data.usage, limit: data.limit });
         })
         .catch(console.error);
