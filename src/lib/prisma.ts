@@ -9,7 +9,7 @@ const globalForPrisma = globalThis as unknown as {
 export function getPrisma() {
   if (globalForPrisma.prisma) return globalForPrisma.prisma
 
-  const { env } = getRequestContext()
+  const { env } = getRequestContext() as any
   
   if (!env || !env.DB) {
     throw new Error('Cloudflare D1 environment not found. Make sure you are running via wrangler or @cloudflare/next-on-pages')
