@@ -91,14 +91,40 @@ export async function POST(req: Request) {
       }
     }
 
-    // Overlap prevention (W1 == W2 == W3)
-    if (w1[0] === w2[0] && w1[1] === w2[1]) w2[0] += 0.5;
-    if (w2[0] === w3[0] && w2[1] === w3[1]) w3[0] += 0.5;
+    // Overlap prevention: If nodes are physically too close, spread them out visually
+    const dist2 = (a: number[], b: number[]) => Math.sqrt(Math.pow(a[0]-b[0], 2) + Math.pow(a[1]-b[1], 2));
+    
+    // Spread W1 and W2
+    if (dist2(w1, w2) < 5) {
+      w2[0] += 8;
+      w2[1] -= 4; // Shift W2 diagonally
+    }
+    // Spread W2 and W3
+    if (dist2(w2, w3) < 5) {
+      w3[0] += 12; // Shift W3 further right
+      w3[1] += 4;
+    }
 
     // Calculate Final Timings
     const t3_visual = t3 / 2; // W2 -> W3 single trip
     let t1_visual = (t1_total - t2 - t3) / 2; // W1 -> W2 single trip
     if (t1_visual < 5) t1_visual = 25; // Prevent negative or zero rendering visually
+
+    // Extract colo
+    const colo = resHeaders.get('x-panic-colo') || 'UNKNOWN';
+
+    // Resolve IP purely for terminal visual logging (does not affect timing since timer is stopped)
+    let resolvedIp = 'Unknown IP';
+    const payload = decodeJwt(token);
+    if (payload.targetHost) {
+      try {
+        const dns = await import('dns/promises');
+        const { address } = await dns.lookup(payload.targetHost);
+        resolvedIp = address;
+      } catch (e) {
+        resolvedIp = 'Unresolved';
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -109,8 +135,10 @@ export async function POST(req: Request) {
          w1, w2, w3,
          t1: t1_visual,
          t2: t2,
-         t3: t3_visual
+         t3: t3_visual,
+         colo
       },
+      resolvedIp,
       responseBody
     });
 

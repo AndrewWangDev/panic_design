@@ -16,6 +16,7 @@ interface WorldMapProps {
   latencyParams?: { base: number, jitter: number, distribution: string };
   isPending?: boolean;
   animKey?: number;
+  colo?: string;
 }
 
 function getLatencyColor(ms: number) {
@@ -24,7 +25,7 @@ function getLatencyColor(ms: number) {
   return "#ef4444"; // red
 }
 
-export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, isPending = false, animKey = 0 }: WorldMapProps) {
+export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, isPending = false, animKey = 0, colo = 'UNKNOWN' }: WorldMapProps) {
   const [geographies, setGeographies] = useState<any[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -262,8 +263,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         </g>
 
         <g className="labels" key={`labels-${animKey}`}>
-          {!isPending && w1 && w2 && t1 !== undefined && renderCurveLabel(w1, w2, t1, t1Color)}
-          {!isPending && w2 && w3 && t3 !== undefined && !isAbort && renderCurveLabel(w2, w3, t3, t3Color, 12)}
+          {!isPending && w1 && w2 && t1 !== undefined && renderCurveLabel(w1, w2, t1, t1Color, -16)}
+          {!isPending && w2 && w3 && t3 !== undefined && !isAbort && renderCurveLabel(w2, w3, t3, t3Color, -16)}
         </g>
 
         {/* Packets and W2 Pulse */}
@@ -320,7 +321,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
             </circle>
           )}
 
-          {!isPending && w2 && renderPin(w2, "Edge Gateway", pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : '504 Gateway Timeout')}
+          {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : '504 Gateway Timeout')}
           {!isPending && w3 && renderPin(w3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
         </g>
       </svg>
