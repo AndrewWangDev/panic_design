@@ -5,13 +5,7 @@ import GitHub from "next-auth/providers/github"
 import { getPrisma } from "@/lib/prisma"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 
-// Lazy initialization so Cloudflare context is available
-let nextAuthInstance: any = null;
-
 function getAuthInstance() {
-  if (nextAuthInstance) return nextAuthInstance;
-
-  // In Cloudflare OpenNext, env is injected here per-request or at startup
   let env: any = process.env;
   try {
     env = getCloudflareContext().env || process.env;
@@ -19,10 +13,10 @@ function getAuthInstance() {
     // Fallback to process.env if not in Cloudflare context
   }
 
-  nextAuthInstance = NextAuth({
+  return NextAuth({
     logger: {
       error(error) {
-        lastAuthError = String(error?.message || error?.name || error);
+        lastAuthError = String(error?.message || error?.name || error) + " | ENV KEYS: " + Object.keys(env).join(", ");
       }
     },
     trustHost: true,
@@ -90,7 +84,6 @@ function getAuthInstance() {
     }
   }
   })
-  return nextAuthInstance;
 }
 
 export const handlers = {
