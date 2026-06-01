@@ -7,18 +7,12 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 export function getPrisma() {
-  if (globalForPrisma.prisma) return globalForPrisma.prisma
-
   const { env } = getCloudflareContext() as any
   
   if (!env || !env.DB) {
-    throw new Error('Cloudflare D1 environment not found. Make sure you are running via wrangler or @opennextjs/cloudflare')
+    throw new Error('Cloudflare D1 environment not found.')
   }
 
   const adapter = new PrismaD1(env.DB)
-  const prisma = new PrismaClient({ adapter, log: ['query'] })
-  
-  if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
-  
-  return prisma
+  return new PrismaClient({ adapter })
 }
