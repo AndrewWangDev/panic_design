@@ -69,19 +69,57 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     if (!proj) return null;
     const [x, y] = proj;
     return (
-      <text 
-        x={x} y={y + dy} 
-        textAnchor="middle" 
-        fill={color} 
-        fontSize="12px" 
-        fontWeight="bold"
-        fontFamily="var(--font-mono)"
-        style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.8)' }}
-      >
-        {ms} ms
-      </text>
+      <g>
+        <text 
+          x={x} y={y + dy} 
+          textAnchor="middle" 
+          stroke="var(--background, #000)"
+          strokeWidth={4}
+          strokeLinejoin="round"
+          fontSize="12px" 
+          fontWeight="bold"
+          fontFamily="var(--font-mono)"
+          opacity={0.8}
+        >
+          {ms} ms
+        </text>
+        <text 
+          x={x} y={y + dy} 
+          textAnchor="middle" 
+          fill={color} 
+          fontSize="12px" 
+          fontWeight="bold"
+          fontFamily="var(--font-mono)"
+        >
+          {ms} ms
+        </text>
+      </g>
     );
   };
+
+  const renderPinText = (y: number, text: string, color: string, isSubLabel: boolean = false) => (
+    <g>
+      <text 
+        y={y} 
+        textAnchor="middle" 
+        stroke="var(--background, #000)"
+        strokeWidth={4}
+        strokeLinejoin="round"
+        fontSize={isSubLabel ? "12px" : "11px"} 
+        fontFamily="var(--font-mono)"
+        fontWeight={600}
+        opacity={0.8}
+      >{text}</text>
+      <text 
+        y={y} 
+        textAnchor="middle" 
+        fill={color} 
+        fontSize={isSubLabel ? "12px" : "11px"} 
+        fontFamily="var(--font-mono)"
+        fontWeight={600}
+      >{text}</text>
+    </g>
+  );
 
   const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string) => {
     const projected = projection(coords);
@@ -95,26 +133,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           style={{ filter: `drop-shadow(0px 4px 4px rgba(0,0,0,0.5))` }}
         />
         <circle cx="0" cy="-14" r="3" fill={isDimmed ? "#888" : "#fff"} />
-        <text 
-          y={-30} 
-          textAnchor="middle" 
-          fill={isDimmed ? "#aaa" : "var(--text-primary, #fff)"} 
-          fontSize="11px" 
-          fontFamily="var(--font-mono)"
-          fontWeight={600}
-          style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
-        >{label}</text>
-        {subLabel && (
-          <text 
-            y={20} 
-            textAnchor="middle" 
-            fill={isAbort ? "#ef4444" : "#eab308"} 
-            fontSize="12px" 
-            fontFamily="var(--font-mono)"
-            fontWeight={600}
-            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
-          >{subLabel}</text>
-        )}
+        {renderPinText(-30, label, isDimmed ? "#aaa" : "var(--text-primary, #fff)")}
+        {subLabel && renderPinText(20, subLabel, isAbort ? "#ef4444" : "#eab308", true)}
       </g>
     );
   };

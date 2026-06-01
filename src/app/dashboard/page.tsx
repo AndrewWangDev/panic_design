@@ -138,34 +138,34 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
       });
       const data = await res.json() as any;
       
-      setTestLogs(prev => {
-        const logs = [
-          ...prev,
-          `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
-          `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
-        ];
-        
-        if (data.status >= 400 && data.responseBody) {
-          logs.push(`< ${data.responseBody}`);
-        }
-        
-        logs.push('');
-        
-        if (fault === 'latency') {
-          logs.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
-          logs.push(`[Telemetry] Injected Latency: ${t2}ms`);
-          logs.push(`[Telemetry] Upstream Backhaul: ${t3}ms`);
-        } else if (fault === '502') {
-          logs.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
-          logs.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
-          logs.push(`[System] Target Unreachable. Edge payload delivered.`);
-        } else if (fault === '504') {
-          logs.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
-          logs.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
-        }
-        
-        return logs;
-      });
+      const lines = [
+        `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
+        `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
+      ];
+      if (data.status >= 400 && data.responseBody) {
+        lines.push(`< ${data.responseBody}`);
+      }
+      lines.push('');
+      
+      if (fault === 'latency') {
+        lines.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
+        lines.push(`[Telemetry] Injected Latency: ${t2}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul: ${t3}ms`);
+      } else if (fault === '502') {
+        lines.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
+        lines.push(`[System] Target Unreachable. Edge payload delivered.`);
+      } else if (fault === '504') {
+        lines.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
+      }
+
+      // Simulate line by line stream
+      for (const line of lines) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        setTestLogs(prev => [...prev, line]);
+      }
+      
       setTestState('done');
     } catch (e: any) {
       setTestLogs(prev => [...prev, `< Error: ${e.message}`, `[System] Test Failed.`]);
