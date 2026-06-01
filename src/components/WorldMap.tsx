@@ -45,10 +45,39 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
   const pathGenerator = d3Geo.geoPath().projection(projection);
 
+  // Helper to get bezier parameters
+  const getBezierParams = (start: [number, number], end: [number, number]) => {
+    const p1 = projection(start);
+    const p2 = projection(end);
+    if (!p1 || !p2) return null;
+
+    const dx = p2[0] - p1[0];
+    const dy = p2[1] - p1[1];
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    if (dist < 0.1) {
+      return { p1, p2, cx: p1[0], cy: p1[1] - 20, dist }; // Tiny loop if same point
+    }
+
+    // Normal vector
+    const nx = -dy / dist;
+    const ny = dx / dist;
+
+    // Arc height (15% of distance)
+    const arcHeight = dist * 0.15;
+    
+    const cx = (p1[0] + p2[0]) / 2 + nx * arcHeight;
+    const cy = (p1[1] + p2[1]) / 2 + ny * arcHeight;
+
+    return { p1, p2, cx, cy, dist };
+  };
+
   const renderCurve = (start: [number, number], end: [number, number], color: string, id: string, dash?: boolean) => {
-    const lineString: any = { type: 'LineString', coordinates: [start, end] };
-    const d = pathGenerator(lineString);
-    if (!d) return null;
+    const params = getBezierParams(start, end);
+    if (!params) return null;
+    const { p1, p2, cx, cy } = params;
+    const d = `M ${p1[0]},${p1[1]} Q ${cx},${cy} ${p2[0]},${p2[1]}`;
+
     return (
       <path 
         id={id}
@@ -64,62 +93,70 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   };
 
   const renderCurveLabel = (start: [number, number], end: [number, number], ms: number, color: string, dy: number = -8) => {
-    const midGeo = d3Geo.geoInterpolate(start, end)(0.5);
-    const proj = projection(midGeo);
-    if (!proj) return null;
-    const [x, y] = proj;
+    const params = getBezierParams(start, end);
+    if (!params) return null;
+    const { p1, p2, cx, cy } = params;
+
+    // Midpoint of quadratic bezier at t=0.5
+    const midX = 0.25 * p1[0] + 0.5 * cx + 0.25 * p2[0];
+    const midY = 0.25 * p1[1] + 0.5 * cy + 0.25 * p2[1];
+
+    const text = `${ms} ms`;
+    const width = text.length * 7.5 + 16;
+    const height = 20;
+
     return (
       <g>
+        <rect 
+          x={midX - width/2} 
+          y={midY + dy - 14} 
+          width={width} 
+          height={height} 
+          rx={height/2} 
+          fill="var(--dash-bg, #000)" 
+          opacity={0.85}
+          style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
+        />
         <text 
-          x={x} y={y + dy} 
-          textAnchor="middle" 
-          stroke="var(--background, #000)"
-          strokeWidth={4}
-          strokeLinejoin="round"
-          fontSize="12px" 
-          fontWeight="bold"
-          fontFamily="var(--font-mono)"
-          opacity={0.8}
-        >
-          {ms} ms
-        </text>
-        <text 
-          x={x} y={y + dy} 
+          x={midX} y={midY + dy} 
           textAnchor="middle" 
           fill={color} 
           fontSize="12px" 
           fontWeight="bold"
           fontFamily="var(--font-mono)"
         >
-          {ms} ms
+          {text}
         </text>
       </g>
     );
   };
 
-  const renderPinText = (y: number, text: string, color: string, isSubLabel: boolean = false) => (
-    <g>
-      <text 
-        y={y} 
-        textAnchor="middle" 
-        stroke="var(--background, #000)"
-        strokeWidth={4}
-        strokeLinejoin="round"
-        fontSize={isSubLabel ? "12px" : "11px"} 
-        fontFamily="var(--font-mono)"
-        fontWeight={600}
-        opacity={0.8}
-      >{text}</text>
-      <text 
-        y={y} 
-        textAnchor="middle" 
-        fill={color} 
-        fontSize={isSubLabel ? "12px" : "11px"} 
-        fontFamily="var(--font-mono)"
-        fontWeight={600}
-      >{text}</text>
-    </g>
-  );
+  const renderPinText = (y: number, text: string, color: string, isSubLabel: boolean = false) => {
+    const width = text.length * (isSubLabel ? 7.5 : 6.5) + 16;
+    const height = isSubLabel ? 20 : 18;
+    return (
+      <g>
+        <rect 
+          x={-width/2} 
+          y={y - (isSubLabel ? 14 : 12)} 
+          width={width} 
+          height={height} 
+          rx={height/2} 
+          fill="var(--dash-bg, #000)" 
+          opacity={0.85}
+          style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
+        />
+        <text 
+          y={y} 
+          textAnchor="middle" 
+          fill={color} 
+          fontSize={isSubLabel ? "12px" : "11px"} 
+          fontFamily="var(--font-mono)"
+          fontWeight={600}
+        >{text}</text>
+      </g>
+    );
+  };
 
   const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string) => {
     const projected = projection(coords);
@@ -149,8 +186,26 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const pinColor = "#cbd5e1"; // Neutral slate-300
 
   const isAbort = fault === '502' || fault === '504';
-  const wallPoint = (w2 && w3) ? d3Geo.geoInterpolate(w2, w3)(0.33) : null;
-  const [wallX, wallY] = wallPoint ? projection(wallPoint) || [0,0] : [0,0];
+  
+  let wallX = 0, wallY = 0;
+  let abortPath = '';
+  
+  if (isAbort && w2 && w3) {
+    const params = getBezierParams(w2, w3);
+    if (params) {
+      const { p1, p2, cx, cy } = params;
+      const t = 0.33;
+      const mt = 1 - t;
+      // End point of partial curve
+      wallX = mt*mt*p1[0] + 2*mt*t*cx + t*t*p2[0];
+      wallY = mt*mt*p1[1] + 2*mt*t*cy + t*t*p2[1];
+      // New control point for partial curve (De Casteljau's)
+      const cx1 = p1[0] + t * (cx - p1[0]);
+      const cy1 = p1[1] + t * (cy - p1[1]);
+      
+      abortPath = `M ${p1[0]},${p1[1]} Q ${cx1},${cy1} ${wallX},${wallY}`;
+    }
+  }
 
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
@@ -181,11 +236,11 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           {w2 && w3 && !isAbort && renderCurve(w2, w3, t3Color, "route-2")}
           
           {/* Abort Wall Route */}
-          {w2 && wallPoint && isAbort && (
+          {isAbort && abortPath && (
             <g>
               <path 
                 id="route-abort"
-                d={pathGenerator({ type: 'LineString', coordinates: [w2, wallPoint] }) || ''} 
+                d={abortPath} 
                 fill="none" 
                 stroke="#ef4444" 
                 strokeWidth={2}
@@ -230,7 +285,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
             </circle>
           )}
           
-          {w2 && wallPoint && isAbort && (
+          {isAbort && abortPath && (
             <g>
               <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`}>
                 <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">

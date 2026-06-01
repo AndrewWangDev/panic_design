@@ -336,6 +336,7 @@ export default function Dashboard() {
   const [customTtl, setCustomTtl] = useState(24);
 
   const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationKey, setSimulationKey] = useState(0);
 
   const ttlOptions = [
     { value: '15m', label: '15 Minutes' },
@@ -747,6 +748,7 @@ export default function Dashboard() {
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {isSimulating && (
                     <WorldMap 
+                      key={simulationKey}
                       w1={[-122.3933, 37.7697]} // Mock Control Plane (SF)
                       w2={[8.5706, 50.0333]} // Mock Data Plane (FRA)
                       w3={[114.1694, 22.3193]} // Mock Target (HKG)
@@ -775,7 +777,10 @@ export default function Dashboard() {
                       fullToken={generatedToken} 
                       targetHost={targetHost} 
                       isSimulating={isSimulating}
-                      onSimulationStart={() => setIsSimulating(true)}
+                      onSimulationStart={() => {
+                        setIsSimulating(true);
+                        setSimulationKey(prev => prev + 1);
+                      }}
                       fault={fault || 'latency'}
                       t1={24}
                       t2={latency}
