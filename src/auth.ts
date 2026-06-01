@@ -16,11 +16,11 @@ function getAuthInstance() {
   return NextAuth({
     logger: {
       error(error) {
-        lastAuthError = String(error?.message || error?.name || error) + " | ENV KEYS: " + Object.keys(env).join(", ");
+        lastAuthError = String(error?.message || error?.name || error) + " | AUTH_SECRET exists: " + (!!env.AUTH_SECRET) + " | TYPE: " + typeof env.AUTH_SECRET + " | ENV KEYS: " + Object.keys(env).join(", ");
       }
     },
     trustHost: true,
-    secret: env.AUTH_SECRET || env.NEXTAUTH_SECRET,
+    secret: env.AUTH_SECRET || "12345678901234567890123456789012",
     providers: [
       GitHub({
         clientId: env.AUTH_CLIENT_ID,
