@@ -13,18 +13,20 @@ function getAuthInstance() {
     // Fallback to process.env if not in Cloudflare context
   }
 
+  const processEnv = process["env"] || {};
+
   return NextAuth({
     logger: {
       error(error) {
-        lastAuthError = String(error?.message || error?.name || error) + " | AUTH_SECRET exists: " + (!!env.AUTH_SECRET) + " | TYPE: " + typeof env.AUTH_SECRET + " | ENV KEYS: " + Object.keys(env).join(", ");
+        lastAuthError = String(error?.message || error?.name || error) + " | PROCESS_ENV_KEYS: " + Object.keys(processEnv).join(",") + " | CF_ENV_KEYS: " + Object.keys(env).join(",");
       }
     },
     trustHost: true,
-    secret: env.AUTH_SECRET || "12345678901234567890123456789012",
+    secret: processEnv.AUTH_SECRET || env.AUTH_SECRET,
     providers: [
       GitHub({
-        clientId: env.AUTH_CLIENT_ID,
-        clientSecret: env.AUTH_CLIENT_SECRET,
+        clientId: processEnv.AUTH_CLIENT_ID || env.AUTH_CLIENT_ID,
+        clientSecret: processEnv.AUTH_CLIENT_SECRET || env.AUTH_CLIENT_SECRET,
       })
     ],
     callbacks: {
