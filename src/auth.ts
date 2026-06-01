@@ -90,7 +90,7 @@ export const handlers = {
   GET: (req: any) => getAuthInstance().handlers.GET(req),
   POST: (req: any) => getAuthInstance().handlers.POST(req),
 };
-export const signIn = (...args: any[]) => getAuthInstance().signIn(...args);
-export const signOut = (...args: any[]) => getAuthInstance().signOut(...args);
-export const auth = (...args: any[]) => getAuthInstance().auth(...args);
+export const signIn = (...args: any[]) => (getAuthInstance().signIn as any)(...args);
+export const signOut = (...args: any[]) => (getAuthInstance().signOut as any)(...args);
+export const auth = (...args: any[]) => (getAuthInstance().auth as any)(...args);
 
