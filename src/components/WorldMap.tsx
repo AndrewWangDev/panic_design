@@ -44,7 +44,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
   const projection = d3Geo.geoEquirectangular()
     .scale(140)
-    .translate([width / 2, height / 2 + 20]);
+    .translate([width / 2, height / 2 + 60]);
 
   const pathGenerator = d3Geo.geoPath().projection(projection);
 
@@ -140,14 +140,14 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     );
   };
 
-  const renderPinText = (y: number, text: string, color: string, isSubLabel: boolean = false) => {
+  const renderPinText = (dx: number, dy: number, text: string, color: string, isSubLabel: boolean = false) => {
     const width = text.length * (isSubLabel ? 7.5 : 6.5) + 16;
     const height = isSubLabel ? 20 : 18;
     return (
       <g>
         <rect 
-          x={-width/2} 
-          y={y - (isSubLabel ? 14 : 12)} 
+          x={dx - width/2} 
+          y={dy - (isSubLabel ? 14 : 12)} 
           width={width} 
           height={height} 
           rx={height/2} 
@@ -156,7 +156,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
         />
         <text 
-          y={y} 
+          x={dx}
+          y={dy} 
           textAnchor="middle" 
           fill={color} 
           fontSize={isSubLabel ? "12px" : "11px"} 
@@ -167,10 +168,27 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     );
   };
 
-  const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string) => {
+  type PinAnchor = 'top' | 'top-left' | 'bottom-right' | 'bottom';
+
+  const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string, anchor: PinAnchor = 'top') => {
     const projected = projection(coords);
     if (!projected) return null;
     const [x, y] = projected;
+
+    let lblDx = 0;
+    let lblDy = -30;
+    let subDx = 0;
+    let subDy = 20;
+
+    if (anchor === 'top-left') {
+      lblDx = -25;
+      lblDy = -35;
+    } else if (anchor === 'bottom-right') {
+      lblDx = 30;
+      lblDy = -15;
+      subDy = 25; // Push sublabel lower
+    }
+
     return (
       <g transform={`translate(${x},${y})`} style={{ opacity: isDimmed ? 0.4 : 1 }}>
         <path 
@@ -179,8 +197,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           style={{ filter: `drop-shadow(0px 4px 4px rgba(0,0,0,0.5))` }}
         />
         <circle cx="0" cy="-14" r="3" fill={isDimmed ? "#888" : "#fff"} />
-        {renderPinText(-30, label, isDimmed ? "#aaa" : "var(--text-primary, #fff)")}
-        {subLabel && renderPinText(20, subLabel, isAbort ? "#ef4444" : "#eab308", true)}
+        {renderPinText(lblDx, lblDy, label, isDimmed ? "#aaa" : "var(--text-primary, #fff)")}
+        {subLabel && renderPinText(subDx, subDy, subLabel, isAbort ? "#ef4444" : "#eab308", true)}
       </g>
     );
   };
@@ -309,17 +327,41 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         </g>
 
         <g className="points" key={`points-${animKey}`}>
-          {w1 && renderPin(w1, "Cloud Runner", pinColor)}
-          
-          {isPending && w1 && projection(w1) && (
-            <circle cx={projection(w1)?.[0]} cy={projection(w1)?.[1]} r={20} fill="none" stroke="#10b981" strokeWidth={1.5} opacity="0">
-              <animate attributeName="r" values="0;40" dur="1.5s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
-            </circle>
-          )}
+          {(() => {
+            let anchorW1: PinAnchor = 'top';
+            let anchorW2: PinAnchor = 'top';
+            if (w1 && w2) {
+              const dx = w1[0] - w2[0];
+              const dy = w1[1] - w2[1];
+              const dist = Math.sqrt(dx*dx + dy*dy);
+              if (dist < 20) {
+                anchorW1 = 'top-left';
+                anchorW2 = 'bottom-right';
+              }
+            }
+            
+            // Mock Anycast W3 to central US if it's placed near Equator [0,0]
+            let visualW3 = w3;
+            if (w3 && Math.abs(w3[0]) < 1 && Math.abs(w3[1]) < 1) {
+              visualW3 = [-97.822, 37.751]; // Central US (Wichita)
+            }
 
-          {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : '504 Gateway Timeout')}
-          {!isPending && w3 && renderPin(w3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
+            return (
+              <>
+                {w1 && renderPin(w1, "Cloud Runner", pinColor, false, undefined, anchorW1)}
+                
+                {isPending && w1 && projection(w1) && (
+                  <circle cx={projection(w1)?.[0]} cy={projection(w1)?.[1]} r={20} fill="none" stroke="#10b981" strokeWidth={1.5} opacity="0">
+                    <animate attributeName="r" values="0;40" dur="1.5s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
+                  </circle>
+                )}
+
+                {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : '504 Gateway Timeout', anchorW2)}
+                {!isPending && visualW3 && renderPin(visualW3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
+              </>
+            );
+          })()}
         </g>
       </svg>
       
