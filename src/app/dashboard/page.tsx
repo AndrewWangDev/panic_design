@@ -126,7 +126,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: fullToken })
       });
-      const data = await res.json();
+      const data = await res.json() as any;
       
       setTestLogs(prev => {
         const logs = [
@@ -361,7 +361,7 @@ export default function Dashboard() {
     try {
       const res = await fetch('/api/tokens');
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as any;
         const formattedTokens = data.tokens.map((t: any) => {
           let config: any = { fault: 'unknown' };
           try { config = JSON.parse(t.config); } catch(e){}
@@ -429,7 +429,7 @@ export default function Dashboard() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as any;
         const fullToken = data.jwt;
         setGeneratedToken(fullToken);
         setLatestFullToken(fullToken);
