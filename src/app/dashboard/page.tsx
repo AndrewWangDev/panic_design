@@ -627,7 +627,7 @@ export default function Dashboard() {
 
                       <div className={styles.latencyCol}>
                         <div className={styles.latencyTitle}>Real-time Simulation</div>
-                        <div className={styles.distChart} style={{ height: '140px', marginTop: '12px' }}>
+                        <div className={styles.distChart} style={{ height: '140px', marginTop: '12px', overflow: 'hidden' }}>
                           <RealTimeSimulationChart latency={latency} jitter={jitter} distribution={distribution} />
                         </div>
                       </div>
