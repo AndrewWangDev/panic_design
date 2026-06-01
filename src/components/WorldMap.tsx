@@ -237,9 +237,6 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         </g>
         
         <g className="routes" key={`routes-${animKey}`}>
-          {/* Direct logical route (dashed) */}
-          {!isPending && w1 && w3 && renderCurve(w1, w3, "rgba(255,255,255,0.2)", "route-direct", true)}
-          
           {/* Actual physical route */}
           {!isPending && w1 && w2 && renderCurve(w1, w2, t1Color, "route-1")}
           {!isPending && w2 && w3 && !isAbort && renderCurve(w2, w3, t3Color, "route-2")}
