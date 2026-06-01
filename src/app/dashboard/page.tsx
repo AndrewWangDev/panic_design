@@ -141,6 +141,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
       setTestLogs(prev => {
         const logs = [
           ...prev,
+          `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
           `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
         ];
         
@@ -154,7 +155,6 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
           logs.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
           logs.push(`[Telemetry] Injected Latency: ${t2}ms`);
           logs.push(`[Telemetry] Upstream Backhaul: ${t3}ms`);
-          logs.push(`[System] Target Host: ${targetHost || 'extracted from JWT'}`);
         } else if (fault === '502') {
           logs.push(`[Telemetry] Edge Network RTT: ${t1}ms`);
           logs.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
