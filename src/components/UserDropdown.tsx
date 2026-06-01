@@ -23,6 +23,7 @@ export default function UserDropdown({ user }: UserDropdownProps) {
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -168,8 +169,8 @@ export default function UserDropdown({ user }: UserDropdownProps) {
 
           {/* Area 4: Logout */}
           <div className={styles.menuList}>
-            <button className={styles.menuItemLogOut} onClick={() => signOut()}>
-              <LogOut size={16} /> Log out
+            <button className={styles.menuItemLogOut} onClick={() => { setIsLoggingOut(true); signOut(); }} disabled={isLoggingOut}>
+              <LogOut size={16} /> {isLoggingOut ? 'Logging out...' : 'Log out'}
             </button>
             <button className={styles.menuItemDelete} onClick={handleDeleteClick}>
               <UserX size={16} /> Delete Account
