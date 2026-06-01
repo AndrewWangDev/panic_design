@@ -1,6 +1,6 @@
 name = "panicdesign"
 main = ".open-next/worker.js"
-compatibility_date = "2024-12-30"
+compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
 
 [assets]
