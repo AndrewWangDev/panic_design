@@ -83,7 +83,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     );
   };
 
-  const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false) => {
+  const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string) => {
     const projected = projection(coords);
     if (!projected) return null;
     const [x, y] = projected;
@@ -104,6 +104,17 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           fontWeight={600}
           style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
         >{label}</text>
+        {subLabel && (
+          <text 
+            y={20} 
+            textAnchor="middle" 
+            fill={isAbort ? "#ef4444" : "#eab308"} 
+            fontSize="12px" 
+            fontFamily="var(--font-mono)"
+            fontWeight={600}
+            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
+          >{subLabel}</text>
+        )}
       </g>
     );
   };
@@ -218,34 +229,38 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
         <g className="points">
           {w1 && renderPin(w1, "Cloud Runner", pinColor)}
-          {w2 && renderPin(w2, "Edge Gateway", pinColor)}
+          {w2 && renderPin(w2, "Edge Gateway", pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : '504 Gateway Timeout')}
           {w3 && renderPin(w3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
         </g>
       </svg>
       
       {/* Top HUD */}
-      <div style={{ position: 'absolute', top: 24, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.6)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '32px', alignItems: 'center', backdropFilter: 'blur(4px)' }}>
-        <div>
-          <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>TARGET HOSTNAME</div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)' }}>{targetHost || 'N/A'}</div>
+      <div style={{ position: 'absolute', top: 24, left: 24, right: 24, background: 'rgba(0,0,0,0.6)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backdropFilter: 'blur(4px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, paddingRight: '16px' }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>TARGET HOSTNAME</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{targetHost || 'N/A'}</div>
         </div>
-        <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)' }}></div>
-        <div>
-          <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>CHAOS POLICY</div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: fault === 'latency' ? '#eab308' : '#ef4444' }}>
-            {fault === 'latency' ? 'Latency Injection' : fault === '502' ? 'Bad Gateway (502)' : 'Gateway Timeout (504)'}
+        
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <div style={{ width: '1px', height: '32px', background: 'rgba(255,255,255,0.2)', margin: '0 24px' }}></div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: fault === 'latency' ? '#eab308' : '#ef4444', whiteSpace: 'nowrap' }}>
+              {fault === 'latency' ? 'Latency Injection' : fault === '502' ? 'Bad Gateway (502)' : 'Gateway Timeout (504)'}
+            </div>
           </div>
         </div>
+
         {fault === 'latency' && latencyParams && (
-          <>
-            <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)' }}></div>
-            <div>
-              <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>PARAMS</div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <div style={{ width: '1px', height: '32px', background: 'rgba(255,255,255,0.2)', margin: '0 24px' }}></div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>PARAMS</div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
                 Base: {latencyParams.base}ms | Jitter: {latencyParams.jitter}ms
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 
