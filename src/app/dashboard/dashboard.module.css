@@ -686,6 +686,19 @@
   font-size: 0.95rem;
   line-height: 1.5;
   text-align: left;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.modalTokenBox::-webkit-scrollbar {
+  width: 6px;
+}
+.modalTokenBox::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modalTokenBox::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 10px;
 }
 
 .modalClose {
