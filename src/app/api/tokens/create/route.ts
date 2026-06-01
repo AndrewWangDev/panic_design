@@ -70,6 +70,24 @@ export async function POST(req: Request) {
     // Convert ttlHours to seconds string for expiration
     const expSeconds = Math.floor(ttlHours * 3600);
 
+    // Resolve W3 (Target Host) coordinates
+    let w3: [number, number] | undefined = undefined;
+    try {
+      // Use dns module to get IP address
+      const dns = await import('dns/promises');
+      const { address } = await dns.lookup(targetHost);
+      
+      // Get geo coordinates
+      const geoRes = await fetch(`https://ipapi.co/${address}/json/`);
+      const geoData = await geoRes.json();
+      if (geoData && typeof geoData.longitude === 'number' && typeof geoData.latitude === 'number') {
+        w3 = [geoData.longitude, geoData.latitude];
+      }
+    } catch (geoErr) {
+      console.warn('Failed to resolve W3 coordinates:', geoErr);
+      // Proceed without w3, backend will handle fallback
+    }
+
     const jwt = await new SignJWT({
       tokenId: token.id,
       targetHost,
@@ -77,7 +95,8 @@ export async function POST(req: Request) {
       latency,
       jitter,
       distribution,
-      userId: session.user.id
+      userId: session.user.id,
+      w3
     })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setIssuedAt()
