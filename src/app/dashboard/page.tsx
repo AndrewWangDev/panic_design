@@ -376,6 +376,7 @@ export default function Dashboard() {
   const pageSize = 5;
 
   const [telemetryData, setTelemetryData] = useState<any>(null);
+  const [isTestPending, setIsTestPending] = useState(false);
 
   const [isMounted, setIsMounted] = useState(false);
   const [enableAnimation, setEnableAnimation] = useState(false);
@@ -764,7 +765,7 @@ export default function Dashboard() {
                   {isSimulating && (
                     <WorldMap 
                       animKey={simulationKey}
-                      isPending={!telemetryData}
+                      isPending={isTestPending || !telemetryData}
                       w1={telemetryData ? telemetryData.w1 : [-122.3933, 37.7697]}
                       w2={telemetryData ? telemetryData.w2 : null}
                       w3={telemetryData ? telemetryData.w3 : null}
@@ -796,12 +797,13 @@ export default function Dashboard() {
                       isSimulating={isSimulating}
                       onSimulationStart={() => {
                         setIsSimulating(true);
-                        setTelemetryData(null); // Clear previous telemetry
+                        setIsTestPending(true);
                         setSimulationKey(prev => prev + 1);
                       }}
                       onTelemetryReceived={(data) => {
                         setTelemetryData(data);
-                        setSimulationKey(prev => prev + 1); // Force map re-mount to play animation with real data
+                        setIsTestPending(false);
+                        setSimulationKey(prev => prev + 1);
                       }}
                       fault={fault || 'latency'}
                       t1={24}
