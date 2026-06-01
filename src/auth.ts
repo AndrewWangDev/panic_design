@@ -1,0 +1,68 @@
+import NextAuth from "next-auth"
+import GitHub from "next-auth/providers/github"
+import { getPrisma } from "@/lib/prisma"
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [
+    GitHub({
+      clientId: process.env.AUTH_CLIENT_ID,
+      clientSecret: process.env.AUTH_CLIENT_SECRET,
+    })
+  ],
+  callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "github") {
+        if (!profile?.id) return false;
+        
+        const githubId = Number(profile.id);
+        const login = profile.login as string;
+        
+        const prisma = getPrisma();
+        await prisma.user.upsert({
+          where: { githubId },
+          update: {
+            username: login,
+            email: user.email,
+            avatarUrl: user.image,
+          },
+          create: {
+            githubId,
+            username: login,
+            email: user.email,
+            avatarUrl: user.image,
+          }
+        });
+        return true;
+      }
+      return true;
+    },
+    async jwt({ token, user, account, profile }) {
+      if (account && profile) {
+        const prisma = getPrisma();
+        const dbUser = await prisma.user.findUnique({ 
+          where: { githubId: Number(profile.id) } 
+        });
+        
+        if (dbUser) {
+          token.internalId = dbUser.id;
+          token.jwtSalt = dbUser.jwtSalt;
+          token.githubUsername = profile.login;
+          token.avatarUrl = dbUser.avatarUrl;
+        }
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token?.internalId) {
+        session.user.id = token.internalId as string;
+        // @ts-ignore
+        session.user.jwtSalt = token.jwtSalt as number;
+        // @ts-ignore
+        session.user.username = token.githubUsername as string;
+        // @ts-ignore
+        session.user.avatarUrl = token.avatarUrl as string;
+      }
+      return session;
+    }
+  }
+})
