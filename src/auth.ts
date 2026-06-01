@@ -1,8 +1,15 @@
 import NextAuth from "next-auth"
+export let lastAuthError = "";
+
 import GitHub from "next-auth/providers/github"
 import { getPrisma } from "@/lib/prisma"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  logger: {
+    error(error) {
+      lastAuthError = String(error?.message || error?.name || error);
+    }
+  },
   trustHost: true,
   secret: process.env.AUTH_SECRET,
   providers: [
