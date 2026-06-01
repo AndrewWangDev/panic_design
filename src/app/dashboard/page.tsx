@@ -133,7 +133,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
           ...prev,
           `< HTTP/1.1 ${data.status} ${data.statusText || ''}`,
           '',
-          `[System] Target Host: ${fullToken.targetHost || 'extracted from JWT'}`,
+          `[System] Target Host: ${tokenData.target || 'extracted from JWT'}`,
           `[System] Latency Recorded: ${data.latency}ms (Includes network round-trip & chaos delay)`
         ];
         return logs;
