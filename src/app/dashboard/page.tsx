@@ -755,13 +755,14 @@ export default function Dashboard() {
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {isSimulating && (
                     <WorldMap 
-                      key={simulationKey}
+                      animKey={simulationKey}
+                      isPending={!telemetryData}
                       w1={telemetryData ? telemetryData.w1 : [-122.3933, 37.7697]}
-                      w2={telemetryData ? telemetryData.w2 : [8.5706, 50.0333]}
-                      w3={telemetryData ? telemetryData.w3 : [114.1694, 22.3193]}
-                      t1={telemetryData ? telemetryData.t1 : 24}
-                      t2={telemetryData ? telemetryData.t2 : (fault === 'latency' ? latency : 400)}
-                      t3={telemetryData ? telemetryData.t3 : 18}
+                      w2={telemetryData ? telemetryData.w2 : null}
+                      w3={telemetryData ? telemetryData.w3 : null}
+                      t1={telemetryData ? telemetryData.t1 : 0}
+                      t2={telemetryData ? telemetryData.t2 : 0}
+                      t3={telemetryData ? telemetryData.t3 : 0}
                       fault={fault || 'latency'}
                       targetHost={targetHost}
                       latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
