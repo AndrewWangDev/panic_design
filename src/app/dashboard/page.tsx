@@ -131,11 +131,17 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`;
       setTestLogs(prev => {
         const logs = [
           ...prev,
-          `< HTTP/1.1 ${data.status} ${data.statusText || ''}`,
-          '',
-          `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
-          `[System] Latency Recorded: ${data.latency}ms (Includes network round-trip & chaos delay)`
+          `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
         ];
+        
+        if (data.status >= 400 && data.responseBody) {
+          logs.push(`< ${data.responseBody}`);
+        }
+        
+        logs.push('');
+        logs.push(`[System] Target Host: ${targetHost || 'extracted from JWT'}`);
+        logs.push(`[System] Latency Recorded: ${data.latency}ms (Includes network round-trip & chaos delay)`);
+        
         return logs;
       });
       setTestState('done');
