@@ -411,10 +411,22 @@ export default function Dashboard() {
 
   const [targetHostError, setTargetHostError] = useState('');
 
+  const validateHost = (host: string) => {
+    if (host && !/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(host)) {
+      setTargetHostError('Invalid hostname format');
+    } else {
+      setTargetHostError('');
+    }
+  };
+
   const handleTargetHostChange = (val: string) => {
-    let host = val.trim();
-    
-    // Auto-extract hostname if URL was pasted
+    const host = val.trim();
+    setTargetHost(host);
+    validateHost(host);
+  };
+
+  const handleTargetHostBlur = () => {
+    let host = targetHost.trim();
     if (host.startsWith('http://') || host.startsWith('https://')) {
       try {
         const url = new URL(host);
@@ -423,13 +435,23 @@ export default function Dashboard() {
     } else if (host.includes('/')) {
       host = host.split('/')[0];
     }
-    
     setTargetHost(host);
-    
-    if (host && !/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(host)) {
-      setTargetHostError('Invalid hostname format');
-    } else {
-      setTargetHostError('');
+    validateHost(host);
+  };
+
+  const handleTargetHostPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData('Text');
+    if (pasted.startsWith('http://') || pasted.startsWith('https://')) {
+      e.preventDefault();
+      let extracted = pasted;
+      try {
+        const url = new URL(pasted);
+        extracted = url.hostname;
+      } catch(err) {
+        if (pasted.includes('/')) extracted = pasted.split('/')[0];
+      }
+      setTargetHost(extracted);
+      validateHost(extracted);
     }
   };
 
@@ -538,6 +560,8 @@ export default function Dashboard() {
                     placeholder="api.your-production.com"
                     value={targetHost}
                     onChange={(e) => handleTargetHostChange(e.target.value)}
+                    onBlur={handleTargetHostBlur}
+                    onPaste={handleTargetHostPaste}
                   />
                   {targetHostError && (
                     <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
