@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client/edge'
 import { PrismaD1 } from '@prisma/adapter-d1'
-import { getRequestContext } from '@cloudflare/next-on-pages'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -9,10 +9,10 @@ const globalForPrisma = globalThis as unknown as {
 export function getPrisma() {
   if (globalForPrisma.prisma) return globalForPrisma.prisma
 
-  const { env } = getRequestContext() as any
+  const { env } = getCloudflareContext() as any
   
   if (!env || !env.DB) {
-    throw new Error('Cloudflare D1 environment not found. Make sure you are running via wrangler or @cloudflare/next-on-pages')
+    throw new Error('Cloudflare D1 environment not found. Make sure you are running via wrangler or @opennextjs/cloudflare')
   }
 
   const adapter = new PrismaD1(env.DB)
