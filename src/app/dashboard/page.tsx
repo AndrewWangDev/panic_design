@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap } from 'lucide-react';
+import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search } from 'lucide-react';
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
 import WorldMap from '@/components/WorldMap';
@@ -419,7 +419,12 @@ export default function Dashboard() {
   
   const [activeTokens, setActiveTokens] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   const pageSize = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const [telemetryData, setTelemetryData] = useState<any>(null);
   const [isTestPending, setIsTestPending] = useState(false);
@@ -617,7 +622,11 @@ export default function Dashboard() {
     }
   };
 
-
+  const filteredTokens = activeTokens.filter(t => 
+    t.target.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.fault.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredTokens.length / pageSize);
 
   return (
     <div className={styles.dashboard}>
@@ -882,7 +891,7 @@ export default function Dashboard() {
                 AIOps What-If Simulation
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'help' : 'default' }}>
+                <div className={styles.tooltipWrapper}>
                   <button 
                     className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}
                     disabled={!isSimulating}
@@ -890,8 +899,13 @@ export default function Dashboard() {
                   >
                     BGP Route Leak
                   </button>
-                </span>
-                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'help' : 'default' }}>
+                  {!isSimulating && (
+                    <div className={styles.tooltipContent}>
+                      Run Cloud Injection First
+                    </div>
+                  )}
+                </div>
+                <div className={styles.tooltipWrapper}>
                   <button 
                     className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}
                     disabled={!isSimulating}
@@ -899,8 +913,13 @@ export default function Dashboard() {
                   >
                     Edge Node Outage
                   </button>
-                </span>
-                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'help' : 'default' }}>
+                  {!isSimulating && (
+                    <div className={styles.tooltipContent}>
+                      Run Cloud Injection First
+                    </div>
+                  )}
+                </div>
+                <div className={styles.tooltipWrapper}>
                   <button 
                     className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}
                     disabled={!isSimulating}
@@ -908,7 +927,12 @@ export default function Dashboard() {
                   >
                     Trans-Pacific Congestion
                   </button>
-                </span>
+                  {!isSimulating && (
+                    <div className={styles.tooltipContent}>
+                      Run Cloud Injection First
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -917,15 +941,26 @@ export default function Dashboard() {
         </div>
 
         {/* Bottom Grid: Active Edge Tokens */}
-        <div className={styles.gridBottom}>
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              Active Edge Tokens
-            </div>
-            
-            {activeTokens.length > 0 ? (
-              <div className={styles.tableContainer}>
-                <table className={styles.table}>
+        {!isSimulating && (
+          <div className={styles.gridBottom}>
+            <div className={styles.card}>
+              <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Active Edge Tokens</span>
+                <div className={styles.searchBox}>
+                  <Search size={14} className={styles.searchIcon} />
+                  <input 
+                    type="text" 
+                    placeholder="Search targets or faults..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={styles.searchInput}
+                  />
+                </div>
+              </div>
+              
+              {filteredTokens.length > 0 ? (
+                <div className={styles.tableContainer}>
+                  <table className={styles.table}>
                   <thead>
                     <tr>
                       <th>Token Hint</th>
@@ -936,7 +971,7 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {activeTokens.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((token) => (
+                    {filteredTokens.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((token) => (
                       <tr key={token.id} className={token.isRevoked ? styles.rowRevoked : ''}>
                         <td className={styles.tokenCell}>
                           {token.tokenHint}
@@ -965,7 +1000,7 @@ export default function Dashboard() {
                   </tbody>
                 </table>
                 
-                {Math.ceil(activeTokens.length / pageSize) > 1 && (
+                {totalPages > 1 && (
                   <div className={styles.pagination}>
                     <button 
                       className={styles.pageBtn} 
@@ -977,10 +1012,10 @@ export default function Dashboard() {
                     </button>
                     
                     <div className={styles.pageNumbers}>
-                      {Array.from({ length: Math.ceil(activeTokens.length / pageSize) })
+                      {Array.from({ length: totalPages })
                         .map((_, i) => i + 1)
                         .filter(pageNum => {
-                          const total = Math.ceil(activeTokens.length / pageSize);
+                          const total = totalPages;
                           if (total <= 5) return true;
                           if (currentPage <= 3) return pageNum <= 5;
                           if (currentPage >= total - 2) return pageNum >= total - 4;
@@ -999,7 +1034,7 @@ export default function Dashboard() {
 
                     <button 
                       className={styles.pageBtn} 
-                      disabled={currentPage === Math.ceil(activeTokens.length / pageSize)}
+                      disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage(p => p + 1)}
                       aria-label="Next Page"
                     >
@@ -1015,7 +1050,7 @@ export default function Dashboard() {
             )}
             
           </div>
-        </div>
+        )}
 
       </div>
 
