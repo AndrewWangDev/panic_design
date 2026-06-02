@@ -841,7 +841,7 @@
 
 .latencyPanel {
   display: grid;
-  grid-template-columns: 6fr 4fr;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 4fr);
   gap: 32px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: var(--radius-md);
