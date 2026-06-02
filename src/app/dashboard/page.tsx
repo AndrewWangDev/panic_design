@@ -199,7 +199,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'}`,
         `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
       ];
-      if (data.status >= 400 && data.responseBody) {
+      if (data.responseBody) {
         // Try to format JSON if possible
         let formattedBody = data.responseBody;
         try {
