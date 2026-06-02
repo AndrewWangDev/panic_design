@@ -459,7 +459,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
                 {/* Removed visual jitter offsets to prevent map lines and pins from detaching */}
                 {!isPending && w1 && renderPin(w1, "Cloud Runner", t1Color, false, undefined, anchorW1)}
-                {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : fault === '429' ? '429 Rate Limit' : '504 Gateway Timeout', anchorW2)}
+                {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '504' ? `504 Timeout (${t2} ms)` : fault === '502' ? '502 Bad Gateway' : '429 Rate Limit', anchorW2)}
                 {!isPending && visualW3 && renderPin(visualW3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
               </>
             );

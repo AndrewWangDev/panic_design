@@ -180,7 +180,8 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         lines.push(`[System] Target Unreachable. Edge payload delivered.`);
       } else if (fault === '504') {
         lines.push(`[Telemetry] Edge Network RTT: ${t1_rtt}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED after ${Math.max(0, Math.round(data.totalLatency - t1_rtt))}ms)`);
+        lines.push(`[Telemetry] Edge Processing: ${t2_rtt}ms (Timeout Wait)`);
+        lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
       } else if (fault === '429') {
         lines.push(`[Telemetry] Edge Network RTT: ${Math.round(data.totalLatency)}ms`);
         lines.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
