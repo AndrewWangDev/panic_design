@@ -875,10 +875,9 @@ export default function Dashboard() {
                     <div className={styles.latencyPanel}>
                       <div className={styles.latencyCol}>
                         <div className={styles.latencyTitle}>Algorithm & Parameters</div>
-                        
-                        <div className={styles.latencyControlRow} style={{ alignItems: 'center' }}>
+                        <div className={styles.latencyControlRow} style={{ alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                           <div className={styles.latencyLabel}>Distribution</div>
-                          <div style={{ width: '130px', marginLeft: '12px' }}>
+                          <div style={{ width: '110px' }}>
                             <CustomSelect 
                               options={distOptions}
                               value={distribution}
@@ -887,10 +886,8 @@ export default function Dashboard() {
                             />
                           </div>
 
-                          <div style={{ flex: 1 }} />
-
-                          <div className={styles.latencyLabel}>Packet Loss</div>
-                          <div className={styles.inputWithUnit} style={{ width: '130px', marginLeft: '12px' }}>
+                          <div className={styles.latencyLabel} style={{ minWidth: 'auto', marginLeft: 'auto' }}>Packet Loss</div>
+                          <div className={styles.inputWithUnit} style={{ width: '110px', borderColor: (packetLoss !== '' && (!Number.isInteger(Number(packetLoss)) || Number(packetLoss) < 0 || Number(packetLoss) > 100)) ? '#ef4444' : undefined }}>
                             <input 
                               type="number" 
                               min="0" max="100"
@@ -900,7 +897,7 @@ export default function Dashboard() {
                                 setPacketLoss(val === '' ? '' : Number(val));
                               }}
                               className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
-                              style={{ width: '100%', textAlign: 'left', borderColor: (packetLoss !== '' && (!Number.isInteger(Number(packetLoss)) || Number(packetLoss) < 0 || Number(packetLoss) > 100)) ? '#ef4444' : undefined }}
+                              style={{ width: '100%', textAlign: 'left' }}
                             />
                             <span className={styles.unitLabel}>%</span>
                           </div>
@@ -916,7 +913,7 @@ export default function Dashboard() {
                               className={styles.slider}
                             />
                           </div>
-                          <div className={styles.inputWithUnit} style={{ width: '130px' }}>
+                          <div className={styles.inputWithUnit} style={{ width: '110px' }}>
                             <input 
                               type="number" 
                               min="0" max="10000"
@@ -932,7 +929,7 @@ export default function Dashboard() {
                         <div className={styles.latencyControlRow}>
                           <div className={styles.latencyLabel}>Network Jitter</div>
                           <div style={{flex: 1}} />
-                          <div className={styles.inputWithUnit} style={{ width: '130px' }}>
+                          <div className={styles.inputWithUnit} style={{ width: '110px' }}>
                             <input 
                               type="number" 
                               min="0"
