@@ -77,34 +77,23 @@ export async function POST(req: Request) {
         try {
           const dns = await import('dns/promises');
           const { address } = await dns.lookup(payload.targetHost);
-          const geoRes = await fetch(`https://ipapi.co/${address}/json/`);
+          const geoRes = await fetch(`http://ip-api.com/json/${address}`);
           const geoData = await geoRes.json();
-          if (geoData && typeof geoData.longitude === 'number' && typeof geoData.latitude === 'number') {
-            w3 = [geoData.longitude, geoData.latitude];
+          if (geoData && typeof geoData.lon === 'number' && typeof geoData.lat === 'number') {
+            w3 = [geoData.lon, geoData.lat];
+          } else {
+            w3 = [...w2]; // Fallback to edge gateway location if API rate limits or fails
           }
         } catch (geoErr) {
           console.warn('Fallback W3 resolution failed:', geoErr);
-          w3 = [-0.1278, 51.5074]; // Mock London
+          w3 = [...w2];
         }
       } else {
-        w3 = [-0.1278, 51.5074]; // Mock London
+        w3 = [...w2]; // Fallback to edge gateway location
       }
     }
 
-    // Overlap prevention: If nodes are physically too close, spread them out visually
-    const dist2 = (a: number[], b: number[]) => Math.sqrt(Math.pow(a[0]-b[0], 2) + Math.pow(a[1]-b[1], 2));
-    
-    // Spread W1 and W2
-    if (dist2(w1, w2) < 3) {
-      w2[0] += 2;
-      w2[1] -= 1.5; // Shift W2 diagonally slightly
-    }
-    // Spread W2 and W3
-    if (dist2(w2, w3) < 3) {
-      w3[0] += 2.5; // Shift W3 slightly further right
-      w3[1] += 1.5;
-    }
-
+    // Removed coordinate-based overlap prevention. Jitter is now handled purely at the visual SVG level.
     // Calculate Final Timings
     const t3_visual = t3 / 2; // W2 -> W3 single trip
     let t1_visual = (t1_total - t2 - t3) / 2; // W1 -> W2 single trip
