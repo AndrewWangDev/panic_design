@@ -264,7 +264,9 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const t3Color = getLatencyColor(t3 || 0);
   const pinColor = "#cbd5e1"; // Neutral slate-300
 
-  const isAbort = fault === '502' || fault === '504' || fault === '429';
+  // t3 === 0 when Packet Loss triggers for a 'latency' fault
+  const isPacketLoss = fault === 'latency' && t3 === 0 && !isPending;
+  const isAbort = fault === '502' || fault === '504' || fault === '429' || isPacketLoss;
   
   let wallX = 0, wallY = 0;
   let abortPath = '';
@@ -459,7 +461,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
                 {/* Removed visual jitter offsets to prevent map lines and pins from detaching */}
                 {!isPending && w1 && renderPin(w1, "Cloud Runner", t1Color, false, undefined, anchorW1)}
-                {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '504' ? `504 Timeout (${t2} ms)` : fault === '502' ? '502 Bad Gateway' : '429 Rate Limit', anchorW2)}
+                {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, isPacketLoss ? 'Packet Loss' : fault === 'latency' ? `${t2} ms` : fault === '504' ? `504 Timeout (${t2} ms)` : fault === '502' ? '502 Bad Gateway' : '429 Rate Limit', anchorW2)}
                 {!isPending && visualW3 && renderPin(visualW3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
               </>
             );

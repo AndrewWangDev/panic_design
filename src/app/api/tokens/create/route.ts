@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json() as any;
-    const { targetHost, fault, latency, jitter, distribution, customTtl } = body;
+    const { targetHost, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, customTtl } = body;
 
     if (!targetHost || !fault) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -41,6 +41,8 @@ export async function POST(req: Request) {
       latency,
       jitter,
       distribution,
+      packetLoss,
+      mutilationStrategy,
       ttlHours
     });
 
@@ -103,6 +105,8 @@ export async function POST(req: Request) {
       latency,
       jitter,
       distribution,
+      packetLoss,
+      mutilationStrategy,
       userId: session.user.id,
       w3
     })

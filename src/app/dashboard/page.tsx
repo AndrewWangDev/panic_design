@@ -216,7 +216,11 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       const t2_rtt = Math.round(realTelemetry.t2);
       const t3_rtt = Math.round(realTelemetry.t3 * 2);
 
-      if (fault === 'latency') {
+      if (data.status === 444) {
+        lines.push(`[Telemetry] Edge Network RTT: ${t1_rtt}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul: -- (PACKET_DROP)`);
+        lines.push(`[System] Target Unreachable. Edge payload dropped.`);
+      } else if (fault === 'latency') {
         lines.push(`[Telemetry] Edge Network RTT: ${t1_rtt}ms`);
         lines.push(`[Telemetry] Injected Latency: ${t2_rtt}ms`);
         lines.push(`[Telemetry] Upstream Backhaul: ${t3_rtt}ms`);
@@ -427,6 +431,8 @@ export default function Dashboard() {
   const [latency, setLatency] = useState(2500);
   const [jitter, setJitter] = useState(0);
   const [distribution, setDistribution] = useState<'Uniform' | 'Normal' | 'Spikes'>('Uniform');
+  const [packetLoss, setPacketLoss] = useState(0);
+  const [mutilationStrategy, setMutilationStrategy] = useState<'None' | 'Unexpected EOF' | 'Type Poisoning' | 'Empty Shell'>('None');
   const [ttl, setTtl] = useState('15m');
   const [customTtl, setCustomTtl] = useState(24);
 
@@ -474,6 +480,8 @@ export default function Dashboard() {
     setDistribution('Uniform');
     setLatency(1000);
     setJitter(3);
+    setMutilationStrategy('Unexpected EOF');
+    setPacketLoss(0);
     
     setTimeout(() => {
       setIsFlashing(false);
@@ -483,7 +491,7 @@ export default function Dashboard() {
   // Clear generated token when form inputs change, resetting terminal to MOCK_LOGS
   useEffect(() => {
     setGeneratedToken('');
-  }, [targetHost, fault, latency, jitter, distribution, ttl, customTtl]);
+  }, [targetHost, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, ttl, customTtl]);
   
   const [activeTokens, setActiveTokens] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -511,6 +519,8 @@ export default function Dashboard() {
         if (state.latency !== undefined) setLatency(state.latency);
         if (state.jitter !== undefined) setJitter(state.jitter);
         if (state.distribution !== undefined) setDistribution(state.distribution);
+        if (state.packetLoss !== undefined) setPacketLoss(state.packetLoss);
+        if (state.mutilationStrategy !== undefined) setMutilationStrategy(state.mutilationStrategy);
         if (state.ttl !== undefined) setTtl(state.ttl);
         if (state.customTtl !== undefined) setCustomTtl(state.customTtl);
       } catch (e) {
@@ -567,9 +577,12 @@ export default function Dashboard() {
 
   // Save state to localStorage whenever form controls change
   useEffect(() => {
-    const state = { targetHost, fault, latency, jitter, distribution, ttl, customTtl };
-    localStorage.setItem('panic-dashboard-state', JSON.stringify(state));
-  }, [targetHost, fault, latency, jitter, distribution, ttl, customTtl]);
+    if (isMounted) {
+      localStorage.setItem('panic-dashboard-state', JSON.stringify({
+        targetHost, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, ttl, customTtl
+      }));
+    }
+  }, [targetHost, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, ttl, customTtl, isMounted]);
 
   const [targetHostError, setTargetHostError] = useState('');
 
@@ -617,7 +630,7 @@ export default function Dashboard() {
     }
   };
 
-  const isFormValid = targetHost.length > 0 && fault !== null && !targetHostError;
+  const isFormValid = targetHost.length > 0 && !targetHostError && fault !== null && (fault !== 'latency' || (Number.isInteger(packetLoss) && packetLoss >= 0 && packetLoss <= 100));
 
   const handleGenerate = async () => {
     if (!isFormValid) return;
@@ -638,6 +651,8 @@ export default function Dashboard() {
           latency,
           jitter,
           distribution,
+          packetLoss,
+          mutilationStrategy,
           customTtl: ttlHours
         })
       });
@@ -814,19 +829,53 @@ export default function Dashboard() {
               {fault === 'latency' && (
                 <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px dashed var(--dash-input-border)', animation: enableAnimation ? 'slideDown 0.3s ease-out' : 'none' }}>
                     <div className={styles.latencyPanel}>
+                      <div className={styles.latencyCol} style={{ marginBottom: '24px' }}>
+                        <div className={styles.latencyTitle}>Payload Mutilation Strategy</div>
+                        <div className={styles.capsuleGroup} style={{ marginTop: '12px' }}>
+                          {['None', 'Unexpected EOF', 'Type Poisoning', 'Empty Shell'].map(strat => (
+                            <button 
+                              key={strat}
+                              className={`${styles.capsuleBtn} ${mutilationStrategy === strat ? styles.active : ''} ${isFlashing ? styles.inputFlash : ''}`}
+                              onClick={() => setMutilationStrategy(strat as any)}
+                              style={{ padding: '6px 12px', fontSize: '12px' }}
+                            >
+                              {strat}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className={styles.latencyCol}>
                         <div className={styles.latencyTitle}>Algorithm & Parameters</div>
                         
-                        <div className={styles.latencyControlRow} style={{ alignItems: 'center' }}>
-                          <div className={styles.latencyLabel}>Distribution</div>
-                          <div style={{flex: 1}} />
-                          <div style={{ width: '140px' }}>
-                            <CustomSelect 
-                              options={distOptions}
-                              value={distribution}
-                              onChange={(val) => setDistribution(val as any)}
-                              className={isFlashing ? styles.inputFlash : ''}
-                            />
+                        <div className={styles.latencyControlRow} style={{ alignItems: 'flex-start' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '16px' }}>
+                            <div className={styles.latencyLabel} style={{ marginBottom: '8px' }}>Distribution</div>
+                            <div style={{ width: '100%' }}>
+                              <CustomSelect 
+                                options={distOptions}
+                                value={distribution}
+                                onChange={(val) => setDistribution(val as any)}
+                                className={isFlashing ? styles.inputFlash : ''}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                            <div className={styles.latencyLabel} style={{ marginBottom: '8px' }}>Packet Loss</div>
+                            <div className={styles.inputWithUnit} style={{ width: '100%', borderColor: (!Number.isInteger(packetLoss) || packetLoss < 0 || packetLoss > 100) ? '#ef4444' : undefined }}>
+                              <input 
+                                type="number" 
+                                min="0" max="100"
+                                value={packetLoss}
+                                onChange={(e) => setPacketLoss(Number(e.target.value))}
+                                className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
+                                style={{ width: '100%', textAlign: 'left' }}
+                              />
+                              <span className={styles.unitLabel}>%</span>
+                            </div>
+                            {(!Number.isInteger(packetLoss) || packetLoss < 0 || packetLoss > 100) && (
+                              <div style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px' }}>Must be an integer 0-100</div>
+                            )}
                           </div>
                         </div>
 
