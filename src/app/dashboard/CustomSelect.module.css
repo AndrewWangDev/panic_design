@@ -13,8 +13,9 @@
   border: 1px solid var(--dash-input-border);
   border-radius: 100px;
   color: var(--dash-input-text);
-  padding: 12px 20px;
-  font-size: 1rem;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
   cursor: pointer;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }

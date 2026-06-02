@@ -311,12 +311,15 @@ const getSliderColor = (value: number) => {
   return '#ef4444'; 
 };
 
-const RealTimeSimulationChart = ({ latency, jitter, distribution }: { latency: number, jitter: number, distribution: string }) => {
+const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: { latency: number, jitter: number, distribution: string, packetLoss: number }) => {
   const dataPoints = 40;
   const [points, setPoints] = useState<number[]>([]);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
 
-  const generatePoint = (baseLat: number, jit: number, dist: string) => {
+  const generatePoint = (baseLat: number, jit: number, dist: string, dropRate: number) => {
+    if (dropRate > 0 && Math.random() < (dropRate / 100)) {
+      return -1; // Dropped packet
+    }
     let val = baseLat;
     if (dist === 'Uniform') {
       val = baseLat + (Math.random() * 2 - 1) * jit;
@@ -339,7 +342,7 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution }: { latency: n
     }
     const initial = [];
     for (let i = 0; i < dataPoints; i++) {
-      initial.push(generatePoint(latency, jitter, distribution));
+      initial.push(generatePoint(latency, jitter, distribution, packetLoss));
     }
     setPoints(initial);
   }, []);
@@ -351,12 +354,12 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution }: { latency: n
         if (prev.length === 0) return prev;
         const next = [...prev];
         next.shift();
-        next.push(generatePoint(latency, jitter, distribution));
+        next.push(generatePoint(latency, jitter, distribution, packetLoss));
         return next;
       });
     }, 150);
     return () => clearInterval(interval);
-  }, [isPlaying, latency, jitter, distribution]);
+  }, [isPlaying, latency, jitter, distribution, packetLoss]);
 
   const togglePlay = () => {
     const nextState = !isPlaying;
@@ -380,7 +383,17 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution }: { latency: n
   const scaleY = (val: number) => h - paddingBottom - (val / maxVal) * chartH;
   const scaleX = (idx: number) => paddingLeft + (idx / (dataPoints - 1)) * chartW;
 
-  const pathData = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${scaleX(idx)},${scaleY(p)}`).join(' ');
+  let pathData = '';
+  let isFirst = true;
+  points.forEach((p, idx) => {
+    if (p === -1) {
+      isFirst = true;
+    } else {
+      pathData += `${isFirst ? 'M' : 'L'}${scaleX(idx)},${scaleY(p)} `;
+      isFirst = false;
+    }
+  });
+
   const color = getSliderColor(latency);
 
   return (
@@ -397,8 +410,22 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution }: { latency: n
         <line x1={paddingLeft} y1={scaleY(latency)} x2={w - paddingRight} y2={scaleY(latency)} stroke="rgba(255,255,255,0.3)" strokeDasharray="4,2" />
         <text x={w - paddingRight - 2} y={scaleY(latency) - 4} fill="rgba(255,255,255,0.9)" fontSize="8" textAnchor="end" fontWeight="bold">Base</text>
 
-        <path d={pathData} stroke={color} fill="none" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
-        <path d={`${pathData} L${scaleX(dataPoints-1)},${scaleY(0)} L${scaleX(0)},${scaleY(0)} Z`} fill={color} opacity="0.1" />
+        {pathData && <path d={pathData} stroke={color} fill="none" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />}
+        
+        {/* Draw red crosses at the bottom for dropped packets */}
+        {points.map((p, idx) => {
+          if (p === -1) {
+            const cx = scaleX(idx);
+            const cy = scaleY(0) + 2;
+            return (
+              <g key={idx}>
+                <line x1={cx - 2} y1={cy - 2} x2={cx + 2} y2={cy + 2} stroke="#ef4444" strokeWidth="1" />
+                <line x1={cx + 2} y1={cy - 2} x2={cx - 2} y2={cy + 2} stroke="#ef4444" strokeWidth="1" />
+              </g>
+            );
+          }
+          return null;
+        })}
       </svg>
       <button 
         onClick={togglePlay}
@@ -836,7 +863,7 @@ export default function Dashboard() {
                         {['None', 'Unexpected EOF', 'Type Poisoning', 'Empty Shell'].map(strat => (
                           <button 
                             key={strat}
-                            className={`${styles.capsuleBtn} ${mutilationStrategy === strat ? styles.active : ''} ${isFlashing ? styles.inputFlash : ''}`}
+                            className={`${styles.capsuleBtn} ${mutilationStrategy === strat ? styles.active : ''} ${isFlashing && strat === 'Unexpected EOF' ? styles.inputFlash : ''}`}
                             onClick={() => setMutilationStrategy(strat as any)}
                           >
                             {strat}
@@ -851,8 +878,7 @@ export default function Dashboard() {
                         
                         <div className={styles.latencyControlRow} style={{ alignItems: 'center' }}>
                           <div className={styles.latencyLabel}>Distribution</div>
-                          <div style={{ flex: 1 }} />
-                          <div style={{ width: '130px' }}>
+                          <div style={{ width: '130px', marginLeft: '12px' }}>
                             <CustomSelect 
                               options={distOptions}
                               value={distribution}
@@ -860,12 +886,11 @@ export default function Dashboard() {
                               className={isFlashing ? styles.inputFlash : ''}
                             />
                           </div>
-                        </div>
 
-                        <div className={styles.latencyControlRow} style={{ alignItems: 'center' }}>
-                          <div className={styles.latencyLabel}>Packet Loss</div>
                           <div style={{ flex: 1 }} />
-                          <div className={styles.inputWithUnit} style={{ width: '130px', borderColor: (packetLoss !== '' && (!Number.isInteger(Number(packetLoss)) || Number(packetLoss) < 0 || Number(packetLoss) > 100)) ? '#ef4444' : undefined }}>
+
+                          <div className={styles.latencyLabel}>Packet Loss</div>
+                          <div className={styles.inputWithUnit} style={{ width: '130px', marginLeft: '12px' }}>
                             <input 
                               type="number" 
                               min="0" max="100"
@@ -875,7 +900,7 @@ export default function Dashboard() {
                                 setPacketLoss(val === '' ? '' : Number(val));
                               }}
                               className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
-                              style={{ width: '100%', textAlign: 'left' }}
+                              style={{ width: '100%', textAlign: 'left', borderColor: (packetLoss !== '' && (!Number.isInteger(Number(packetLoss)) || Number(packetLoss) < 0 || Number(packetLoss) > 100)) ? '#ef4444' : undefined }}
                             />
                             <span className={styles.unitLabel}>%</span>
                           </div>
@@ -928,7 +953,7 @@ export default function Dashboard() {
                       <div className={styles.latencyCol}>
                         <div className={styles.latencyTitle}>Real-time Simulation</div>
                         <div className={styles.distChart} style={{ height: '140px', marginTop: '12px', overflow: 'hidden' }}>
-                          <RealTimeSimulationChart latency={latency} jitter={jitter} distribution={distribution} />
+                          <RealTimeSimulationChart latency={latency} jitter={jitter} distribution={distribution} packetLoss={Number(packetLoss) || 0} />
                         </div>
                       </div>
                   </div>
