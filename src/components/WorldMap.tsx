@@ -222,7 +222,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
   type PinAnchor = 'top' | 'top-left' | 'bottom-right' | 'bottom';
 
-  const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string, anchor: PinAnchor = 'top', pinOffsetX: number = 0, pinOffsetY: number = 0) => {
+  const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string, anchor: PinAnchor = 'top') => {
     const projected = projection(coords);
     if (!projected) return null;
     const [x, y] = projected;
@@ -242,7 +242,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     }
 
     return (
-      <g style={{ transform: `translate(${x}px,${y}px) scale(${1 / viewport.k}) translate(${pinOffsetX}px,${pinOffsetY}px)`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)', opacity: isDimmed ? 0.4 : 1 }}>
+      <g style={{ transform: `translate(${x}px,${y}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)', opacity: isDimmed ? 0.4 : 1 }}>
         <path 
           d="M0 -24 C -6 -24, -10 -19.5, -10 -14 C -10 -6, 0 0, 0 0 C 0 0, 10 -6, 10 -14 C 10 -19.5, 6 -24, 0 -24 Z"
           fill={color}
@@ -457,10 +457,10 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
                   </g>
                 )}
 
-                {/* Add jitter offsets so overlapping pins are visually spread out */}
-                {!isPending && w1 && renderPin(w1, "Cloud Runner", t1Color, false, undefined, anchorW1, -12, 0)}
-                {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : fault === '429' ? '429 Rate Limit' : '504 Gateway Timeout', anchorW2, 12, 0)}
-                {!isPending && visualW3 && renderPin(visualW3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort, undefined, 'top', 0, -12)}
+                {/* Removed visual jitter offsets to prevent map lines and pins from detaching */}
+                {!isPending && w1 && renderPin(w1, "Cloud Runner", t1Color, false, undefined, anchorW1)}
+                {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, fault === 'latency' ? `${t2} ms` : fault === '502' ? '502 Bad Gateway' : fault === '429' ? '429 Rate Limit' : '504 Gateway Timeout', anchorW2)}
+                {!isPending && visualW3 && renderPin(visualW3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
               </>
             );
           })()}
