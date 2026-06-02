@@ -69,7 +69,7 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 24px;
 }
 
 /* 标题区 */
@@ -914,6 +914,12 @@
   border-color: var(--color-primary);
 }
 
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0px 0px rgba(255, 59, 48, 0.2); }
+  50% { box-shadow: 0 0 15px 5px rgba(255, 59, 48, 0.4); }
+  100% { box-shadow: 0 0 0px 0px rgba(255, 59, 48, 0.2); }
+}
+
 /* Run Test Button in Payload */
 .runTestBtn {
   background: transparent;
@@ -929,11 +935,13 @@
   gap: 8px;
   cursor: pointer;
   transition: all var(--transition-fast);
+  animation: pulseGlow 2s infinite ease-in-out;
 }
 
 .runTestBtn:hover {
   background: rgba(255, 59, 48, 0.1);
-  box-shadow: 0 0 10px rgba(255, 59, 48, 0.2);
+  box-shadow: 0 0 15px rgba(255, 59, 48, 0.6);
+  animation: none;
 }
 
 .testLogContainer {

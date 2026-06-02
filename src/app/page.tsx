@@ -6,6 +6,29 @@ import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 
+const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "", isFloat = false, initial = 0 }: any) => {
+  const [count, setCount] = useState(initial);
+  
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    let animationFrame: number;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      const current = initial + (end - initial) * ease;
+      setCount(current);
+      if (progress < 1) {
+        animationFrame = window.requestAnimationFrame(step);
+      }
+    };
+    animationFrame = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [end, duration, initial]);
+
+  return <span>{prefix}{isFloat ? count.toFixed(1) : Math.floor(count)}{suffix}</span>;
+};
+
 export default function Home() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -198,15 +221,21 @@ export default function Home() {
       <div>
         <div className={styles.metrics}>
           <div className={styles.metricItem}>
-            <div className={styles.metricValue}>300+</div>
+            <div className={styles.metricValue}>
+              <AnimatedCounter end={300} suffix="+" />
+            </div>
             <div className={styles.metricLabel}>Edge Locations</div>
           </div>
           <div className={styles.metricItem}>
-            <div className={styles.metricValue}>1.4M</div>
+            <div className={styles.metricValue}>
+              <AnimatedCounter end={1.4} isFloat={true} suffix="M" />
+            </div>
             <div className={styles.metricLabel}>Outages Injected</div>
           </div>
           <div className={styles.metricItem}>
-            <div className={styles.metricValue}>&lt; 5ms</div>
+            <div className={styles.metricValue}>
+              <AnimatedCounter initial={10} end={5} prefix="< " suffix="ms" duration={1500} />
+            </div>
             <div className={styles.metricLabel}>Auth Latency</div>
           </div>
         </div>

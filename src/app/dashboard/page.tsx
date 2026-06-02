@@ -384,9 +384,29 @@ export default function Dashboard() {
 
   const [generatedToken, setGeneratedToken] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showTokenModal, setShowTokenModal] = useState(false);
   const [modalCopied, setModalCopied] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [latestFullToken, setLatestFullToken] = useState('');
+  
+  const topGridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showTokenModal && generatedToken && topGridRef.current) {
+      setTimeout(() => {
+        topGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [showTokenModal, generatedToken]);
+
+  const handleQuickDemo = () => {
+    setTargetHost('jsonplaceholder.typicode.com');
+    setTtl('12h');
+    setFault('latency');
+    setDistribution('Uniform');
+    setLatency(1000);
+    setJitter(3);
+  };
   
   const [activeTokens, setActiveTokens] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -597,12 +617,17 @@ export default function Dashboard() {
         </div>
 
         {/* Top Grid */}
-        <div className={styles.gridTop}>
+        <div className={styles.gridTop} ref={topGridRef}>
           
           {/* Left: Control Plane */}
           <div className={`${styles.card} ${styles.controlPlaneCard} ${isSimulating ? styles.controlPlaneCardSimulating : ''}`}>
-            <div className={styles.cardHeader}>
-              Control Plane <div className={styles.blinkDot} />
+            <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                Control Plane <div className={styles.blinkDot} />
+              </div>
+              <button className={styles.runTestBtn} style={{ padding: '4px 12px', fontSize: '10px', animation: 'none' }} onClick={handleQuickDemo}>
+                Quick Demo
+              </button>
             </div>
 
             <div className={styles.inputGroup}>
