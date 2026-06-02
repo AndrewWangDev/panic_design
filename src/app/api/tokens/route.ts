@@ -24,7 +24,7 @@ export async function GET() {
       if (t.isRevoked) return;
       try {
         const config = JSON.parse(t.config);
-        const ttlHours = parseInt(config.ttl) || 0;
+        const ttlHours = parseFloat(config.ttlHours) || 0.25;
         const expiresAt = new Date(t.createdAt.getTime() + ttlHours * 60 * 60 * 1000);
         if (expiresAt <= now) {
           expiredIds.push(t.id);

@@ -70,18 +70,26 @@ export async function POST(req: Request) {
     // Convert ttlHours to seconds string for expiration
     const expSeconds = Math.floor(ttlHours * 3600);
 
-    // Resolve W3 (Target Host) coordinates
+    // Resolve W3 (Target Host) coordinates using Edge-compatible fetch
     let w3: [number, number] | undefined = undefined;
     try {
-      // Use dns module to get IP address
-      const dns = await import('dns/promises');
-      const { address } = await dns.lookup(targetHost);
+      const dnsRes = await fetch(`https://cloudflare-dns.com/dns-query?name=${targetHost}&type=A`, {
+        headers: { 'accept': 'application/dns-json' }
+      });
+      const dnsData = await dnsRes.json() as any;
       
-      // Get geo coordinates
-      const geoRes = await fetch(`https://ipapi.co/${address}/json/`);
-      const geoData = await geoRes.json();
-      if (geoData && typeof geoData.longitude === 'number' && typeof geoData.latitude === 'number') {
-        w3 = [geoData.longitude, geoData.latitude];
+      let address = '';
+      if (dnsData.Status === 0 && dnsData.Answer && dnsData.Answer.length > 0) {
+        address = dnsData.Answer.find((a: any) => a.type === 1)?.data || dnsData.Answer[0].data;
+      }
+      
+      if (address) {
+        // Get geo coordinates
+        const geoRes = await fetch(`https://ipapi.co/${address}/json/`);
+        const geoData = await geoRes.json() as any;
+        if (geoData && typeof geoData.longitude === 'number' && typeof geoData.latitude === 'number') {
+          w3 = [geoData.longitude, geoData.latitude];
+        }
       }
     } catch (geoErr) {
       console.warn('Failed to resolve W3 coordinates:', geoErr);
