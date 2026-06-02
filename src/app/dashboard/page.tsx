@@ -800,6 +800,7 @@ export default function Dashboard() {
                         value={ttl}
                         onChange={(val) => setTtl(val)}
                         className={isFlashing ? styles.inputFlash : ''}
+                        size="large"
                       />
                     </div>
                     {ttl === 'custom' && (

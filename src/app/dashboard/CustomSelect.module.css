@@ -24,6 +24,11 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
+.largeTrigger {
+  padding: 12px 24px;
+  font-size: 1.05rem;
+}
+
 /* Light mode overrides logic (assuming globals has these vars correctly set) */
 [data-theme='light'] .selectTrigger:hover {
   border-color: rgba(0, 0, 0, 0.3);

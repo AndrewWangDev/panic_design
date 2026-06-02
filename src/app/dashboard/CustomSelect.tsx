@@ -12,9 +12,10 @@ interface CustomSelectProps {
   value: string;
   onChange: (val: string) => void;
   className?: string;
+  size?: 'normal' | 'large';
 }
 
-export default function CustomSelect({ options, value, onChange, className }: CustomSelectProps) {
+export default function CustomSelect({ options, value, onChange, className, size = 'normal' }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +34,7 @@ export default function CustomSelect({ options, value, onChange, className }: Cu
   return (
     <div className={styles.selectContainer} ref={dropdownRef}>
       <div 
-        className={`${styles.selectTrigger} ${isOpen ? styles.open : ''} ${className || ''}`}
+        className={`${styles.selectTrigger} ${size === 'large' ? styles.largeTrigger : ''} ${isOpen ? styles.open : ''} ${className || ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <span>{selectedOption?.label}</span>
