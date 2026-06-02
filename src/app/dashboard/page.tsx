@@ -102,7 +102,10 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
 # Token Hint: ${tokenDisplay}
 # Ready for edge network injection.
 
-[System] Awaiting trigger...`;
+export PANIC_TOKEN="${tokenDisplay}"
+curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
+
+# [System] Awaiting trigger...`;
 
   useEffect(() => {
     setText('');
@@ -880,27 +883,33 @@ export default function Dashboard() {
                 AIOps What-If Simulation
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <button 
-                  className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}
-                  disabled={!isSimulating}
-                  title={!isSimulating ? "Run Cloud Injection First" : ""}
-                >
-                  BGP Route Leak
-                </button>
-                <button 
-                  className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}
-                  disabled={!isSimulating}
-                  title={!isSimulating ? "Run Cloud Injection First" : ""}
-                >
-                  Edge Node Outage
-                </button>
-                <button 
-                  className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}
-                  disabled={!isSimulating}
-                  title={!isSimulating ? "Run Cloud Injection First" : ""}
-                >
-                  Trans-Pacific Congestion
-                </button>
+                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'not-allowed' : 'default' }}>
+                  <button 
+                    className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}
+                    disabled={!isSimulating}
+                    style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
+                  >
+                    BGP Route Leak
+                  </button>
+                </span>
+                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'not-allowed' : 'default' }}>
+                  <button 
+                    className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}
+                    disabled={!isSimulating}
+                    style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
+                  >
+                    Edge Node Outage
+                  </button>
+                </span>
+                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'not-allowed' : 'default' }}>
+                  <button 
+                    className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}
+                    disabled={!isSimulating}
+                    style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
+                  >
+                    Trans-Pacific Congestion
+                  </button>
+                </span>
               </div>
             </div>
             
