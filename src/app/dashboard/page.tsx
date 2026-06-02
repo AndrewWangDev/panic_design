@@ -67,11 +67,49 @@ const RollingLogs = () => {
   );
 };
 
+const ExpandablePayload = ({ payload }: { payload: string }) => {
+  const [expanded, setExpanded] = useState(false);
+  const lines = payload.split('\n');
+  const showLines = expanded ? lines : lines.slice(0, 5);
+  const hasMore = lines.length > 5;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {showLines.map((l, i) => (
+        <div key={i} style={{ color: '#94a3b8', whiteSpace: 'pre' }}>{`< ${l}`}</div>
+      ))}
+      {!expanded && hasMore && (
+        <div style={{ color: '#94a3b8' }}>{`< ...`}</div>
+      )}
+      {hasMore && (
+        <div 
+          onClick={() => setExpanded(!expanded)}
+          style={{
+            cursor: 'pointer',
+            color: '#38bdf8',
+            marginTop: '4px',
+            marginBottom: '4px',
+            userSelect: 'none',
+            display: 'inline-block',
+            textShadow: '0 0 5px rgba(56, 189, 248, 0.4)',
+            transition: 'opacity 0.2s',
+            opacity: 0.8
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
+        >
+          {expanded ? '> [ - Hide payload ]' : '> [ + Click to expand full payload ]'}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart, onTelemetryReceived, fault, t1, t2, t3 }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: () => void, onTelemetryReceived?: (data: any) => void, fault: string, t1: number, t2: number, t3: number }) => {
   const [text, setText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [testState, setTestState] = useState<'idle' | 'testing' | 'done'>('idle');
-  const [testLogs, setTestLogs] = useState<string[]>([]);
+  const [testLogs, setTestLogs] = useState<any[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -162,7 +200,15 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
       ];
       if (data.status >= 400 && data.responseBody) {
-        lines.push(`< ${data.responseBody}`);
+        // Try to format JSON if possible
+        let formattedBody = data.responseBody;
+        try {
+          const parsed = JSON.parse(data.responseBody);
+          formattedBody = JSON.stringify(parsed, null, 2);
+          lines.push(`< Content-Type: application/json`);
+          lines.push(`<`);
+        } catch(e) {}
+        lines.push({ type: 'payload', content: formattedBody } as any);
       }
       lines.push('');
       
@@ -221,14 +267,19 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       {testLogs.length > 0 && (
         <div className={styles.testLogContainer}>
           {testLogs.map((l, i) => {
+            if (typeof l === 'object' && l.type === 'payload') {
+              return <ExpandablePayload key={i} payload={l.content} />;
+            }
             let color = 'var(--text-secondary)';
-            if (l.startsWith('< HTTP/1.1 5') || l.includes('ABORTED') || l.includes('TIMEOUT_EXCEEDED') || l.includes('Target Unreachable') || l.startsWith('< Error')) color = '#ef4444';
-            else if (l.startsWith('< HTTP/1.1 2')) color = '#10b981';
-            else if (l.startsWith('< HTTP/1.1 4')) color = '#f59e0b';
-            else if (l.startsWith('[System]')) color = '#38bdf8';
-            else if (l.startsWith('[Telemetry]')) color = '#10b981';
-            else if (l.startsWith('> [Chaos]')) color = '#eab308';
-            else if (l.startsWith('>')) color = '#38bdf8';
+            if (typeof l === 'string') {
+              if (l.startsWith('< HTTP/1.1 5') || l.includes('ABORTED') || l.includes('TIMEOUT_EXCEEDED') || l.includes('Target Unreachable') || l.startsWith('< Error')) color = '#ef4444';
+              else if (l.startsWith('< HTTP/1.1 2')) color = '#10b981';
+              else if (l.startsWith('< HTTP/1.1 4')) color = '#f59e0b';
+              else if (l.startsWith('[System]')) color = '#38bdf8';
+              else if (l.startsWith('[Telemetry]')) color = '#10b981';
+              else if (l.startsWith('> [Chaos]')) color = '#eab308';
+              else if (l.startsWith('>')) color = '#38bdf8';
+            }
             
             return <div key={i} style={{ marginBottom: '4px', color }}>{l}</div>;
           })}
