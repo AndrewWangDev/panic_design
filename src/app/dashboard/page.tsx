@@ -431,7 +431,7 @@ export default function Dashboard() {
   const [latency, setLatency] = useState(2500);
   const [jitter, setJitter] = useState(0);
   const [distribution, setDistribution] = useState<'Uniform' | 'Normal' | 'Spikes'>('Uniform');
-  const [packetLoss, setPacketLoss] = useState(0);
+  const [packetLoss, setPacketLoss] = useState<string | number>(0);
   const [mutilationStrategy, setMutilationStrategy] = useState<'None' | 'Unexpected EOF' | 'Type Poisoning' | 'Empty Shell'>('None');
   const [ttl, setTtl] = useState('15m');
   const [customTtl, setCustomTtl] = useState(24);
@@ -630,7 +630,7 @@ export default function Dashboard() {
     }
   };
 
-  const isFormValid = targetHost.length > 0 && !targetHostError && fault !== null && (fault !== 'latency' || (Number.isInteger(packetLoss) && packetLoss >= 0 && packetLoss <= 100));
+  const isFormValid = targetHost.length > 0 && !targetHostError && fault !== null && (fault !== 'latency' || (packetLoss === '' || (Number.isInteger(Number(packetLoss)) && Number(packetLoss) >= 0 && Number(packetLoss) <= 100)));
 
   const handleGenerate = async () => {
     if (!isFormValid) return;
@@ -651,7 +651,7 @@ export default function Dashboard() {
           latency,
           jitter,
           distribution,
-          packetLoss,
+          packetLoss: Number(packetLoss) || 0,
           mutilationStrategy,
           customTtl: ttlHours
         })
@@ -828,54 +828,56 @@ export default function Dashboard() {
 
               {fault === 'latency' && (
                 <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px dashed var(--dash-input-border)', animation: enableAnimation ? 'slideDown 0.3s ease-out' : 'none' }}>
-                    <div className={styles.latencyPanel}>
-                      <div className={styles.latencyCol} style={{ marginBottom: '24px' }}>
-                        <div className={styles.latencyTitle}>Payload Mutilation Strategy</div>
-                        <div className={styles.capsuleGroup} style={{ marginTop: '12px' }}>
-                          {['None', 'Unexpected EOF', 'Type Poisoning', 'Empty Shell'].map(strat => (
-                            <button 
-                              key={strat}
-                              className={`${styles.capsuleBtn} ${mutilationStrategy === strat ? styles.active : ''} ${isFlashing ? styles.inputFlash : ''}`}
-                              onClick={() => setMutilationStrategy(strat as any)}
-                              style={{ padding: '6px 12px', fontSize: '12px' }}
-                            >
-                              {strat}
-                            </button>
-                          ))}
-                        </div>
+                    <div style={{ marginBottom: '24px' }}>
+                      <div className={styles.labelRow}>
+                        <span className={styles.label}>Payload Mutilation Strategy</span>
                       </div>
+                      <div className={styles.capsuleGroup} style={{ marginTop: '12px' }}>
+                        {['None', 'Unexpected EOF', 'Type Poisoning', 'Empty Shell'].map(strat => (
+                          <button 
+                            key={strat}
+                            className={`${styles.capsuleBtn} ${mutilationStrategy === strat ? styles.active : ''} ${isFlashing ? styles.inputFlash : ''}`}
+                            onClick={() => setMutilationStrategy(strat as any)}
+                          >
+                            {strat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
+                    <div className={styles.latencyPanel}>
                       <div className={styles.latencyCol}>
                         <div className={styles.latencyTitle}>Algorithm & Parameters</div>
                         
-                        <div className={styles.latencyControlRow} style={{ alignItems: 'flex-start' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '16px' }}>
-                            <div className={styles.latencyLabel} style={{ marginBottom: '8px' }}>Distribution</div>
-                            <div style={{ width: '100%' }}>
-                              <CustomSelect 
-                                options={distOptions}
-                                value={distribution}
-                                onChange={(val) => setDistribution(val as any)}
-                                className={isFlashing ? styles.inputFlash : ''}
-                              />
-                            </div>
+                        <div className={styles.latencyControlRow} style={{ alignItems: 'center' }}>
+                          <div className={styles.latencyLabel}>Distribution</div>
+                          <div style={{ flex: 1 }} />
+                          <div style={{ width: '130px' }}>
+                            <CustomSelect 
+                              options={distOptions}
+                              value={distribution}
+                              onChange={(val) => setDistribution(val as any)}
+                              className={isFlashing ? styles.inputFlash : ''}
+                            />
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                            <div className={styles.latencyLabel} style={{ marginBottom: '8px' }}>Packet Loss</div>
-                            <div className={styles.inputWithUnit} style={{ width: '100%', borderColor: (!Number.isInteger(packetLoss) || packetLoss < 0 || packetLoss > 100) ? '#ef4444' : undefined }}>
-                              <input 
-                                type="number" 
-                                min="0" max="100"
-                                value={packetLoss}
-                                onChange={(e) => setPacketLoss(Number(e.target.value))}
-                                className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
-                                style={{ width: '100%', textAlign: 'left' }}
-                              />
-                              <span className={styles.unitLabel}>%</span>
-                            </div>
-                            {(!Number.isInteger(packetLoss) || packetLoss < 0 || packetLoss > 100) && (
-                              <div style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px' }}>Must be an integer 0-100</div>
-                            )}
+                        </div>
+
+                        <div className={styles.latencyControlRow} style={{ alignItems: 'center' }}>
+                          <div className={styles.latencyLabel}>Packet Loss</div>
+                          <div style={{ flex: 1 }} />
+                          <div className={styles.inputWithUnit} style={{ width: '130px', borderColor: (packetLoss !== '' && (!Number.isInteger(Number(packetLoss)) || Number(packetLoss) < 0 || Number(packetLoss) > 100)) ? '#ef4444' : undefined }}>
+                            <input 
+                              type="number" 
+                              min="0" max="100"
+                              value={packetLoss}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setPacketLoss(val === '' ? '' : Number(val));
+                              }}
+                              className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
+                              style={{ width: '100%', textAlign: 'left' }}
+                            />
+                            <span className={styles.unitLabel}>%</span>
                           </div>
                         </div>
 
@@ -889,13 +891,14 @@ export default function Dashboard() {
                               className={styles.slider}
                             />
                           </div>
-                          <div className={styles.inputWithUnit}>
+                          <div className={styles.inputWithUnit} style={{ width: '130px' }}>
                             <input 
                               type="number" 
                               min="0" max="10000"
                               value={latency}
                               onChange={(e) => setLatency(Number(e.target.value))}
                               className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
+                              style={{ width: '100%', textAlign: 'left' }}
                             />
                             <span className={styles.unitLabel}>ms</span>
                           </div>
@@ -904,14 +907,18 @@ export default function Dashboard() {
                         <div className={styles.latencyControlRow}>
                           <div className={styles.latencyLabel}>Network Jitter</div>
                           <div style={{flex: 1}} />
-                          <div className={styles.inputWithUnit}>
+                          <div className={styles.inputWithUnit} style={{ width: '130px' }}>
                             <input 
                               type="number" 
                               min="0"
                               placeholder="± 0"
-                              value={jitter || ''}
-                              onChange={(e) => setJitter(Number(e.target.value))}
+                              value={jitter === 0 ? '' : jitter}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setJitter(val === '' ? 0 : Number(val));
+                              }}
                               className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
+                              style={{ width: '100%', textAlign: 'left' }}
                             />
                             <span className={styles.unitLabel}>ms</span>
                           </div>
