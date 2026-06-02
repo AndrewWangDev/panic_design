@@ -163,19 +163,23 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       }
       lines.push('');
       
+      const t1_rtt = Math.round(realTelemetry.t1 * 2);
+      const t2_rtt = Math.round(realTelemetry.t2);
+      const t3_rtt = Math.round(realTelemetry.t3 * 2);
+
       if (fault === 'latency') {
-        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
-        lines.push(`[Telemetry] Injected Latency: ${Math.round(realTelemetry.t2)}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul: ${Math.round(realTelemetry.t3)}ms`);
+        lines.push(`[Telemetry] Edge Network RTT: ${t1_rtt}ms`);
+        lines.push(`[Telemetry] Injected Latency: ${t2_rtt}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul: ${t3_rtt}ms`);
       } else if (fault === '502') {
-        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
+        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(data.totalLatency)}ms`);
         lines.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
         lines.push(`[System] Target Unreachable. Edge payload delivered.`);
       } else if (fault === '504') {
-        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
+        lines.push(`[Telemetry] Edge Network RTT: ${t1_rtt}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED after ${Math.max(0, Math.round(data.totalLatency - t1_rtt))}ms)`);
       } else if (fault === '429') {
-        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
+        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(data.totalLatency)}ms`);
         lines.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
         lines.push(`[System] Target Unreachable. Edge payload delivered.`);
       }
