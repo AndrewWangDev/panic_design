@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause } from 'lucide-react';
+import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap } from 'lucide-react';
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
 import WorldMap from '@/components/WorldMap';
