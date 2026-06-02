@@ -99,7 +99,6 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
     
   const fullContent = `# Edge Token issued successfully.
 # Scope: ${targetHost || 'extracted from JWT'}
-# Token Hint: ${tokenDisplay}
 # Ready for edge network injection.
 
 export PANIC_TOKEN="${tokenDisplay}"
@@ -883,7 +882,7 @@ export default function Dashboard() {
                 AIOps What-If Simulation
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'not-allowed' : 'default' }}>
+                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'help' : 'default' }}>
                   <button 
                     className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}
                     disabled={!isSimulating}
@@ -892,7 +891,7 @@ export default function Dashboard() {
                     BGP Route Leak
                   </button>
                 </span>
-                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'not-allowed' : 'default' }}>
+                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'help' : 'default' }}>
                   <button 
                     className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}
                     disabled={!isSimulating}
@@ -901,7 +900,7 @@ export default function Dashboard() {
                     Edge Node Outage
                   </button>
                 </span>
-                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'not-allowed' : 'default' }}>
+                <span title={!isSimulating ? "Run Cloud Injection First" : ""} style={{ display: 'inline-block', cursor: !isSimulating ? 'help' : 'default' }}>
                   <button 
                     className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}
                     disabled={!isSimulating}
