@@ -97,7 +97,7 @@
   display: flex;
   width: 100%;
   gap: 24px;
-  align-items: stretch;
+  align-items: flex-start;
   scroll-margin-top: 80px;
 }
 
@@ -810,7 +810,7 @@
   background: var(--dash-input-bg);
   border: 1px solid var(--dash-input-border);
   color: var(--dash-input-text);
-  border-radius: var(--radius-sm);
+  border-radius: 100px;
   padding: 8px 12px;
   font-family: var(--font-mono);
   font-size: 0.9rem;

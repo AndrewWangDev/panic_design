@@ -389,6 +389,7 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [latestFullToken, setLatestFullToken] = useState('');
   const [isFlashing, setIsFlashing] = useState(false);
+  const [copiedTargetId, setCopiedTargetId] = useState<string | null>(null);
   
   const topGridRef = useRef<HTMLDivElement>(null);
 
@@ -591,6 +592,12 @@ export default function Dashboard() {
     }
   };
 
+  const handleCopyTarget = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedTargetId(id);
+    setTimeout(() => setCopiedTargetId(null), 1000);
+  };
+
   const handleRevoke = async (id: string) => {
     setActiveTokens(activeTokens.map(t => t.id === id ? { ...t, isRevoked: true } : t));
     
@@ -743,7 +750,7 @@ export default function Dashboard() {
                               type="range" min="0" max="10000" step="100"
                               value={latency}
                               onChange={(e) => setLatency(Number(e.target.value))}
-                              className={`${styles.slider} ${isFlashing ? styles.inputFlash : ''}`}
+                              className={styles.slider}
                             />
                           </div>
                           <div className={styles.inputWithUnit}>
@@ -752,7 +759,7 @@ export default function Dashboard() {
                               min="0" max="10000"
                               value={latency}
                               onChange={(e) => setLatency(Number(e.target.value))}
-                              className={styles.latencyInput}
+                              className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
                             />
                             <span className={styles.unitLabel}>ms</span>
                           </div>
@@ -768,7 +775,7 @@ export default function Dashboard() {
                               placeholder="± 0"
                               value={jitter || ''}
                               onChange={(e) => setJitter(Number(e.target.value))}
-                              className={styles.latencyInput}
+                              className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
                             />
                             <span className={styles.unitLabel}>ms</span>
                           </div>
@@ -908,9 +915,13 @@ export default function Dashboard() {
                         <td className={styles.tokenCell}>
                           {token.tokenHint}
                         </td>
-                        <td className={styles.tokenCell} style={{ cursor: 'pointer' }} onClick={() => handleCopy(token.target, false)} title="Click to copy target">
+                        <td className={styles.tokenCell} style={{ cursor: 'pointer' }} onClick={() => handleCopyTarget(token.id, token.target)} title="Click to copy target">
                           {token.target}
-                          <Copy size={12} style={{ opacity: 0.5, marginLeft: '6px' }} />
+                          {copiedTargetId === token.id ? (
+                            <Check size={12} color="#10b981" style={{ marginLeft: '6px' }} />
+                          ) : (
+                            <Copy size={12} style={{ opacity: 0.5, marginLeft: '6px' }} />
+                          )}
                         </td>
                         <td className={styles.faultCell}>{token.fault}</td>
                         <td title={`Last used: ${token.issuedAtFull}`}>{token.issuedAt}</td>
@@ -940,14 +951,23 @@ export default function Dashboard() {
                     </button>
                     
                     <div className={styles.pageNumbers}>
-                      {Array.from({ length: Math.ceil(activeTokens.length / pageSize) }).map((_, i) => (
-                        <button 
-                          key={i} 
-                          className={`${styles.pageBtn} ${currentPage === i + 1 ? styles.pageActive : ''}`}
-                          onClick={() => setCurrentPage(i + 1)}
-                        >
-                          {i + 1}
-                        </button>
+                      {Array.from({ length: Math.ceil(activeTokens.length / pageSize) })
+                        .map((_, i) => i + 1)
+                        .filter(pageNum => {
+                          const total = Math.ceil(activeTokens.length / pageSize);
+                          if (total <= 5) return true;
+                          if (currentPage <= 3) return pageNum <= 5;
+                          if (currentPage >= total - 2) return pageNum >= total - 4;
+                          return pageNum >= currentPage - 2 && pageNum <= currentPage + 2;
+                        })
+                        .map((pageNum) => (
+                          <button 
+                            key={pageNum} 
+                            className={`${styles.pageBtn} ${currentPage === pageNum ? styles.pageActive : ''}`}
+                            onClick={() => setCurrentPage(pageNum)}
+                          >
+                            {pageNum}
+                          </button>
                       ))}
                     </div>
 

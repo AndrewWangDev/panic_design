@@ -31,9 +31,9 @@ export default function CustomSelect({ options, value, onChange, className }: Cu
   }, []);
 
   return (
-    <div className={`${styles.selectContainer} ${className || ''}`} ref={dropdownRef}>
+    <div className={styles.selectContainer} ref={dropdownRef}>
       <div 
-        className={`${styles.selectTrigger} ${isOpen ? styles.open : ''}`}
+        className={`${styles.selectTrigger} ${isOpen ? styles.open : ''} ${className || ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <span>{selectedOption?.label}</span>
