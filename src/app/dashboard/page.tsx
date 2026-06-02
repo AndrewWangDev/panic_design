@@ -840,7 +840,7 @@ export default function Dashboard() {
 
               {/* Terminal Container */}
               <div className={`${styles.terminalContainer} ${isSimulating ? styles.terminalContainerSimulating : styles.terminalContainerNormal}`}>
-                <div className={styles.codeBlock} style={{ overflowY: generatedToken ? 'auto' : 'hidden', height: '100%' }}>
+                <div className={styles.codeBlock} style={{ overflowY: generatedToken ? 'auto' : 'hidden' }}>
                   {generatedToken && (
                     <button className={`${styles.copyBtn} ${copied ? styles.copied : ''}`} onClick={() => handleCopy(`export PANIC_TOKEN="${generatedToken}"\ncurl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`)}>
                       {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
@@ -880,9 +880,27 @@ export default function Dashboard() {
                 AIOps What-If Simulation
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <button className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}>BGP Route Leak</button>
-                <button className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}>Edge Node Outage</button>
-                <button className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}>Trans-Pacific Congestion</button>
+                <button 
+                  className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}
+                  disabled={!isSimulating}
+                  title={!isSimulating ? "Run Cloud Injection First" : ""}
+                >
+                  BGP Route Leak
+                </button>
+                <button 
+                  className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}
+                  disabled={!isSimulating}
+                  title={!isSimulating ? "Run Cloud Injection First" : ""}
+                >
+                  Edge Node Outage
+                </button>
+                <button 
+                  className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}
+                  disabled={!isSimulating}
+                  title={!isSimulating ? "Run Cloud Injection First" : ""}
+                >
+                  Trans-Pacific Congestion
+                </button>
               </div>
             </div>
             

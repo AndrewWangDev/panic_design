@@ -167,24 +167,29 @@
   backdrop-filter: blur(4px);
 }
 
-.aiopsChip:hover {
+.aiopsChip:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
-.aiopsChipBgp:hover {
+.aiopsChipBgp:hover:not(:disabled) {
   border-color: #a855f7;
   box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
 }
 
-.aiopsChipEdge:hover {
+.aiopsChipEdge:hover:not(:disabled) {
   border-color: #ef4444;
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
 }
 
-.aiopsChipCable:hover {
+.aiopsChipCable:hover:not(:disabled) {
   border-color: #f97316;
   box-shadow: 0 0 12px rgba(249, 115, 22, 0.2);
+}
+
+.aiopsChip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .mapContainer {
