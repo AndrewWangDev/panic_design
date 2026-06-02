@@ -192,6 +192,40 @@
   cursor: not-allowed;
 }
 
+/* Custom Tooltip */
+.tooltipWrapper {
+  position: relative;
+  display: inline-flex;
+  cursor: default;
+}
+
+.tooltipContent {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--dash-card-bg);
+  border: 1px solid var(--dash-card-border);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.tooltipWrapper:hover .tooltipContent {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
 .mapContainer {
   width: 0%;
   opacity: 0;
@@ -581,10 +615,44 @@
   color: #10b981;
 }
 
-/* 数据表格 */
+/* 数据表格与搜索 */
 .tableContainer {
   width: 100%;
   overflow-x: auto;
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.searchInput {
+  background: var(--dash-input-bg);
+  border: 1px solid var(--dash-input-border);
+  color: var(--dash-input-text);
+  border-radius: 100px;
+  padding: 8px 16px 8px 34px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  width: 260px;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.searchInput:focus {
+  border-color: var(--dash-input-focus);
+}
+
+.searchInput::placeholder {
+  color: var(--dash-input-placeholder);
 }
 
 .table {
