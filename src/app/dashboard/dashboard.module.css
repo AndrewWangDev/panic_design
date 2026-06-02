@@ -98,6 +98,7 @@
   width: 100%;
   gap: 24px;
   align-items: stretch;
+  scroll-margin-top: 80px;
 }
 
 .gridBottom {

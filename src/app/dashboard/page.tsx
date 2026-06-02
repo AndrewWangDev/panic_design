@@ -395,7 +395,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!showTokenModal && generatedToken && topGridRef.current) {
       setTimeout(() => {
-        topGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        topGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
   }, [showTokenModal, generatedToken]);
@@ -698,13 +698,13 @@ export default function Dashboard() {
               </div>
               <div className={styles.capsuleGroup}>
                 <button 
-                  className={`${styles.capsuleBtn} ${fault === '502' ? styles.active : ''} ${isFlashing ? styles.inputFlash : ''}`}
+                  className={`${styles.capsuleBtn} ${fault === '502' ? styles.active : ''}`}
                   onClick={() => setFault('502')}
                 >
                   502 Bad Gateway
                 </button>
                 <button 
-                  className={`${styles.capsuleBtn} ${fault === '504' ? styles.active : ''} ${isFlashing ? styles.inputFlash : ''}`}
+                  className={`${styles.capsuleBtn} ${fault === '504' ? styles.active : ''}`}
                   onClick={() => setFault('504')}
                 >
                   504 Gateway Timeout
