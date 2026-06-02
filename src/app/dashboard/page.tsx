@@ -153,7 +153,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       }
       
       const lines = [
-        `> [Chaos] Fault Engine Engaged: ${fault === 'latency' ? 'Latency Injection' : `HTTP ${fault}`}`,
+        `> [Chaos] Fault Engine Engaged: ${fault === 'latency' ? 'Traffic Degradation' : `HTTP ${fault}`}`,
         `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
         `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'}`,
         `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
@@ -174,6 +174,9 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       } else if (fault === '504') {
         lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
         lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
+      } else if (fault === '429') {
+        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul: -- (RATE_LIMITED)`);
       }
       
       lines.push('');
@@ -360,7 +363,7 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution }: { latency: n
 };
 export default function Dashboard() {
   const [targetHost, setTargetHost] = useState('');
-  const [fault, setFault] = useState<'502' | '504' | 'latency' | null>(null);
+  const [fault, setFault] = useState<'502' | '504' | '429' | 'latency' | null>(null);
   const [latency, setLatency] = useState(2500);
   const [jitter, setJitter] = useState(0);
   const [distribution, setDistribution] = useState<'Uniform' | 'Normal' | 'Spikes'>('Uniform');
@@ -466,6 +469,8 @@ export default function Dashboard() {
           
           let faultPolicyStr = config.fault === 'latency' 
             ? `${config.latency}ms TCP Latency` 
+            : config.fault === '429' ? '429 Rate Limit'
+            : config.fault === '504' ? '504 Gateway Timeout'
             : `${config.fault} Bad Gateway`;
             
           if (config.fault === 'latency' && config.jitter > 0) {
@@ -728,10 +733,16 @@ export default function Dashboard() {
                   504 Gateway Timeout
                 </button>
                 <button 
+                  className={`${styles.capsuleBtn} ${fault === '429' ? styles.active : ''}`}
+                  onClick={() => setFault('429')}
+                >
+                  429 Rate Limit
+                </button>
+                <button 
                   className={`${styles.capsuleBtn} ${fault === 'latency' ? styles.active : ''} ${isFlashing ? styles.inputFlash : ''}`}
                   onClick={() => setFault('latency')}
                 >
-                  Latency Injection
+                  Traffic Degradation
                 </button>
               </div>
 
