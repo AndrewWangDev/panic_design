@@ -312,7 +312,7 @@ const getSliderColor = (value: number) => {
 };
 
 const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: { latency: number, jitter: number, distribution: string, packetLoss: number }) => {
-  const dataPoints = 40;
+  const dataPoints = 80;
   const [points, setPoints] = useState<number[]>([]);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
 
@@ -370,12 +370,12 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
   if (points.length === 0) return null;
 
   const maxVal = Math.max(latency + jitter + 50, 100);
-  const w = 180;
-  const h = 100;
-  const paddingLeft = 35;
+  const w = 600;
+  const h = 180;
+  const paddingLeft = 45;
   const paddingBottom = 15;
   const paddingTop = 10;
-  const paddingRight = 5;
+  const paddingRight = 10;
   
   const chartW = w - paddingLeft - paddingRight;
   const chartH = h - paddingTop - paddingBottom;
@@ -400,12 +400,16 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: '100%', overflow: 'visible', fontFamily: 'var(--font-mono)' }}>
         <line x1={paddingLeft} y1={scaleY(maxVal)} x2={w - paddingRight} y2={scaleY(maxVal)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+        <line x1={paddingLeft} y1={scaleY(maxVal * 0.75)} x2={w - paddingRight} y2={scaleY(maxVal * 0.75)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
         <line x1={paddingLeft} y1={scaleY(maxVal/2)} x2={w - paddingRight} y2={scaleY(maxVal/2)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+        <line x1={paddingLeft} y1={scaleY(maxVal * 0.25)} x2={w - paddingRight} y2={scaleY(maxVal * 0.25)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
         <line x1={paddingLeft} y1={scaleY(0)} x2={w - paddingRight} y2={scaleY(0)} stroke="rgba(255,255,255,0.1)" />
         
-        <text x={paddingLeft - 5} y={scaleY(maxVal) + 3} fill="rgba(255,255,255,0.85)" fontSize="8" textAnchor="end" fontWeight="500">{Math.round(maxVal)}ms</text>
-        <text x={paddingLeft - 5} y={scaleY(maxVal/2) + 3} fill="rgba(255,255,255,0.85)" fontSize="8" textAnchor="end" fontWeight="500">{Math.round(maxVal/2)}ms</text>
-        <text x={paddingLeft - 5} y={scaleY(0) + 3} fill="rgba(255,255,255,0.85)" fontSize="8" textAnchor="end" fontWeight="500">0ms</text>
+        <text x={paddingLeft - 8} y={scaleY(maxVal) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal)}ms</text>
+        <text x={paddingLeft - 8} y={scaleY(maxVal * 0.75) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.75)}ms</text>
+        <text x={paddingLeft - 8} y={scaleY(maxVal/2) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal/2)}ms</text>
+        <text x={paddingLeft - 8} y={scaleY(maxVal * 0.25) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.25)}ms</text>
+        <text x={paddingLeft - 8} y={scaleY(0) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">0ms</text>
 
         <line x1={paddingLeft} y1={scaleY(latency)} x2={w - paddingRight} y2={scaleY(latency)} stroke="rgba(255,255,255,0.3)" strokeDasharray="4,2" />
         <text x={w - paddingRight - 2} y={scaleY(latency) - 4} fill="rgba(255,255,255,0.9)" fontSize="8" textAnchor="end" fontWeight="bold">Base</text>
@@ -876,7 +880,8 @@ export default function Dashboard() {
                     <div className={styles.latencyPanel}>
                       <div className={styles.latencyCol}>
                         <div className={styles.latencyTitle}>Algorithm & Parameters</div>
-                        <div className={styles.latencyControlRow} style={{ alignItems: 'center' }}>
+                        <div style={{ maxWidth: '650px', display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '4px' }}>
+                          <div className={styles.latencyControlRow} style={{ alignItems: 'center' }}>
                           <div className={styles.latencyLabel} style={{ minWidth: '85px' }}>Distribution</div>
                           <div style={{ width: '110px' }}>
                             <CustomSelect 
@@ -949,10 +954,11 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
+                    </div>
 
                       <div className={styles.latencyCol}>
                         <div className={styles.latencyTitle}>Real-time Simulation</div>
-                        <div className={styles.distChart} style={{ height: '140px', marginTop: '12px', overflow: 'hidden' }}>
+                        <div className={styles.distChart} style={{ height: '220px', marginTop: '12px', overflow: 'hidden' }}>
                           <RealTimeSimulationChart latency={latency} jitter={jitter} distribution={distribution} packetLoss={Number(packetLoss) || 0} />
                         </div>
                       </div>
