@@ -176,7 +176,8 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
       } else if (fault === '429') {
         lines.push(`[Telemetry] Edge Network RTT: ${Math.round(realTelemetry.t1)}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul: -- (RATE_LIMITED)`);
+        lines.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
+        lines.push(`[System] Target Unreachable. Edge payload delivered.`);
       }
       
       lines.push('');
@@ -419,6 +420,11 @@ export default function Dashboard() {
       setIsFlashing(false);
     }, 400); 
   };
+  
+  // Clear generated token when form inputs change, resetting terminal to MOCK_LOGS
+  useEffect(() => {
+    setGeneratedToken('');
+  }, [targetHost, fault, latency, jitter, distribution, ttl, customTtl]);
   
   const [activeTokens, setActiveTokens] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
