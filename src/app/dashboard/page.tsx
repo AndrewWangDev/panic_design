@@ -149,7 +149,10 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       const realTelemetry = data.telemetry || { t1: t1, t2: t2, t3: t3 };
       
       if (onTelemetryReceived && data.telemetry) {
-        onTelemetryReceived(data.telemetry);
+        onTelemetryReceived({
+          ...data.telemetry,
+          totalLatency: data.totalLatency
+        });
       }
       
       const lines = [
@@ -858,7 +861,7 @@ export default function Dashboard() {
                       w1={telemetryData ? telemetryData.w1 : [-122.3933, 37.7697]}
                       w2={telemetryData ? telemetryData.w2 : null}
                       w3={telemetryData ? telemetryData.w3 : null}
-                      t1={telemetryData ? telemetryData.t1 : 0}
+                      t1={['429', '502'].includes(fault || '') ? Math.round(telemetryData?.totalLatency || 0) : Math.round((telemetryData?.t1 || 0) * 2)}
                       t2={telemetryData ? telemetryData.t2 : 0}
                       t3={telemetryData ? telemetryData.t3 : 0}
                       colo={telemetryData ? telemetryData.colo : 'UNKNOWN'}

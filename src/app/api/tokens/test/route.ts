@@ -93,7 +93,16 @@ export async function POST(req: Request) {
       }
     }
 
-    // Removed coordinate-based overlap prevention. Jitter is now handled purely at the visual SVG level.
+    // Micro-jitter for identical points to ensure lines render and pins don't perfectly stack
+    const dist2 = (a: number[], b: number[]) => Math.sqrt(Math.pow(a[0]-b[0], 2) + Math.pow(a[1]-b[1], 2));
+    if (dist2(w1, w2) < 0.1) {
+      w2[0] += 0.5;
+      w2[1] -= 0.3;
+    }
+    if (dist2(w2, w3) < 0.1) {
+      w3[0] += 0.8;
+      w3[1] += 0.4;
+    }
     // Calculate Final Timings
     const t3_visual = t3 / 2; // W2 -> W3 single trip
     let t1_visual = (t1_total - t2 - t3) / 2; // W1 -> W2 single trip
