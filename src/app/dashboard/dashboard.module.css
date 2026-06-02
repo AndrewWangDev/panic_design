@@ -201,9 +201,9 @@
 
 .tooltipContent {
   position: absolute;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%) translateY(4px);
+  transform: translateX(-50%) translateY(-4px);
   background: var(--dash-card-bg);
   border: 1px solid var(--dash-card-border);
   padding: 8px 12px;
@@ -615,10 +615,13 @@
   color: #10b981;
 }
 
-/* 数据表格与搜索 */
 .tableContainer {
   width: 100%;
   overflow-x: auto;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .searchBox {
@@ -731,6 +734,10 @@
   color: #555;
   font-size: 0.95rem;
   margin-top: 16px;
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 
