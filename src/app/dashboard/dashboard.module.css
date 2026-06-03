@@ -142,7 +142,7 @@
 
 .edgePayloadCardSimulating {
   width: 100%;
-  height: 550px;
+  min-height: 550px;
 }
 
 .payloadContent {
@@ -541,6 +541,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid var(--dash-code-border);
+  flex-shrink: 0;
 }
 
 .codeBlock::-webkit-scrollbar {
