@@ -511,43 +511,63 @@ const PostMortemPanel = ({ stats }: { stats: any }) => {
   const dropColor = stats.packetDropCount > 0 ? '#ef4444' : '#10b981';
 
   return (
-    <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '8px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Activity size={14} color="#f59e0b" /> INJECTION POST-MORTEM
+    <div style={{ 
+      marginTop: '8px', 
+      background: 'rgba(15, 23, 42, 0.6)', 
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      borderRadius: '8px', 
+      padding: '20px 24px', 
+      border: '1px solid rgba(56, 189, 248, 0.15)',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
+    }}>
+      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Activity size={16} /> INJECTION POST-MORTEM
       </div>
       
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '10px', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>L7 Application Faults</div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
-          <span style={{ color: '#cbd5e1' }}>Gateway Fast-Fail</span>
-          <span style={{ color: stats.fastFailCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.fastFailCount} times</span>
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>L7 Application Faults</div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Gateway Fast-Fail</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.fastFailCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.fastFailCount} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-          <span style={{ color: '#cbd5e1' }}>Payload Mutilation</span>
-          <span style={{ color: stats.mutilationCount > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{stats.mutilationCount} times</span>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Payload Mutilation</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.mutilationCount > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{stats.mutilationCount} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
         </div>
       </div>
 
       <div>
-        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '10px', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>L3/L4 TRAFFIC SHAPING</div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
-          <span style={{ color: '#cbd5e1' }}>Average Edge Network RTT</span>
-          <span style={{ color: getLatencyColor(avgT1, 50, 100), fontWeight: 500 }}>{avgT1} ms</span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '2px' }}>
-          <span style={{ color: '#cbd5e1' }}>Average Upstream Backhaul</span>
-          <span style={{ color: getLatencyColor(avgT3, 100, 300), fontWeight: 500 }}>{avgT3} ms</span>
-        </div>
-        <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: '10px', textAlign: 'right' }}>* Excludes edge-terminated requests</div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px', background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '4px' }}>
-          <span style={{ color: '#e2e8f0', fontWeight: 500 }}>Average Total Round-Trip Time</span>
-          <span style={{ color: getLatencyColor(avgTotal, 200, 500), fontWeight: 600 }}>{avgTotal} ms</span>
+        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          L3/L4 Traffic Shaping
+          <span style={{ fontSize: '0.6rem', color: '#475569', letterSpacing: '0' }}>*Excl. edge-terminated</span>
         </div>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '4px 8px' }}>
-          <span style={{ color: '#cbd5e1' }}>Packet Loss Rate / Count</span>
-          <span style={{ color: dropColor, fontWeight: 500 }}>{dropRate}% ({stats.packetDropCount} Pkts Dropped)</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Avg Edge Network RTT</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: getLatencyColor(avgT1, 50, 100), fontWeight: 500 }}>{avgT1} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>ms</span></span>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Avg Upstream Backhaul</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: getLatencyColor(avgT3, 100, 300), fontWeight: 500 }}>{avgT3} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>ms</span></span>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.1)', padding: '10px 12px', borderRadius: '6px' }}>
+          <span style={{ fontSize: '0.8rem', color: '#e2e8f0', fontWeight: 500 }}>Avg Total RTT</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: getLatencyColor(avgTotal, 200, 500), fontWeight: 600 }}>{avgTotal} <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'var(--font-sans)', fontWeight: 400 }}>ms</span></span>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Packet Loss Rate</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: dropColor, fontWeight: 500 }}>
+            {dropRate}% 
+            <span style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'var(--font-sans)', marginLeft: '6px' }}>
+              ({stats.packetDropCount} dropped)
+            </span>
+          </span>
         </div>
       </div>
     </div>
@@ -1323,7 +1343,7 @@ export default function Dashboard() {
         {/* Post Mortem Panel placed right-aligned */}
         {isSimulating && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', marginBottom: '16px' }}>
-            <div style={{ width: '400px' }}>
+            <div style={{ width: '400px', marginRight: '40px' }}>
               <PostMortemPanel stats={postMortemStats} />
             </div>
           </div>
