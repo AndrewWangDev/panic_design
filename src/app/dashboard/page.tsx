@@ -218,7 +218,8 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
           ...data.telemetry,
           totalLatency: data.totalLatency,
           status: data.status,
-          responseBody: data.responseBody
+          responseBody: data.responseBody,
+          chaosReason: data.chaosReason
         });
       }
       
@@ -972,6 +973,7 @@ export default function Dashboard() {
                       value={scope}
                       onChange={(val) => setScope(val)}
                       className={styles.prefixSelect}
+                      size="large"
                     />
                     <input 
                       type="text" 
@@ -1214,19 +1216,19 @@ export default function Dashboard() {
               <div className={`${styles.mapContainer} ${isSimulating ? styles.mapActive : ''}`}>
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {isSimulating && (
-                    <WorldMap 
-                      animKey={simulationKey}
-                      isPending={isTestPending || !telemetryData}
-                      w1={telemetryData ? telemetryData.w1 : [-122.3933, 37.7697]}
-                      w2={telemetryData ? telemetryData.w2 : null}
-                      w3={telemetryData ? telemetryData.w3 : null}
-                      t1={['429', '502'].includes(fault || '') ? Math.round(telemetryData?.totalLatency || 0) : Math.round((telemetryData?.t1 || 0) * 2)}
-                      t2={telemetryData ? telemetryData.t2 : 0}
-                      t3={telemetryData ? telemetryData.t3 : 0}
-                      colo={telemetryData ? telemetryData.colo : 'UNKNOWN'}
-                      fault={fault || 'latency'}
-                      targetHost={targetHost}
-                      latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
+                      <WorldMap 
+                        animKey={simulationKey}
+                        isPending={isTestPending || !telemetryData}
+                        w1={telemetryData ? telemetryData.w1 : [-122.3933, 37.7697]}
+                        w2={telemetryData ? telemetryData.w2 : null}
+                        w3={telemetryData ? telemetryData.w3 : null}
+                        t1={['429', '502'].includes(fault || '') && !telemetryData?.chaosReason ? Math.round(telemetryData?.totalLatency || 0) : Math.round((telemetryData?.t1 || 0) * 2)}
+                        t2={telemetryData ? telemetryData.t2 : 0}
+                        t3={telemetryData ? telemetryData.t3 : 0}
+                        colo={telemetryData ? telemetryData.colo : 'UNKNOWN'}
+                        fault={telemetryData?.chaosReason ? 'latency' : (fault || 'latency')}
+                        targetHost={targetHost}
+                        latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
                     />
                   )}
                 </div>
