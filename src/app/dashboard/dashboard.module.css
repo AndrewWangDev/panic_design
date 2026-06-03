@@ -17,8 +17,8 @@
   --dash-btn-disabled-bg: #1a1a1a;
   --dash-btn-disabled-text: #444;
   --dash-btn-disabled-border: #222;
-  --dash-btn-ready-bg: #ffffff;
-  --dash-btn-ready-text: #000000;
+  --dash-btn-ready-bg: #1e293b;
+  --dash-btn-ready-text: #e2e8f0;
   --dash-code-bg: #000000;
   --dash-code-border: rgba(255, 255, 255, 0.05);
   --dash-code-text: #d1d5db;
@@ -52,8 +52,8 @@
   --dash-btn-disabled-bg: #f3f4f6;
   --dash-btn-disabled-text: #9ca3af;
   --dash-btn-disabled-border: #e5e7eb;
-  --dash-btn-ready-bg: #111827;
-  --dash-btn-ready-text: #ffffff;
+  --dash-btn-ready-bg: #334155;
+  --dash-btn-ready-text: #f8fafc;
   --dash-code-bg: #1f2937;
   --dash-code-border: rgba(0, 0, 0, 0.1);
   --dash-code-text: #f3f4f6;
@@ -490,9 +490,8 @@
   transition: color 0.3s;
 }
 
-/* 终极触发器 */
 .generateContainer {
-  margin-top: 24px;
+  margin-top: 0;
 }
 
 .generateBtn {
@@ -516,11 +515,13 @@
 .generateBtn.ready {
   background: var(--dash-btn-ready-bg);
   color: var(--dash-btn-ready-text);
-  box-shadow: 0 0 0 rgba(255, 59, 48, 0);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .generateBtn.ready:hover {
-  box-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
+  background: #334155;
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-1px);
 }
 
@@ -679,7 +680,7 @@
   border-bottom: 1px solid var(--dash-table-row-border);
   font-size: 0.9rem;
   color: var(--text-primary);
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .tokenCell {
@@ -716,14 +717,35 @@
   cursor: not-allowed;
 }
 
+.rowRevoked {
+  opacity: 0.4;
+}
+
 .rowRevoked td {
   color: var(--text-secondary);
-  text-decoration: line-through;
 }
 
 .rowRevoked .faultCell {
   color: var(--text-secondary);
 }
+
+.badgeNeutral, .badgeAmber, .badgeRed {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgeNeutral { background: #262626; color: #d4d4d4; border: 1px solid rgba(255, 255, 255, 0.1); }
+.badgeAmber { background: rgba(217, 119, 6, 0.15); color: #fbbf24; border: 1px solid rgba(217, 119, 6, 0.2); }
+.badgeRed { background: rgba(185, 28, 28, 0.15); color: #fca5a5; border: 1px solid rgba(185, 28, 28, 0.2); }
+
+:global([data-theme='light']) .badgeNeutral { background: #e5e5e5; color: #404040; border-color: #d4d4d4; }
+:global([data-theme='light']) .badgeAmber { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+:global([data-theme='light']) .badgeRed { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
 
 /* 空状态 */
 .emptyState {
@@ -1066,4 +1088,87 @@
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.6) !important;
   background-color: rgba(16, 185, 129, 0.05) !important;
   transition: all 0.2s ease-out;
+}
+
+/* Disabled Config Area for L7 Faults */
+.disabledConfigArea {
+  opacity: 0.25;
+  pointer-events: none;
+  user-select: none;
+  filter: grayscale(80%);
+  transition: all 0.3s ease;
+}
+
+.disabledOverlayMessage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 10;
+  animation: fadeIn 0.4s ease-out forwards;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.disabledMessageContent {
+  padding: 24px 32px;
+  text-align: center;
+  max-width: 480px;
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+:global([data-theme='light']) .disabledMessageContent {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 1024px) {
+  .gridTop {
+    flex-direction: column;
+  }
+  
+  .controlPlaneCard,
+  .edgePayloadCard {
+    width: 100%;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .targetRow {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .latencyRow {
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .latencyCol {
+    width: 100%;
+  }
+  
+  .terminalContainer {
+    border-right: none;
+    border-bottom: 1px solid var(--dash-card-border);
+    margin-right: 0;
+    padding-right: 0;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+  }
 }

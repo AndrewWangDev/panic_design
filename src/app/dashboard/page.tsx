@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search } from 'lucide-react';
+import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search, Lock, MonitorSmartphone } from 'lucide-react';
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
 import WorldMap from '@/components/WorldMap';
@@ -18,6 +18,32 @@ const MOCK_LOGS = [
   "[SYSTEM] Awaiting control plane commands...",
   "[SYSTEM] Syncing with Cloudflare D1 distributed database... OK."
 ];
+
+const renderFaultBadges = (config: any, isRevoked?: boolean) => {
+  if (!config || config.fault === 'unknown') return <span className={styles.badgeNeutral}>Unknown</span>;
+  
+  const getBadgeClass = (defaultClass: string) => isRevoked ? styles.badgeNeutral : defaultClass;
+
+  if (config.fault === 'latency') {
+    return (
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <span className={getBadgeClass(styles.badgeAmber)}>Lat: {config.latency}ms</span>
+        {config.jitter > 0 && <span className={getBadgeClass(styles.badgeAmber)}>Jit: ±{config.jitter}ms</span>}
+        {config.packetLoss > 0 && <span className={getBadgeClass(styles.badgeRed)}>Drop: {config.packetLoss}%</span>}
+        {config.distribution && <span className={styles.badgeNeutral}>{config.distribution}</span>}
+        {config.mutilationStrategy && config.mutilationStrategy !== 'None' && (
+          <span className={getBadgeClass(styles.badgeRed)}>{config.mutilationStrategy}</span>
+        )}
+      </div>
+    );
+  }
+  
+  let faultName = config.fault === '429' ? '429 Rate Limit'
+                : config.fault === '504' ? '504 Gateway Timeout'
+                : `${config.fault} Bad Gateway`;
+                
+  return <span className={getBadgeClass(styles.badgeRed)}>{faultName}</span>;
+};
 
 const RollingLogs = () => {
   // Use objects with unique IDs for React keys to ensure smooth CSS animations on enter
@@ -369,7 +395,12 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
 
   if (points.length === 0) return null;
 
-  const maxVal = Math.max(latency + jitter + 50, 100);
+  const rawMax = Math.max(latency + jitter + 50, 100);
+  let maxVal = 100;
+  if (rawMax <= 100) maxVal = 100;
+  else if (rawMax <= 500) maxVal = Math.ceil(rawMax / 100) * 100;
+  else if (rawMax <= 2000) maxVal = Math.ceil(rawMax / 500) * 500;
+  else maxVal = Math.ceil(rawMax / 1000) * 1000;
   const w = 600;
   const h = 180;
   const paddingLeft = 45;
@@ -397,62 +428,65 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
   const color = getSliderColor(latency);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: '100%', overflow: 'visible', fontFamily: 'var(--font-mono)' }}>
-        <line x1={paddingLeft} y1={scaleY(maxVal)} x2={w - paddingRight} y2={scaleY(maxVal)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
-        <line x1={paddingLeft} y1={scaleY(maxVal * 0.75)} x2={w - paddingRight} y2={scaleY(maxVal * 0.75)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
-        <line x1={paddingLeft} y1={scaleY(maxVal/2)} x2={w - paddingRight} y2={scaleY(maxVal/2)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
-        <line x1={paddingLeft} y1={scaleY(maxVal * 0.25)} x2={w - paddingRight} y2={scaleY(maxVal * 0.25)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
-        <line x1={paddingLeft} y1={scaleY(0)} x2={w - paddingRight} y2={scaleY(0)} stroke="rgba(255,255,255,0.1)" />
-        
-        <text x={paddingLeft - 8} y={scaleY(maxVal) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal)}ms</text>
-        <text x={paddingLeft - 8} y={scaleY(maxVal * 0.75) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.75)}ms</text>
-        <text x={paddingLeft - 8} y={scaleY(maxVal/2) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal/2)}ms</text>
-        <text x={paddingLeft - 8} y={scaleY(maxVal * 0.25) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.25)}ms</text>
-        <text x={paddingLeft - 8} y={scaleY(0) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">0ms</text>
+    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          Real-time Simulation
+        </div>
+        <button 
+          onClick={togglePlay}
+          style={{
+            background: 'rgba(0,0,0,0.4)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '4px',
+            padding: '4px 8px',
+            cursor: 'pointer',
+            color: 'var(--text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '0.75rem',
+            transition: 'all 0.2s'
+          }}
+          title={isPlaying ? "Pause Simulation" : "Play Simulation"}
+        >
+          {isPlaying ? <><Pause size={12} /> Pause</> : <><Play size={12} /> Play</>}
+        </button>
+      </div>
+      <div style={{ flex: 1, position: 'relative' }}>
+        <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: '100%', overflow: 'visible', fontFamily: 'var(--font-mono)' }}>
+          <line x1={paddingLeft} y1={scaleY(maxVal)} x2={w - paddingRight} y2={scaleY(maxVal)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+          <line x1={paddingLeft} y1={scaleY(maxVal * 0.75)} x2={w - paddingRight} y2={scaleY(maxVal * 0.75)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+          <line x1={paddingLeft} y1={scaleY(maxVal/2)} x2={w - paddingRight} y2={scaleY(maxVal/2)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+          <line x1={paddingLeft} y1={scaleY(maxVal * 0.25)} x2={w - paddingRight} y2={scaleY(maxVal * 0.25)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+          <line x1={paddingLeft} y1={scaleY(0)} x2={w - paddingRight} y2={scaleY(0)} stroke="rgba(255,255,255,0.1)" />
+          
+          <text x={paddingLeft - 8} y={scaleY(maxVal) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal)}ms</text>
+          <text x={paddingLeft - 8} y={scaleY(maxVal * 0.75) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.75)}ms</text>
+          <text x={paddingLeft - 8} y={scaleY(maxVal/2) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal/2)}ms</text>
+          <text x={paddingLeft - 8} y={scaleY(maxVal * 0.25) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.25)}ms</text>
+          <text x={paddingLeft - 8} y={scaleY(0) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">0ms</text>
 
-        <line x1={paddingLeft} y1={scaleY(latency)} x2={w - paddingRight} y2={scaleY(latency)} stroke="rgba(255,255,255,0.3)" strokeDasharray="4,2" />
-        <text x={w - paddingRight - 2} y={scaleY(latency) - 4} fill="rgba(255,255,255,0.9)" fontSize="8" textAnchor="end" fontWeight="bold">Base</text>
+          <line x1={paddingLeft} y1={scaleY(latency)} x2={w - paddingRight} y2={scaleY(latency)} stroke="rgba(255,255,255,0.3)" strokeDasharray="4,2" />
+          <text x={w - paddingRight - 2} y={scaleY(latency) - 4} fill="rgba(255,255,255,0.9)" fontSize="8" textAnchor="end" fontWeight="bold">Base</text>
 
-        {pathData && <path d={pathData} stroke={color} fill="none" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />}
-        
-        {/* Draw red crosses at the bottom for dropped packets */}
-        {points.map((p, idx) => {
-          if (p === -1) {
-            const cx = scaleX(idx);
-            const cy = scaleY(0) + 2;
-            return (
-              <g key={idx}>
-                <line x1={cx - 2} y1={cy - 2} x2={cx + 2} y2={cy + 2} stroke="#ef4444" strokeWidth="1" />
-                <line x1={cx + 2} y1={cy - 2} x2={cx - 2} y2={cy + 2} stroke="#ef4444" strokeWidth="1" />
-              </g>
-            );
-          }
-          return null;
-        })}
-      </svg>
-      <button 
-        onClick={togglePlay}
-        style={{
-          position: 'absolute',
-          bottom: '-5px',
-          right: '5px',
-          background: 'rgba(0,0,0,0.8)',
-          border: '1px solid rgba(255,255,255,0.3)',
-          borderRadius: '6px',
-          padding: '6px',
-          cursor: 'pointer',
-          color: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-          transition: 'all 0.2s'
-        }}
-        title={isPlaying ? "Pause Simulation" : "Play Simulation"}
-      >
-        {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-      </button>
+          {pathData && <path d={pathData} stroke={color} fill="none" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />}
+          
+          {/* Draw red bars for dropped packets */}
+          {points.map((p, idx) => {
+            if (p === -1) {
+              const cx = scaleX(idx);
+              const barW = Math.max(2, chartW / dataPoints);
+              return (
+                <g key={idx}>
+                  <rect x={cx - barW/2} y={scaleY(maxVal)} width={barW} height={chartH} fill="rgba(239, 68, 68, 0.25)" />
+                </g>
+              );
+            }
+            return null;
+          })}
+        </svg>
+      </div>
     </div>
   );
 };
@@ -538,6 +572,7 @@ export default function Dashboard() {
 
   const [isMounted, setIsMounted] = useState(false);
   const [enableAnimation, setEnableAnimation] = useState(false);
+  const [showMobileWarning, setShowMobileWarning] = useState(false);
 
   // Load state from localStorage on initial render
   useEffect(() => {
@@ -558,6 +593,14 @@ export default function Dashboard() {
         // ignore
       }
     }
+    
+    if (window.innerWidth < 1024) {
+      const warningDismissed = localStorage.getItem('panic-mobile-warning-dismissed');
+      if (warningDismissed !== 'true') {
+        setShowMobileWarning(true);
+      }
+    }
+
     setIsMounted(true);
     // Enable animations slightly after mount to prevent initial expand slide-downs
     const timer = setTimeout(() => setEnableAnimation(true), 150);
@@ -573,21 +616,11 @@ export default function Dashboard() {
           let config: any = { fault: 'unknown' };
           try { config = JSON.parse(t.config); } catch(e){}
           
-          let faultPolicyStr = config.fault === 'latency' 
-            ? `${config.latency}ms TCP Latency` 
-            : config.fault === '429' ? '429 Rate Limit'
-            : config.fault === '504' ? '504 Gateway Timeout'
-            : `${config.fault} Bad Gateway`;
-            
-          if (config.fault === 'latency' && config.jitter > 0) {
-            faultPolicyStr += ` (±${config.jitter}ms ${config.distribution})`;
-          }
-
           return {
             id: t.id,
             tokenHint: t.tokenHint,
             target: t.targetHost,
-            fault: faultPolicyStr,
+            fault: config,
             issuedAt: new Date(t.createdAt).toLocaleString(),
             issuedAtFull: new Date(t.createdAt).toLocaleString(),
             isRevoked: t.isRevoked,
@@ -738,14 +771,55 @@ export default function Dashboard() {
     }
   };
 
-  const filteredTokens = activeTokens.filter(t => 
-    t.target.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    t.fault.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTokens = activeTokens.filter(t => {
+    const q = (searchQuery || '').toLowerCase();
+    const targetMatch = (t.target || '').toLowerCase().includes(q);
+    
+    let faultString = '';
+    try {
+      faultString = typeof t.fault === 'string' ? t.fault : JSON.stringify(t.fault || {});
+    } catch(e) {}
+    
+    const faultMatch = faultString.toLowerCase().includes(q);
+    return targetMatch || faultMatch;
+  });
   const totalPages = Math.ceil(filteredTokens.length / pageSize);
 
   return (
     <div className={styles.dashboard}>
+      {showMobileWarning && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, padding: '24px'
+        }}>
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px', padding: '32px', textAlign: 'center', maxWidth: '400px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+          }}>
+            <MonitorSmartphone size={48} color="#94a3b8" style={{ margin: '0 auto 16px auto' }} />
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', letterSpacing: '1px', textTransform: 'uppercase' }}>Desktop Recommended</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.6, marginBottom: '24px' }}>
+              This core console is highly optimized for desktop wide-screen interfaces. While you can continue on a mobile device, the layout and advanced configuration panels will be heavily compressed.
+            </p>
+            <button 
+              onClick={() => {
+                localStorage.setItem('panic-mobile-warning-dismissed', 'true');
+                setShowMobileWarning(false);
+              }}
+              style={{
+                background: '#1e293b', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)',
+                padding: '12px 24px', borderRadius: '8px', fontWeight: 600, width: '100%',
+                cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '1px'
+              }}
+            >
+              Continue Anyway
+            </button>
+          </div>
+        </div>
+      )}
       <div className={styles.container} style={{ opacity: isMounted ? 1 : 0, transition: 'opacity 0.2s ease-out' }}>
         
         {/* Header */}
@@ -858,8 +932,11 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {fault === 'latency' && (
-                <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px dashed var(--dash-input-border)', animation: enableAnimation ? 'slideDown 0.3s ease-out' : 'none' }}>
+              <div style={{ position: 'relative', marginTop: '24px', paddingTop: '24px', borderTop: '1px dashed var(--dash-input-border)' }}>
+                <div 
+                  className={fault !== 'latency' ? styles.disabledConfigArea : ''}
+                  style={{ animation: enableAnimation ? 'slideDown 0.3s ease-out' : 'none' }}
+                >
                     <div style={{ marginBottom: '24px' }}>
                       <div className={styles.labelRow}>
                         <span className={styles.label}>Payload Mutilation Strategy</span>
@@ -957,14 +1034,30 @@ export default function Dashboard() {
                     </div>
 
                       <div className={styles.latencyCol}>
-                        <div className={styles.latencyTitle}>Real-time Simulation</div>
-                        <div className={styles.distChart} style={{ height: '220px', marginTop: '12px', overflow: 'hidden' }}>
+                        <div className={styles.distChart} style={{ height: '210px', marginTop: '0', overflow: 'hidden' }}>
                           <RealTimeSimulationChart latency={latency} jitter={jitter} distribution={distribution} packetLoss={Number(packetLoss) || 0} />
                         </div>
                       </div>
                   </div>
                 </div>
-              )}
+
+                {fault !== 'latency' && (
+                  <div className={styles.disabledOverlayMessage}>
+                    <div className={styles.disabledMessageContent}>
+                      <span style={{ color: '#6b7280', marginBottom: '8px', display: 'inline-block' }}>
+                        <Lock size={24} fill="currentColor" />
+                      </span>
+                      <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        L4 Parameters Locked
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        Fast-fail L7 policies (502/504/429) terminate the connection at the edge proxy.<br/>
+                        Transport layer degradation is physically inapplicable.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className={styles.generateContainer}>
@@ -973,7 +1066,7 @@ export default function Dashboard() {
                 disabled={!isFormValid}
                 onClick={handleGenerate}
               >
-                Generate Edge Token
+                Deploy Chaos Token
               </button>
             </div>
           </div>
@@ -1147,7 +1240,7 @@ export default function Dashboard() {
                             <Copy size={12} style={{ opacity: 0.5, marginLeft: '6px' }} />
                           )}
                         </td>
-                        <td className={styles.faultCell}>{token.fault}</td>
+                        <td className={styles.faultCell}>{renderFaultBadges(token.fault, token.isRevoked)}</td>
                         <td title={`Last used: ${token.issuedAtFull}`}>{token.issuedAt}</td>
                         <td>
                           <button 
