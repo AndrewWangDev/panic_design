@@ -226,8 +226,15 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         `> [Chaos] Fault Engine Engaged: ${fault === 'latency' ? 'Traffic Degradation' : `HTTP ${fault}`}`,
         `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
         `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'}`,
-        `< HTTP/1.1 ${data.status} ${data.statusText || ''}`
       ];
+      
+      if (data.chaosReason) {
+        lines.push(`> [Security] ⚠️ INJECTION ABORTED (FAIL-OPEN TRIGGERED)`);
+        lines.push(`> [Security] Reason: ${data.chaosReason}`);
+        lines.push(`> [Security] Control Plane Identity: ${data.chaosClientContext || 'Unknown'}`);
+      }
+      
+      lines.push(`< HTTP/1.1 ${data.status} ${data.statusText || ''}`);
       if (data.responseBody) {
         // Try to format JSON if possible
         let formattedBody = data.responseBody;
@@ -582,6 +589,7 @@ export default function Dashboard() {
   const [distribution, setDistribution] = useState<'Uniform' | 'Normal' | 'Spikes'>('Uniform');
   const [packetLoss, setPacketLoss] = useState<string | number>(0);
   const [mutilationStrategy, setMutilationStrategy] = useState<'None' | 'Unexpected EOF' | 'Type Poisoning' | 'Empty Shell'>('None');
+  const [scope, setScope] = useState('Global');
   const [ttl, setTtl] = useState('15m');
   const [customTtl, setCustomTtl] = useState(24);
 
@@ -594,6 +602,14 @@ export default function Dashboard() {
     { value: '12h', label: '12 Hours' },
     { value: '24h', label: '24 Hours' },
     { value: 'custom', label: 'Custom...' }
+  ];
+
+  const scopeOptions = [
+    { value: 'Global', label: '🌍 Global' },
+    { value: 'Cloud ASNs', label: '☁️ Cloud ASNs' },
+    { value: 'Cellular', label: '📱 Cellular' },
+    { value: 'Cross-Region', label: '🌉 Cross-Region' },
+    { value: 'Bots Only', label: '🤖 Bots Only' }
   ];
 
   const distOptions = [
@@ -624,12 +640,13 @@ export default function Dashboard() {
   const handleQuickDemo = () => {
     setIsFlashing(true);
     setTargetHost('jsonplaceholder.typicode.com');
+    setScope('Global');
     setTtl('12h');
     setFault('latency');
     setDistribution('Uniform');
     setLatency(1000);
     setJitter(3);
-    setMutilationStrategy('Unexpected EOF');
+    setMutilationStrategy('Type Poisoning');
     setPacketLoss(0);
     
     setTimeout(() => {
@@ -640,7 +657,7 @@ export default function Dashboard() {
   // Clear generated token when form inputs change, resetting terminal to MOCK_LOGS
   useEffect(() => {
     setGeneratedToken('');
-  }, [targetHost, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, ttl, customTtl]);
+  }, [targetHost, scope, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, ttl, customTtl]);
   
   const [activeTokens, setActiveTokens] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -677,6 +694,7 @@ export default function Dashboard() {
       try {
         const state = JSON.parse(saved);
         if (state.targetHost !== undefined) setTargetHost(state.targetHost);
+        if (state.scope !== undefined) setScope(state.scope);
         if (state.fault !== undefined) setFault(state.fault);
         if (state.latency !== undefined) setLatency(state.latency);
         if (state.jitter !== undefined) setJitter(state.jitter);
@@ -739,10 +757,10 @@ export default function Dashboard() {
   useEffect(() => {
     if (isMounted) {
       localStorage.setItem('panic-dashboard-state', JSON.stringify({
-        targetHost, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, ttl, customTtl
+        targetHost, scope, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, ttl, customTtl
       }));
     }
-  }, [targetHost, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, ttl, customTtl, isMounted]);
+  }, [targetHost, scope, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, ttl, customTtl, isMounted]);
 
   const [targetHostError, setTargetHostError] = useState('');
 
@@ -807,6 +825,7 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           targetHost,
+          scope,
           fault,
           latency,
           jitter,
@@ -944,18 +963,26 @@ export default function Dashboard() {
               <div className={styles.targetRow}>
                 <div className={styles.targetHostWrap}>
                   <div className={styles.labelRow}>
-                    <span className={styles.label}>Target Hostname</span>
+                    <span className={styles.label}>Target Hostname & Scope</span>
                     <span className={styles.labelHint}>HTTPS or HTTP2 Only</span>
                   </div>
-                  <input 
-                    type="text" 
-                    className={`${styles.inputField} ${targetHostError ? styles.inputError : ''} ${isFlashing ? styles.inputFlash : ''}`} 
-                    placeholder="api.your-production.com"
-                    value={targetHost}
-                    onChange={(e) => handleTargetHostChange(e.target.value)}
-                    onBlur={handleTargetHostBlur}
-                    onPaste={handleTargetHostPaste}
-                  />
+                  <div className={styles.prefixInputWrap}>
+                    <CustomSelect 
+                      options={scopeOptions}
+                      value={scope}
+                      onChange={(val) => setScope(val)}
+                      className={styles.prefixSelect}
+                    />
+                    <input 
+                      type="text" 
+                      className={`${styles.inputField} ${targetHostError ? styles.inputError : ''} ${isFlashing ? styles.inputFlash : ''}`} 
+                      placeholder="api.your-production.com"
+                      value={targetHost}
+                      onChange={(e) => handleTargetHostChange(e.target.value)}
+                      onBlur={handleTargetHostBlur}
+                      onPaste={handleTargetHostPaste}
+                    />
+                  </div>
                   {targetHostError && (
                     <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
                       {targetHostError}
@@ -975,23 +1002,27 @@ export default function Dashboard() {
                         onChange={(val) => setTtl(val)}
                         className={isFlashing ? styles.inputFlash : ''}
                         size="large"
-                      />
+                      >
+                        {ttl === 'custom' && (
+                          <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.2)' }}>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Hours:</span>
+                            <input 
+                              type="number" 
+                              min="1" max="168"
+                              value={customTtl}
+                              onChange={(e) => {
+                                let val = Number(e.target.value);
+                                if (val > 168) val = 168;
+                                if (val < 1) val = 1;
+                                setCustomTtl(val);
+                              }}
+                              className={styles.ttlCustomInput}
+                              style={{ width: '100%' }}
+                            />
+                          </div>
+                        )}
+                      </CustomSelect>
                     </div>
-                    {ttl === 'custom' && (
-                      <input 
-                        type="number" 
-                        min="1" max="168"
-                        value={customTtl}
-                        onChange={(e) => {
-                          let val = Number(e.target.value);
-                          if (val > 168) val = 168;
-                          if (val < 1) val = 1;
-                          setCustomTtl(val);
-                        }}
-                        className={styles.ttlCustomInput}
-                        title="Hours (1-168)"
-                      />
-                    )}
                   </div>
                 </div>
               </div>
