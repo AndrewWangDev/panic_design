@@ -429,6 +429,12 @@
   border-color: transparent;
 }
 
+/* Force the CustomSelect container to only take content width */
+.prefixInputWrap > div {
+  width: auto;
+  flex-shrink: 0;
+}
+
 .prefixSelect {
   border: none !important;
   background: transparent !important;
