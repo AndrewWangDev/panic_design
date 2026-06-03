@@ -1321,15 +1321,18 @@ export default function Dashboard() {
         </div>
 
         {/* Post Mortem Panel placed right-aligned */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', marginBottom: '16px' }}>
-          <div style={{ width: '400px' }}>
-            <PostMortemPanel stats={postMortemStats} />
+        {isSimulating && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', marginBottom: '16px' }}>
+            <div style={{ width: '400px' }}>
+              <PostMortemPanel stats={postMortemStats} />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Bottom Grid: Active Edge Tokens */}
-        <div className={styles.gridBottom}>
-          <div className={styles.card}>
+        {!isSimulating && (
+          <div className={styles.gridBottom}>
+            <div className={styles.card}>
               <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Active Edge Tokens</span>
                 <div className={styles.searchBox}>
@@ -1437,6 +1440,7 @@ export default function Dashboard() {
             
           </div>
         </div>
+        )}
 
       </div>
 
