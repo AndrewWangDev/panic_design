@@ -404,6 +404,40 @@
   color: var(--dash-input-placeholder);
 }
 
+.prefixInputWrap {
+  display: flex;
+  align-items: stretch;
+  background: var(--dash-input-bg);
+  border: 1px solid var(--dash-input-border);
+  border-radius: 100px;
+  transition: border-color var(--transition-fast);
+}
+
+.prefixInputWrap:focus-within {
+  border-color: var(--dash-input-focus);
+}
+
+.prefixInputWrap .inputField {
+  border: none;
+  background: transparent;
+  flex: 1;
+  border-radius: 0 100px 100px 0;
+  padding-left: 16px;
+}
+
+.prefixInputWrap .inputField:focus {
+  border-color: transparent;
+}
+
+.prefixSelect {
+  border: none !important;
+  background: transparent !important;
+  border-right: 1px solid var(--dash-input-border) !important;
+  border-radius: 100px 0 0 100px !important;
+  box-shadow: none !important;
+  min-width: 150px;
+}
+
 /* 分段胶囊按钮组 */
 .capsuleGroup {
   display: flex;

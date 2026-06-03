@@ -13,9 +13,10 @@ interface CustomSelectProps {
   onChange: (val: string) => void;
   className?: string;
   size?: 'normal' | 'large';
+  children?: React.ReactNode;
 }
 
-export default function CustomSelect({ options, value, onChange, className, size = 'normal' }: CustomSelectProps) {
+export default function CustomSelect({ options, value, onChange, className, size = 'normal', children }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -54,6 +55,7 @@ export default function CustomSelect({ options, value, onChange, className, size
               {opt.label}
             </div>
           ))}
+          {children}
         </div>
       )}
     </div>

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json() as any;
-    const { targetHost, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, customTtl } = body;
+    const { targetHost, scope, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, customTtl } = body;
 
     if (!targetHost || !fault) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -38,6 +38,7 @@ export async function POST(req: Request) {
     // Prepare Token config JSON
     const config = JSON.stringify({
       fault,
+      scope,
       latency,
       jitter,
       distribution,
@@ -101,6 +102,7 @@ export async function POST(req: Request) {
     const jwt = await new SignJWT({
       tokenId: token.id,
       targetHost,
+      scope,
       fault,
       latency,
       jitter,

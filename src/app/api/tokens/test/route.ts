@@ -115,8 +115,10 @@ export async function POST(req: Request) {
     let t1_visual = (t1_total_net - t2 - t3) / 2; // W1 -> W2 single trip
     if (t1_visual < 5) t1_visual = 25; // Prevent negative or zero rendering visually
 
-    // Extract colo
+    // Extract colo and abort reasons
     const colo = resHeaders.get('x-panic-colo') || 'UNKNOWN';
+    const chaosReason = resHeaders.get('X-Chaos-Reason');
+    const chaosClientContext = resHeaders.get('X-Chaos-Client-Context');
 
     // Resolve IP purely for terminal visual logging (does not affect timing since timer is stopped)
     let resolvedIp = 'Unknown IP';
@@ -144,6 +146,8 @@ export async function POST(req: Request) {
          t3: t3_visual,
          colo
       },
+      chaosReason,
+      chaosClientContext,
       resolvedIp,
       responseBody
     });
