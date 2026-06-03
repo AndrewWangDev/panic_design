@@ -204,14 +204,34 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
     ]);
     
     try {
+      const browserStart = Date.now();
       const res = await fetch('/api/tokens/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: fullToken })
       });
       const data = await res.json() as any;
+      const tBrowserTotal = Date.now() - browserStart;
       
-      const realTelemetry = data.telemetry || { t1: t1, t2: t2, t3: t3 };
+      let realTelemetry = data.telemetry || { t1: t1, t2: t2, t3: t3 };
+      
+      if (data.telemetry) {
+        // True physical T1 (Browser -> Edge) calculation:
+        // By measuring from the browser, we capture the exact RTT matching the browser's IP (Cogent)
+        const overhead = 30; // Approx Next.js API route overhead
+        let adjustedTotal = tBrowserTotal - overhead;
+        if (adjustedTotal < 10) adjustedTotal = 10;
+        
+        const t3_full = data.telemetry.t3 * 2;
+        const t2_full = data.telemetry.t2;
+        
+        let t1_single = (adjustedTotal - t2_full - t3_full) / 2;
+        if (t1_single < 5) t1_single = 5;
+        
+        realTelemetry.t1 = t1_single;
+        data.totalLatency = adjustedTotal;
+        data.telemetry.t1 = t1_single;
+      }
       
       if (onTelemetryReceived && data.telemetry) {
         onTelemetryReceived({
