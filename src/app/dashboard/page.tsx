@@ -1262,7 +1262,6 @@ export default function Dashboard() {
                     <RollingLogs />
                   )}
                 </div>
-                {isSimulating && <PostMortemPanel stats={postMortemStats} />}
               </div>
             </div>
 
@@ -1321,10 +1320,16 @@ export default function Dashboard() {
           
         </div>
 
+        {/* Post Mortem Panel placed right-aligned */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', marginBottom: '16px' }}>
+          <div style={{ width: '400px' }}>
+            <PostMortemPanel stats={postMortemStats} />
+          </div>
+        </div>
+
         {/* Bottom Grid: Active Edge Tokens */}
-        {!isSimulating && (
-          <div className={styles.gridBottom}>
-            <div className={styles.card}>
+        <div className={styles.gridBottom}>
+          <div className={styles.card}>
               <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Active Edge Tokens</span>
                 <div className={styles.searchBox}>
@@ -1432,7 +1437,6 @@ export default function Dashboard() {
             
           </div>
         </div>
-      )}
 
       </div>
 
