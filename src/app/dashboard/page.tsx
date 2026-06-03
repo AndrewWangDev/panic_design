@@ -1262,8 +1262,8 @@ export default function Dashboard() {
                     <RollingLogs />
                   )}
                 </div>
+                {isSimulating && <PostMortemPanel stats={postMortemStats} />}
               </div>
-              {isSimulating && <PostMortemPanel stats={postMortemStats} />}
             </div>
 
             {/* AIOps Sandbox UI */}
