@@ -314,14 +314,14 @@
 .label {
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: #cbd5e1;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .labelHint {
   font-size: 0.75rem;
-  color: #555;
+  color: #94a3b8;
 }
 
 .targetRow {
@@ -884,7 +884,7 @@
 
 .latencyTitle {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: #cbd5e1;
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 600;
@@ -898,7 +898,7 @@
 
 .latencyLabel {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: #cbd5e1;
   min-width: 100px;
 }
 
@@ -965,7 +965,7 @@
 }
 
 .unitLabel {
-  color: var(--text-secondary);
+  color: #cbd5e1;
   font-size: 0.9rem;
   font-family: var(--font-mono);
 }

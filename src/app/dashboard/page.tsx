@@ -131,7 +131,7 @@ const ExpandablePayload = ({ payload }: { payload: string }) => {
   );
 };
 
-const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart, onTelemetryReceived, fault, t1, t2, t3 }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: () => void, onTelemetryReceived?: (data: any) => void, fault: string, t1: number, t2: number, t3: number }) => {
+const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart, onTelemetryReceived, fault, t1, t2, t3 }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: (isFirst: boolean) => void, onTelemetryReceived?: (data: any) => void, fault: string, t1: number, t2: number, t3: number }) => {
   const [text, setText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [testState, setTestState] = useState<'idle' | 'testing' | 'done'>('idle');
@@ -193,7 +193,8 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
   }, [isSimulating]);
 
   const handleTest = async () => {
-    onSimulationStart();
+    const isFirst = testState === 'idle';
+    onSimulationStart(isFirst);
     setTestState('testing');
     setTestLogs([
       '> Initiating TLS handshake with gateway.andrewwangdev.com...',
@@ -215,7 +216,9 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       if (onTelemetryReceived && data.telemetry) {
         onTelemetryReceived({
           ...data.telemetry,
-          totalLatency: data.totalLatency
+          totalLatency: data.totalLatency,
+          status: data.status,
+          responseBody: data.responseBody
         });
       }
       
@@ -472,14 +475,15 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
 
           {pathData && <path d={pathData} stroke={color} fill="none" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />}
           
-          {/* Draw red bars for dropped packets */}
+          {/* Draw neon red bars for dropped packets with solid top border */}
           {points.map((p, idx) => {
             if (p === -1) {
               const cx = scaleX(idx);
               const barW = Math.max(2, chartW / dataPoints);
               return (
                 <g key={idx}>
-                  <rect x={cx - barW/2} y={scaleY(maxVal)} width={barW} height={chartH} fill="rgba(239, 68, 68, 0.25)" />
+                  <rect x={cx - barW/2} y={scaleY(maxVal)} width={barW} height={chartH} fill="rgba(255, 40, 40, 0.3)" />
+                  <line x1={cx - barW/2} y1={scaleY(maxVal)} x2={cx + barW/2} y2={scaleY(maxVal)} stroke="rgba(255, 40, 40, 1)" strokeWidth="2" />
                 </g>
               );
             }
@@ -490,6 +494,66 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
     </div>
   );
 };
+const PostMortemPanel = ({ stats }: { stats: any }) => {
+  if (stats.totalRequests === 0) return null;
+
+  const getLatencyColor = (val: number, threshold1: number = 200, threshold2: number = 500) => {
+    if (val < threshold1) return '#10b981'; // Green
+    if (val < threshold2) return '#f59e0b'; // Amber
+    return '#ef4444'; // Red
+  };
+
+  const avgT1 = stats.t1Count > 0 ? Math.round(stats.t1Sum / stats.t1Count) : 0;
+  const avgT3 = stats.t3Count > 0 ? Math.round(stats.t3Sum / stats.t3Count) : 0;
+  const avgTotal = stats.totalRttCount > 0 ? Math.round(stats.totalRttSum / stats.totalRttCount) : 0;
+  
+  const dropRate = stats.totalRequests > 0 ? ((stats.packetDropCount / stats.totalRequests) * 100).toFixed(2) : '0.00';
+  const dropColor = stats.packetDropCount > 0 ? '#ef4444' : '#10b981';
+
+  return (
+    <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '8px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Activity size={14} color="#f59e0b" /> INJECTION POST-MORTEM
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '10px', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>L7 Application Faults</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
+          <span style={{ color: '#cbd5e1' }}>Gateway Fast-Fail</span>
+          <span style={{ color: stats.fastFailCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.fastFailCount} times</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+          <span style={{ color: '#cbd5e1' }}>Payload Mutilation</span>
+          <span style={{ color: stats.mutilationCount > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{stats.mutilationCount} times</span>
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '10px', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>L3/L4 TRAFFIC SHAPING</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
+          <span style={{ color: '#cbd5e1' }}>Average Edge Network RTT</span>
+          <span style={{ color: getLatencyColor(avgT1, 50, 100), fontWeight: 500 }}>{avgT1} ms</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '2px' }}>
+          <span style={{ color: '#cbd5e1' }}>Average Upstream Backhaul</span>
+          <span style={{ color: getLatencyColor(avgT3, 100, 300), fontWeight: 500 }}>{avgT3} ms</span>
+        </div>
+        <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: '10px', textAlign: 'right' }}>* Excludes edge-terminated requests</div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px', background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '4px' }}>
+          <span style={{ color: '#e2e8f0', fontWeight: 500 }}>Average Total Round-Trip Time</span>
+          <span style={{ color: getLatencyColor(avgTotal, 200, 500), fontWeight: 600 }}>{avgTotal} ms</span>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '4px 8px' }}>
+          <span style={{ color: '#cbd5e1' }}>Packet Loss Rate / Count</span>
+          <span style={{ color: dropColor, fontWeight: 500 }}>{dropRate}% ({stats.packetDropCount} Pkts Dropped)</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const [targetHost, setTargetHost] = useState('');
   const [fault, setFault] = useState<'502' | '504' | '429' | 'latency' | null>(null);
@@ -568,6 +632,18 @@ export default function Dashboard() {
   }, [searchQuery]);
 
   const [telemetryData, setTelemetryData] = useState<any>(null);
+  const [postMortemStats, setPostMortemStats] = useState({
+    fastFailCount: 0,
+    mutilationCount: 0,
+    t1Sum: 0,
+    t1Count: 0,
+    t3Sum: 0,
+    t3Count: 0,
+    totalRttSum: 0,
+    totalRttCount: 0,
+    packetDropCount: 0,
+    totalRequests: 0
+  });
   const [isTestPending, setIsTestPending] = useState(false);
 
   const [isMounted, setIsMounted] = useState(false);
@@ -1119,15 +1195,63 @@ export default function Dashboard() {
                       fullToken={generatedToken} 
                       targetHost={targetHost} 
                       isSimulating={isSimulating}
-                      onSimulationStart={() => {
+                      onSimulationStart={(isFirst) => {
                         setIsSimulating(true);
                         setIsTestPending(true);
                         setSimulationKey(prev => prev + 1);
+                        if (isFirst) {
+                          setPostMortemStats({
+                            fastFailCount: 0,
+                            mutilationCount: 0,
+                            t1Sum: 0,
+                            t1Count: 0,
+                            t3Sum: 0,
+                            t3Count: 0,
+                            totalRttSum: 0,
+                            totalRttCount: 0,
+                            packetDropCount: 0,
+                            totalRequests: 0
+                          });
+                        }
                       }}
                       onTelemetryReceived={(data) => {
                         setTelemetryData(data);
                         setIsTestPending(false);
                         setSimulationKey(prev => prev + 1);
+
+                        setPostMortemStats(prev => {
+                          const next = { ...prev };
+                          next.totalRequests++;
+                          
+                          if ([502, 504, 429].includes(data.status)) {
+                            next.fastFailCount++;
+                          }
+                          
+                          if (data.status === 444) {
+                            next.packetDropCount++;
+                          }
+                          
+                          if (data.responseBody && (data.responseBody.includes('Unexpected EOF') || data.responseBody.includes('Type Poisoning') || data.responseBody.includes('Empty Shell') || data.responseBody.includes('MUTILATED_PAYLOAD'))) {
+                            next.mutilationCount++;
+                          }
+
+                          if (data.t1 !== undefined) {
+                            next.t1Sum += data.t1 * 2;
+                            next.t1Count++;
+                          }
+
+                          if (data.t3 > 0 && ![502, 504, 429, 444].includes(data.status)) {
+                            next.t3Sum += data.t3 * 2;
+                            next.t3Count++;
+                          }
+
+                          if (data.totalLatency !== undefined) {
+                            next.totalRttSum += data.totalLatency;
+                            next.totalRttCount++;
+                          }
+
+                          return next;
+                        });
                       }}
                       fault={fault || 'latency'}
                       t1={24}
@@ -1139,6 +1263,7 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
+              {isSimulating && <PostMortemPanel stats={postMortemStats} />}
             </div>
 
             {/* AIOps Sandbox UI */}
