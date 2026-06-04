@@ -916,6 +916,48 @@ export default function Dashboard() {
     }, 20);
   };
 
+  const [aiState, setAiState] = useState<{ isLoading: boolean, data: any }>({ isLoading: false, data: null });
+
+  const handleAiSubmit = async () => {
+    if (!aiInputValue.trim() || !isSimulating) return;
+    
+    setShowAiOutput(true);
+    setAiState({ isLoading: true, data: null });
+
+    const baseline = {
+      targetHost,
+      fault,
+      latency,
+      jitter,
+      distribution,
+      packetLoss,
+      telemetry: telemetryData,
+      w2_colo: telemetryData?.w2_colo || telemetryData?.colo || 'UNKNOWN',
+      t1: telemetryData?.t1,
+      t2: telemetryData?.t2,
+      t3: telemetryData?.t3,
+      w1: telemetryData?.w1,
+      w2: telemetryData?.w2,
+      w3: telemetryData?.w3
+    };
+
+    try {
+      const res = await fetch('/api/aiops', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction: aiInputValue,
+          baseline
+        })
+      });
+      const data = await res.json();
+      setAiState({ isLoading: false, data });
+    } catch (e) {
+      console.error(e);
+      setAiState({ isLoading: false, data: { insight: "AI Service Error: Failed to fetch simulation result." } });
+    }
+  };
+
   // Load state from localStorage on initial render
   useEffect(() => {
     const saved = localStorage.getItem('panic-dashboard-state');
@@ -1466,6 +1508,7 @@ export default function Dashboard() {
                         fault={telemetryData?.chaosReason ? 'latency' : (fault || 'latency')}
                         targetHost={targetHost}
                         latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
+                        aiMapData={aiState.data?.map_data}
                     />
                   )}
                 </div>
@@ -1643,15 +1686,15 @@ export default function Dashboard() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
-                          if (aiInputValue.trim().length > 0) setShowAiOutput(true);
+                          handleAiSubmit();
                         }
                       }}
                       style={{ maxHeight: '120px', overflowY: 'auto' }}
                     />
                     <button 
                       className={styles.aiSendBtn} 
-                      disabled={!isSimulating || aiInputValue.trim().length === 0}
-                      onClick={() => setShowAiOutput(true)}
+                      disabled={!isSimulating || aiInputValue.trim().length === 0 || aiState.isLoading}
+                      onClick={handleAiSubmit}
                     >
                       <Send size={16} />
                     </button>
@@ -1716,7 +1759,16 @@ export default function Dashboard() {
                         💡 COPILOT INSIGHT
                       </div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        
+                        {aiState.isLoading ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className={styles.spinner} style={{ width: '12px', height: '12px', borderTopColor: 'var(--color-cyan)' }} />
+                            Thinking...
+                          </div>
+                        ) : aiState.data ? (
+                          <div style={{ lineHeight: 1.5 }}>
+                            {aiState.data.insight || (aiState.data.error && <span style={{ color: '#ef4444' }}>{aiState.data.error}</span>)}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   )}
