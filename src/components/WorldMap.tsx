@@ -17,6 +17,7 @@ interface WorldMapProps {
   isPending?: boolean;
   animKey?: number;
   colo?: string;
+  w1Colo?: string;
 }
 
 function getLatencyColor(ms: number) {
@@ -25,7 +26,7 @@ function getLatencyColor(ms: number) {
   return "#ef4444"; // red
 }
 
-export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, isPending = false, animKey = 0, colo = 'UNKNOWN' }: WorldMapProps) {
+export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, isPending = false, animKey = 0, colo = 'UNKNOWN', w1Colo = 'UNKNOWN' }: WorldMapProps) {
   const [geographies, setGeographies] = useState<any[]>([]);
   const [viewport, setViewport] = useState({ x: 0, y: 0, k: 1 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -449,7 +450,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
             return (
               <>
-                {w1 && renderPin(w1, "Cloud Runner", pinColor, false, undefined, anchorW1)}
+                {w1 && renderPin(w1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", pinColor, false, undefined, anchorW1)}
                 
                 {isPending && w1 && projection(w1) && (
                   <g style={{ transform: `translate(${projection(w1)?.[0]}px, ${projection(w1)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
@@ -461,7 +462,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
                 )}
 
                 {/* Removed visual jitter offsets to prevent map lines and pins from detaching */}
-                {!isPending && w1 && renderPin(w1, "Cloud Runner", t1Color, false, undefined, anchorW1)}
+                {!isPending && w1 && renderPin(w1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", t1Color, false, undefined, anchorW1)}
                 {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, isPacketLoss ? 'Packet Loss' : fault === 'latency' ? `${t2} ms` : fault === '504' ? `504 Timeout (${t2} ms)` : fault === '502' ? '502 Bad Gateway' : '429 Rate Limit', anchorW2)}
                 {!isPending && visualW3 && renderPin(visualW3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
               </>
