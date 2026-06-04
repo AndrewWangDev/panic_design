@@ -335,10 +335,9 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           {!isPending && w1 && w2 && renderCurve(w1, w2, t1Color, "route-1")}
           {!isPending && w2 && visualW3 && !isAbort && renderCurve(w2, visualW3, t3Color, "route-2")}
           {/* Abort Wall Route */}
-          {isAbort && abortPath && (
+          {!isPending && isAbort && abortPath && (
             <g>
               <g>
-                <animate attributeName="opacity" values={`0;0;1;1`} keyTimes={`0;${p2Start-0.01};${p2Start};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
                 <path 
                   id="route-abort"
                   d={abortPath} 
@@ -357,7 +356,6 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
               </circle>
               {wallX && wallY && (
                 <g style={{ transform: `translate(${wallX}px, ${wallY}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                  <animate attributeName="opacity" values={`0;0;1;1`} keyTimes={`0;${p2Start-0.01};${p2Start};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
                   <line x1="-10" y1="-10" x2="10" y2="10" stroke="#ef4444" strokeWidth={3} />
                   <line x1="-10" y1="10" x2="10" y2="-10" stroke="#ef4444" strokeWidth={3} />
                 </g>
