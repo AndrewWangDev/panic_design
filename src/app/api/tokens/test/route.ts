@@ -59,13 +59,11 @@ export async function POST(req: Request) {
     let t3 = 0;
 
     if (hdrW1) w1 = hdrW1.split(',').map(Number);
-    if (hdrW2) w2 = hdrW2.split(',').map(Number);
     if (hdrT2) t2 = Number(hdrT2);
     if (hdrT3) t3 = Number(hdrT3);
 
     // Fallbacks if data plane headers are missing (e.g. gateway offline or not deployed yet)
-    if (!hdrW1) w1 = [-77.0369, 38.9072]; // Mock Vercel US-East
-    if (!hdrW2) w2 = [-118.2437, 34.0522]; // Mock CF LAX
+    if (!hdrW1) w1 = [-118.2437, 34.0522]; // Mock CF LAX
 
     // W3 fallback for legacy tokens or missing data plane
     if (hdrW3 && hdrW3 !== '0,0') {
@@ -82,26 +80,15 @@ export async function POST(req: Request) {
           if (geoData && typeof geoData.lon === 'number' && typeof geoData.lat === 'number') {
             w3 = [geoData.lon, geoData.lat];
           } else {
-            w3 = [...w2]; // Fallback to edge gateway location if API rate limits or fails
+            w3 = [0, 0];
           }
         } catch (geoErr) {
           console.warn('Fallback W3 resolution failed:', geoErr);
-          w3 = [...w2];
+          w3 = [0, 0];
         }
       } else {
-        w3 = [...w2]; // Fallback to edge gateway location
+        w3 = [0, 0]; // Fallback to 0,0
       }
-    }
-
-    // Micro-jitter for identical points to ensure lines render and pins don't perfectly stack
-    const dist2 = (a: number[], b: number[]) => Math.sqrt(Math.pow(a[0]-b[0], 2) + Math.pow(a[1]-b[1], 2));
-    if (dist2(w1, w2) < 0.1) {
-      w2[0] += 2.5; // Enough to separate at max zoom
-      w2[1] -= 2.0;
-    }
-    if (dist2(w2, w3) < 0.1) {
-      w3[0] += 3.5;
-      w3[1] += 2.0;
     }
     // Calculate Final Timings
     let t1_total_net = t1_total;
@@ -113,7 +100,7 @@ export async function POST(req: Request) {
 
     const t3_visual = t3 / 2; // W2 -> W3 single trip
     let t1_visual = (t1_total_net - t2 - t3) / 2; // W1 -> W2 single trip
-    if (t1_visual < 5) t1_visual = 25; // Prevent negative or zero rendering visually
+    if (t1_visual < 5) t1_visual = 5; // Prevent negative rendering visually
 
     // Extract colo and abort reasons
     const colo = resHeaders.get('x-panic-colo') || 'UNKNOWN';
@@ -140,7 +127,7 @@ export async function POST(req: Request) {
       totalLatency: t1_total_net,
       overheadLatency: overhead,
       telemetry: {
-         w1, w2, w3,
+         w1, w3,
          t1: t1_visual,
          t2: t2,
          t3: t3_visual,

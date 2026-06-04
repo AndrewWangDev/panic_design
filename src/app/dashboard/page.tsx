@@ -18,6 +18,47 @@ const MOCK_LOGS = [
   "[SYSTEM] Awaiting control plane commands...",
   "[SYSTEM] Syncing with Cloudflare D1 distributed database... OK."
 ];
+const EDGE_TOPOLOGY: Record<string, { lat: number, lng: number }> = {
+  'SFO': { lat: 37.7697, lng: -122.3933 },
+  'SJC': { lat: 37.3382, lng: -121.8863 },
+  'LAX': { lat: 34.0522, lng: -118.2437 },
+  'FRA': { lat: 50.1109, lng: 8.6821 },
+  'HKG': { lat: 22.3964, lng: 114.1095 },
+  'NRT': { lat: 35.6895, lng: 139.6917 },
+  'LHR': { lat: 51.5074, lng: -0.1278 },
+  'CDG': { lat: 48.8566, lng: 2.3522 },
+  'SIN': { lat: 1.3521, lng: 103.8198 },
+  'SYD': { lat: -33.8688, lng: 151.2093 },
+  'IAD': { lat: 38.9072, lng: -77.0369 },
+  'EWR': { lat: 40.6895, lng: -74.1745 },
+  'AMS': { lat: 52.3676, lng: 4.9041 },
+  'BOM': { lat: 19.0760, lng: 72.8777 },
+  'GRU': { lat: -23.5505, lng: -46.6333 }
+};
+
+function haversineDist(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+function findClosestColo(lat: number, lng: number) {
+  let minD = Infinity;
+  let best = 'UNKNOWN';
+  for (const [colo, coords] of Object.entries(EDGE_TOPOLOGY)) {
+    const d = haversineDist(lat, lng, coords.lat, coords.lng);
+    if (d < minD) {
+      minD = d;
+      best = colo;
+    }
+  }
+  return best;
+}
 
 const renderFaultBadges = (config: any, isRevoked?: boolean) => {
   if (!config || config.fault === 'unknown') return <span className={styles.badgeNeutral}>Unknown</span>;
@@ -211,7 +252,36 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       });
       const data = await res.json() as any;
       
-      const realTelemetry = data.telemetry || { t1: t1, t2: t2, t3: t3 };
+      let realTelemetry = data.telemetry || { t1: t1, t2: t2, t3: t3 };
+      let estimatedColo = data.telemetry?.colo || 'UNKNOWN';
+
+      if (data.telemetry) {
+        const T1 = data.telemetry.t1 * 2; 
+        const T3 = data.telemetry.t3 * 2;
+        const w1 = data.telemetry.w1;
+        const w3 = data.telemetry.w3;
+
+        let alpha = 0;
+        if (T3 > 0) {
+          alpha = T1 / (T1 + T3);
+        } else {
+          alpha = 0.05; // Fallback if T3 is 0 (e.g. 502/504)
+        }
+        alpha = Math.max(0.02, Math.min(0.98, alpha)); // Bound it
+
+        if (w1 && w3 && w1.length === 2 && w3.length === 2 && (w3[0] !== 0 || w3[1] !== 0)) {
+          const w2Lng = (1 - alpha) * w1[0] + alpha * w3[0];
+          const w2Lat = (1 - alpha) * w1[1] + alpha * w3[1];
+          data.telemetry.w2 = [w2Lng, w2Lat];
+          estimatedColo = findClosestColo(w2Lat, w2Lng);
+        } else {
+          // If no W3, offset W2 slightly from W1
+          data.telemetry.w2 = [w1[0] + 1.5, w1[1] - 1.5];
+          estimatedColo = data.telemetry.colo;
+        }
+        data.telemetry.w2_colo = estimatedColo;
+        realTelemetry = data.telemetry;
+      }
       
       if (onTelemetryReceived && data.telemetry) {
         onTelemetryReceived({
@@ -1225,7 +1295,7 @@ export default function Dashboard() {
                         t1={['429', '502'].includes(fault || '') && !telemetryData?.chaosReason ? Math.round(telemetryData?.totalLatency || 0) : Math.round((telemetryData?.t1 || 0) * 2)}
                         t2={telemetryData ? telemetryData.t2 : 0}
                         t3={telemetryData ? telemetryData.t3 : 0}
-                        colo={telemetryData ? telemetryData.colo : 'UNKNOWN'}
+                        colo={telemetryData ? (telemetryData.w2_colo || telemetryData.colo) : 'UNKNOWN'}
                         fault={telemetryData?.chaosReason ? 'latency' : (fault || 'latency')}
                         targetHost={targetHost}
                         latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
