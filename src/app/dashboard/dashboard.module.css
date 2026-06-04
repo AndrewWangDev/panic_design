@@ -332,11 +332,11 @@
 }
 
 .targetHostWrap {
-  flex: 3;
+  flex: 1;
 }
 
 .ttlWrap {
-  flex: 2;
+  flex: 0 0 160px;
   display: flex;
   flex-direction: column;
 }

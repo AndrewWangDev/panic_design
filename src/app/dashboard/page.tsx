@@ -1173,8 +1173,8 @@ export default function Dashboard() {
                         size="large"
                       >
                         {ttl === 'custom' && (
-                          <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.2)' }}>
-                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Hours:</span>
+                          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--dash-input-border)', display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.04)' }}>
+                            <span style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 500 }}>Hours:</span>
                             <input 
                               type="number" 
                               min="1" max="168"
