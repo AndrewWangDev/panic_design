@@ -772,11 +772,11 @@ export default function Dashboard() {
   ];
 
   const scopeOptions = [
-    { value: 'Global', label: '🌍 Global' },
-    { value: 'Cloud ASNs', label: '☁️ Cloud ASNs' },
-    { value: 'Cellular', label: '📱 Cellular' },
-    { value: 'Cross-Region', label: '🌉 Cross-Region' },
-    { value: 'Bots Only', label: '🤖 Bots Only' }
+    { value: 'Global', label: 'Global', icon: '🌍' },
+    { value: 'Cloud ASNs', label: 'Cloud ASNs', icon: '☁️' },
+    { value: 'Cellular', label: 'Cellular', icon: '📱' },
+    { value: 'Cross-Region', label: 'Cross-Region', icon: '🌉' },
+    { value: 'Bots Only', label: 'Bots Only', icon: '🤖' }
   ];
 
   const distOptions = [
@@ -1140,6 +1140,7 @@ export default function Dashboard() {
                       onChange={(val) => setScope(val)}
                       className={styles.prefixSelect}
                       size="large"
+                      iconOnlyTrigger={true}
                     />
                     <input 
                       type="text" 
