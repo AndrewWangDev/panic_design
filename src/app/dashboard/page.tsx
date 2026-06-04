@@ -1505,11 +1505,9 @@ export default function Dashboard() {
             {/* Compiled Chaos Token Preview */}
             {(!isTestPending && !isSimulating) && (
               <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--dash-card-border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
-                    Compiled Chaos Token
-                  </div>
-                  <div style={{ fontSize: '11px', color: generatedToken ? '#10b981' : '#eab308', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, letterSpacing: '0.5px' }}>
+                <div className={styles.cardHeader} style={{ justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <span>Compiled Token</span>
+                  <div style={{ fontSize: '0.9rem', color: generatedToken ? '#10b981' : '#eab308', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, letterSpacing: '0.5px' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: generatedToken ? '#10b981' : '#eab308', boxShadow: `0 0 8px ${generatedToken ? '#10b981' : '#eab308'}` }} />
                     {generatedToken ? 'PENDING INJECTION' : 'PENDING SIGNATURE'}
                   </div>
