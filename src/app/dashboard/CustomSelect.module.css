@@ -51,7 +51,8 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  right: 0;
+  min-width: 100%;
+  width: max-content;
   background: var(--dash-bg); /* Use dashboard bg for the menu */
   border: 1px solid var(--dash-card-border);
   border-radius: 16px;
@@ -70,6 +71,7 @@
   color: var(--text-primary);
   cursor: pointer;
   transition: background var(--transition-fast);
+  white-space: nowrap;
 }
 
 .option:hover {

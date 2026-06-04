@@ -441,7 +441,6 @@
   border-right: 1px solid var(--dash-input-border) !important;
   border-radius: 100px 0 0 100px !important;
   box-shadow: none !important;
-  min-width: 150px;
 }
 
 /* 分段胶囊按钮组 */

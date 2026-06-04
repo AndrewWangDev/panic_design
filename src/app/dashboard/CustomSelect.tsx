@@ -5,6 +5,7 @@ import styles from './CustomSelect.module.css';
 interface Option {
   value: string;
   label: string;
+  icon?: string;
 }
 
 interface CustomSelectProps {
@@ -14,9 +15,10 @@ interface CustomSelectProps {
   className?: string;
   size?: 'normal' | 'large';
   children?: React.ReactNode;
+  iconOnlyTrigger?: boolean;
 }
 
-export default function CustomSelect({ options, value, onChange, className, size = 'normal', children }: CustomSelectProps) {
+export default function CustomSelect({ options, value, onChange, className, size = 'normal', children, iconOnlyTrigger }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +40,9 @@ export default function CustomSelect({ options, value, onChange, className, size
         className={`${styles.selectTrigger} ${size === 'large' ? styles.largeTrigger : ''} ${isOpen ? styles.open : ''} ${className || ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span>{selectedOption?.label}</span>
+        <span>
+          {iconOnlyTrigger && selectedOption?.icon ? selectedOption.icon : selectedOption?.label}
+        </span>
         <ChevronDown size={16} className={`${styles.icon} ${isOpen ? styles.iconOpen : ''}`} />
       </div>
       {isOpen && (
@@ -52,6 +56,7 @@ export default function CustomSelect({ options, value, onChange, className, size
                 setIsOpen(false);
               }}
             >
+              {opt.icon && <span style={{ marginRight: '8px' }}>{opt.icon}</span>}
               {opt.label}
             </div>
           ))}
