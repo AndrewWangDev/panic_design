@@ -60,6 +60,24 @@ function findClosestColo(lat: number, lng: number) {
   return { name: best, distance: minD };
 }
 
+const syntaxHighlight = (json: string) => {
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+    let cls = 'color: #38bdf8;'; // string color
+    if (/^"/.test(match)) {
+      if (/:$/.test(match)) {
+        cls = 'color: #f472b6;'; // key color
+      }
+    } else if (/true|false/.test(match)) {
+      cls = 'color: #a78bfa;'; // boolean
+    } else if (/null/.test(match)) {
+      cls = 'color: #a78bfa;'; // null
+    } else {
+      cls = 'color: #fb923c;'; // number
+    }
+    return `<span style="${cls}">${match}</span>`;
+  });
+};
+
 const renderFaultBadges = (config: any, isRevoked?: boolean) => {
   if (!config || config.fault === 'unknown') return <span className={styles.badgeNeutral}>Unknown</span>;
   
@@ -1496,47 +1514,47 @@ export default function Dashboard() {
                     {generatedToken ? 'PENDING INJECTION' : 'PENDING SIGNATURE'}
                   </div>
                 </div>
-                <div className={styles.codeBlock} style={{ maxHeight: 'none', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', fontSize: '12px', color: '#94a3b8' }}>
-                  <pre style={{ margin: 0, fontFamily: 'var(--font-mono)' }}>
-{JSON.stringify({
-  header: {
-    alg: "HS256",
-    typ: "JWT",
-    kid: "panic-sign-v1-primary/",
-    iss: "panic.andrewwangdev.com/cp"
-  },
-  payload: {
-    target: {
-      hostname: targetHost || 'pending...',
-      scope: scope,
-      ttl: ttl === 'custom' ? `${customTtl}h` : ttl,
-      compliance_domain: "RFC-9110-COMPLIANT"
-    },
-    fault_profile: {
-      category: fault === 'latency' ? 'Network Latency' : (fault === '502' ? 'Bad Gateway' : (fault === '504' ? 'Gateway Timeout' : (fault === '429' ? 'Rate Limit' : 'None'))),
-      mutilation_strategy: mutilationStrategy !== 'None' ? mutilationStrategy : 'Type Poisoning',
-      interception_layer: "L7_PROXY_W2"
-    },
-    algorithm_parameters: {
-      distribution: distribution,
-      packet_loss: `${packetLoss}%`,
-      base_latency: `${latency}ms`,
-      network_jitter: `${jitter}ms`,
-      drift_tolerance: "40%"
-    },
-    engine_state: {
-      real_time_simulation: "Active",
-      telemetry_mode: "LGPA_ANALYTICS",
-      fail_safe: "TRANSPARENT_BYPASS"
-    },
-    metadata: {
-      nonce: "a7f2-88d4-991c",
-      trace_origin: "CHENGDU_CONTROL_CENTER"
-    }
-  },
-  signature: generatedToken ? "V2ZfcGFuaWNfZGVzaWduX2VkamVfc2lnbmF0dXJl" : "..."
-}, null, 2)}
-                  </pre>
+                <div className={styles.codeBlock} style={{ maxHeight: '220px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', fontSize: '12px', color: '#94a3b8' }}>
+                  <pre style={{ margin: 0, fontFamily: 'var(--font-mono)' }} dangerouslySetInnerHTML={{
+                    __html: syntaxHighlight(JSON.stringify({
+                      header: {
+                        alg: "HS256",
+                        typ: "JWT",
+                        kid: "panic-sign-v1-primary/",
+                        iss: "panic.andrewwangdev.com/cp"
+                      },
+                      payload: {
+                        target: {
+                          hostname: targetHost || 'pending...',
+                          scope: scope,
+                          ttl: ttl === 'custom' ? `${customTtl}h` : ttl,
+                          compliance_domain: "RFC-9110-COMPLIANT"
+                        },
+                        fault_profile: {
+                          category: fault === 'latency' ? 'Network Latency' : (fault === '502' ? 'Bad Gateway' : (fault === '504' ? 'Gateway Timeout' : (fault === '429' ? 'Rate Limit' : 'None'))),
+                          mutilation_strategy: mutilationStrategy !== 'None' ? mutilationStrategy : 'Type Poisoning',
+                          interception_layer: "L7_PROXY_W2"
+                        },
+                        algorithm_parameters: {
+                          distribution: distribution,
+                          packet_loss: `${packetLoss}%`,
+                          base_latency: `${latency}ms`,
+                          network_jitter: `${jitter}ms`,
+                          drift_tolerance: "40%"
+                        },
+                        engine_state: {
+                          real_time_simulation: "Active",
+                          telemetry_mode: "LGPA_ANALYTICS",
+                          fail_safe: "TRANSPARENT_BYPASS"
+                        },
+                        metadata: {
+                          nonce: "a7f2-88d4-991c",
+                          trace_origin: "CHENGDU_CONTROL_CENTER"
+                        }
+                      },
+                      signature: generatedToken ? "V2ZfcGFuaWNfZGVzaWduX2VkamVfc2lnbmF0dXJl" : "..."
+                    }, null, 2))
+                  }} />
                 </div>
               </div>
             )}
