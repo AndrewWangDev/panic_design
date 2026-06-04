@@ -1592,119 +1592,121 @@ export default function Dashboard() {
 
             {/* AIOps Sandbox UI */}
             <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--dash-card-border)' }}>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '16px' }}>
-                AIOps What-If Simulation
-              </div>
+              <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '16px' }}>
+                    AIOps What-If Simulation
+                  </div>
 
-              {/* AI Instruction Input */}
-              <div className={`${styles.tooltipWrapper} ${styles.aiInputWrapper} ${!isSimulating ? styles.disabled : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
-                <Sparkles size={16} color="var(--color-cyan, #06b6d4)" />
-                <textarea 
-                  ref={aiInputRef}
-                  className={styles.aiInput} 
-                  placeholder="Describe a disaster scenario, e.g., Drop 20% traffic from Asia..."
-                  disabled={!isSimulating}
-                  value={aiInputValue}
-                  rows={1}
-                  onChange={(e) => {
-                    setAiInputValue(e.target.value);
-                    e.target.style.height = 'auto';
-                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      if (aiInputValue.trim().length > 0) setShowAiOutput(true);
-                    }
-                  }}
-                  style={{ maxHeight: '120px', overflowY: 'auto' }}
-                />
-                <button 
-                  className={styles.aiSendBtn} 
-                  disabled={!isSimulating || aiInputValue.trim().length === 0}
-                  onClick={() => setShowAiOutput(true)}
-                >
-                  <Send size={16} />
-                </button>
-                {!isSimulating && (
-                  <div className={styles.tooltipContent}>
-                    Run Cloud Injection First
+                  {/* AI Instruction Input */}
+                  <div className={`${styles.tooltipWrapper} ${styles.aiInputWrapper} ${!isSimulating ? styles.disabled : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
+                    <Sparkles size={16} color="var(--color-cyan, #06b6d4)" />
+                    <textarea 
+                      ref={aiInputRef}
+                      className={styles.aiInput} 
+                      placeholder="Describe a disaster scenario, e.g., Drop 20% traffic from Asia..."
+                      disabled={!isSimulating}
+                      value={aiInputValue}
+                      rows={1}
+                      onChange={(e) => {
+                        setAiInputValue(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (aiInputValue.trim().length > 0) setShowAiOutput(true);
+                        }
+                      }}
+                      style={{ maxHeight: '120px', overflowY: 'auto' }}
+                    />
+                    <button 
+                      className={styles.aiSendBtn} 
+                      disabled={!isSimulating || aiInputValue.trim().length === 0}
+                      onClick={() => setShowAiOutput(true)}
+                    >
+                      <Send size={16} />
+                    </button>
+                    {!isSimulating && (
+                      <div className={styles.tooltipContent}>
+                        Run Cloud Injection First
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <div className={styles.tooltipWrapper}>
+                      <button 
+                        className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}
+                        disabled={!isSimulating}
+                        style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
+                        onClick={() => handleAiopsClick("Simulate a catastrophic BGP route leak. Drop 100% of packets globally and enforce 504 Gateway Timeouts to mimic complete unreachability.")}
+                      >
+                        BGP Route Leak
+                      </button>
+                      {!isSimulating && (
+                        <div className={styles.tooltipContent}>
+                          Run Cloud Injection First
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.tooltipWrapper}>
+                      <button 
+                        className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}
+                        disabled={!isSimulating}
+                        style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
+                        onClick={() => handleAiopsClick("Trigger a massive edge node failure. Hijack all responses with 502 Bad Gateway and apply 'Empty Shell' mutation to strip all payload contents.")}
+                      >
+                        Edge Node Outage
+                      </button>
+                      {!isSimulating && (
+                        <div className={styles.tooltipContent}>
+                          Run Cloud Injection First
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.tooltipWrapper}>
+                      <button 
+                        className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}
+                        disabled={!isSimulating}
+                        style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
+                        onClick={() => handleAiopsClick("Simulate severe trans-Pacific cable congestion. Degrade traffic with 1000ms base latency, 3ms jitter, and apply Type Poisoning to simulate data corruption during transit.")}
+                      >
+                        Trans-Pacific Congestion
+                      </button>
+                      {!isSimulating && (
+                        <div className={styles.tooltipContent}>
+                          Run Cloud Injection First
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* AI Conversation Output */}
+                  {showAiOutput && isSimulating && (
+                    <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--color-cyan, #06b6d4)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        💡 COPILOT INSIGHT
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Post Mortem Panel */}
+                {isSimulating && (
+                  <div style={{ width: '400px', flexShrink: 0 }}>
+                    <PostMortemPanel stats={postMortemStats} />
                   </div>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <div className={styles.tooltipWrapper}>
-                  <button 
-                    className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}
-                    disabled={!isSimulating}
-                    style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
-                    onClick={() => handleAiopsClick("Simulate a catastrophic BGP route leak. Drop 100% of packets globally and enforce 504 Gateway Timeouts to mimic complete unreachability.")}
-                  >
-                    BGP Route Leak
-                  </button>
-                  {!isSimulating && (
-                    <div className={styles.tooltipContent}>
-                      Run Cloud Injection First
-                    </div>
-                  )}
-                </div>
-                <div className={styles.tooltipWrapper}>
-                  <button 
-                    className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}
-                    disabled={!isSimulating}
-                    style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
-                    onClick={() => handleAiopsClick("Trigger a massive edge node failure. Hijack all responses with 502 Bad Gateway and apply 'Empty Shell' mutation to strip all payload contents.")}
-                  >
-                    Edge Node Outage
-                  </button>
-                  {!isSimulating && (
-                    <div className={styles.tooltipContent}>
-                      Run Cloud Injection First
-                    </div>
-                  )}
-                </div>
-                <div className={styles.tooltipWrapper}>
-                  <button 
-                    className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}
-                    disabled={!isSimulating}
-                    style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
-                    onClick={() => handleAiopsClick("Simulate severe trans-Pacific cable congestion. Degrade traffic with 1000ms base latency, 3ms jitter, and apply Type Poisoning to simulate data corruption during transit.")}
-                  >
-                    Trans-Pacific Congestion
-                  </button>
-                  {!isSimulating && (
-                    <div className={styles.tooltipContent}>
-                      Run Cloud Injection First
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* AI Conversation Output */}
-              {showAiOutput && isSimulating && (
-                <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--color-cyan, #06b6d4)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    💡 COPILOT INSIGHT
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    
-                  </div>
-                </div>
-              )}
             </div>
             
           </div>
           
         </div>
-
-        {/* Post Mortem Panel placed right-aligned */}
-        {isSimulating && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', marginBottom: '16px' }}>
-            <div style={{ width: '400px', marginRight: '40px' }}>
-              <PostMortemPanel stats={postMortemStats} />
-            </div>
-          </div>
-        )}
 
         {/* Bottom Grid: Active Edge Tokens */}
         {!isSimulating && (
