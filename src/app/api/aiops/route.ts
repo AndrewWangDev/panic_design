@@ -43,7 +43,7 @@ The JSON MUST follow this exact schema:
   "insight": string (A concise, professional 1-3 sentence AIOps analysis of the impact to display in the COPILOT INSIGHT panel)
 }`;
 
-    const response = await env.AI.run('@cf/meta/llama-2-7b-chat-int8', {
+    const response = await env.AI.run('@cf/meta/llama-3-8b-instruct', {
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: instruction }
