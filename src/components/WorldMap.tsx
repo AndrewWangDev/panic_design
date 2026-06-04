@@ -18,6 +18,7 @@ interface WorldMapProps {
   animKey?: number;
   colo?: string;
   w1Colo?: string;
+  aiMapData?: any;
 }
 
 function getLatencyColor(ms: number) {
@@ -26,13 +27,17 @@ function getLatencyColor(ms: number) {
   return "#ef4444"; // red
 }
 
-export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, isPending = false, animKey = 0, colo = 'UNKNOWN', w1Colo = 'UNKNOWN' }: WorldMapProps) {
+export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, isPending = false, animKey = 0, colo = 'UNKNOWN', w1Colo = 'UNKNOWN', aiMapData }: WorldMapProps) {
   const [geographies, setGeographies] = useState<any[]>([]);
   const [viewport, setViewport] = useState({ x: 0, y: 0, k: 1 });
   const containerRef = useRef<HTMLDivElement>(null);
   
   const width = 800;
   const height = 450;
+
+  // t3 === 0 when Packet Loss triggers for a 'latency' fault
+  const isPacketLoss = fault === 'latency' && t3 === 0 && !isPending;
+  const isAbort = fault === '502' || fault === '504' || fault === '429' || isPacketLoss;
 
   useEffect(() => {
     fetch('/world-110m.json')
@@ -101,8 +106,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
   const pathGenerator = d3Geo.geoPath().projection(projection);
 
-  // Helper to get bezier parameters
-  const getBezierParams = (start: [number, number], end: [number, number]) => {
+  const getBezierParams = (start: [number, number], end: [number, number], isDetour: boolean = false) => {
     const p1 = projection(start);
     const p2 = projection(end);
     if (!p1 || !p2) return null;
@@ -125,8 +129,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
       ny = -ny;
     }
 
-    // Arc height (15% of distance)
-    const arcHeight = dist * 0.15;
+    // Arc height (15% of distance normally, 45% for detour)
+    const arcHeight = dist * (isDetour ? 0.45 : 0.15);
     
     const cx = (p1[0] + p2[0]) / 2 + nx * arcHeight;
     const cy = (p1[1] + p2[1]) / 2 + ny * arcHeight;
@@ -134,8 +138,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     return { p1, p2, cx, cy, dist };
   };
 
-  const renderCurve = (start: [number, number], end: [number, number], color: string, id: string, dash?: boolean) => {
-    const params = getBezierParams(start, end);
+  const renderCurve = (start: [number, number], end: [number, number], color: string, id: string, dash?: boolean, isDetour?: boolean) => {
+    const params = getBezierParams(start, end, isDetour);
     if (!params) return null;
     const { p1, p2, cx, cy } = params;
     const d = `M ${p1[0]},${p1[1]} Q ${cx},${cy} ${p2[0]},${p2[1]}`;
@@ -155,8 +159,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     );
   };
 
-  const renderCurveLabel = (start: [number, number], end: [number, number], ms: number, color: string, dy: number = -8) => {
-    const params = getBezierParams(start, end);
+  const renderCurveLabel = (start: [number, number], end: [number, number], ms: number, color: string, dy: number = -8, isDetour?: boolean) => {
+    const params = getBezierParams(start, end, isDetour);
     if (!params) return null;
     const { p1, p2, cx, cy } = params;
 
@@ -251,7 +255,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         />
         <circle cx="0" cy="-14" r="3" fill={isDimmed ? "#888" : "#fff"} />
         {renderPinText(lblDx, lblDy, label, isDimmed ? "#aaa" : "var(--text-primary, #fff)")}
-        {subLabel && renderPinText(subDx, subDy, subLabel, isAbort ? "#ef4444" : "#eab308", true)}
+        {subLabel && renderPinText(subDx, subDy, subLabel, isDimmed ? "#ef4444" : "#eab308", true)}
       </g>
     );
   };
@@ -265,29 +269,37 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const t3Color = getLatencyColor(t3 || 0);
   const pinColor = "#cbd5e1"; // Neutral slate-300
 
-  // t3 === 0 when Packet Loss triggers for a 'latency' fault
-  const isPacketLoss = fault === 'latency' && t3 === 0 && !isPending;
-  const isAbort = fault === '502' || fault === '504' || fault === '429' || isPacketLoss;
-  
-  let wallX = 0, wallY = 0;
-  let abortPath = '';
-  
-  if (isAbort && w2 && visualW3) {
-    const params = getBezierParams(w2, visualW3);
-    if (params) {
-      const { p1, p2, cx, cy } = params;
-      const t = 0.66;
-      const mt = 1 - t;
-      // End point of partial curve
-      wallX = mt*mt*p1[0] + 2*mt*t*cx + t*t*p2[0];
-      wallY = mt*mt*p1[1] + 2*mt*t*cy + t*t*p2[1];
-      // New control point for partial curve (De Casteljau's)
-      const cx1 = p1[0] + t * (cx - p1[0]);
-      const cy1 = p1[1] + t * (cy - p1[1]);
-      
-      abortPath = `M ${p1[0]},${p1[1]} Q ${cx1},${cy1} ${wallX},${wallY}`;
-    }
-  }
+  // Effective overrides from AI
+  const effW1 = aiMapData?.W1 || w1;
+  const effW2 = aiMapData?.W2 || w2;
+  const effW3 = aiMapData?.W3 || visualW3;
+  const effT1 = aiMapData?.T1 !== undefined ? aiMapData.T1 : t1;
+  const effT3 = aiMapData?.T3 !== undefined ? aiMapData.T3 : t3;
+
+  const flag_1 = aiMapData?.flag_1 || false;
+  const flag_2 = aiMapData ? aiMapData.flag_2 : (fault === '502' || fault === '504' || fault === '429' || isPacketLoss);
+  const flag_route_1 = aiMapData?.flag_route_1 || false;
+  const flag_route_2 = aiMapData?.flag_route_2 || false;
+
+  const w1LabelOverride = aiMapData?.W1_label;
+  const w2LabelOverride = aiMapData?.W2_label;
+  const w3LabelOverride = aiMapData?.W3_label;
+
+  const getAbortPath = (start: [number, number], end: [number, number], isDetour: boolean = false) => {
+    const params = getBezierParams(start, end, isDetour);
+    if (!params) return null;
+    const { p1, p2, cx, cy } = params;
+    const t = 0.66;
+    const mt = 1 - t;
+    const wx = mt*mt*p1[0] + 2*mt*t*cx + t*t*p2[0];
+    const wy = mt*mt*p1[1] + 2*mt*t*cy + t*t*p2[1];
+    const cx1 = p1[0] + t * (cx - p1[0]);
+    const cy1 = p1[1] + t * (cy - p1[1]);
+    return { path: `M ${p1[0]},${p1[1]} Q ${cx1},${cy1} ${wx},${wy}`, wx, wy };
+  };
+
+  const abort1Data = (flag_1 && effW1 && effW2) ? getAbortPath(effW1, effW2, flag_route_1) : null;
+  const abort2Data = (flag_2 && effW2 && effW3) ? getAbortPath(effW2, effW3, flag_route_2) : null;
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       
@@ -332,31 +344,47 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           </g>
         
         <g className="routes" key={`routes-${animKey}`}>
-          {/* Actual physical route */}
-          {!isPending && w1 && w2 && renderCurve(w1, w2, t1Color, "route-1")}
-          {!isPending && w2 && visualW3 && !isAbort && renderCurve(w2, visualW3, t3Color, "route-2")}
-          {/* Abort Wall Route */}
-          {!isPending && isAbort && abortPath && (
+          {/* Actual physical route 1 */}
+          {!isPending && effW1 && effW2 && !flag_1 && renderCurve(effW1, effW2, t1Color, "route-1", false, flag_route_1)}
+          {/* Abort Wall Route 1 */}
+          {!isPending && effW1 && effW2 && flag_1 && abort1Data && (
             <g>
-              <g>
-                <path 
-                  id="route-abort"
-                  d={abortPath} 
-                  fill="none" 
-                  stroke="#ef4444" 
-                  strokeWidth={2} 
-                  strokeDasharray="4,4"
-                  vectorEffect="non-scaling-stroke"
-                  style={{ filter: `drop-shadow(0px 0px 4px #ef4444)` }}
-                />
-              </g>
-              <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
-                  <mpath href="#route-abort" />
-                </animateMotion>
-              </circle>
-              {wallX && wallY && (
-                <g style={{ transform: `translate(${wallX}px, ${wallY}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <path 
+                id="route-abort-1"
+                d={abort1Data.path} 
+                fill="none" 
+                stroke="#ef4444" 
+                strokeWidth={2} 
+                strokeDasharray="4,4"
+                vectorEffect="non-scaling-stroke"
+                style={{ filter: `drop-shadow(0px 0px 4px #ef4444)` }}
+              />
+              {abort1Data.wx && abort1Data.wy && (
+                <g style={{ transform: `translate(${abort1Data.wx}px, ${abort1Data.wy}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                  <line x1="-10" y1="-10" x2="10" y2="10" stroke="#ef4444" strokeWidth={3} />
+                  <line x1="-10" y1="10" x2="10" y2="-10" stroke="#ef4444" strokeWidth={3} />
+                </g>
+              )}
+            </g>
+          )}
+
+          {/* Actual physical route 2 */}
+          {!isPending && effW2 && effW3 && !flag_2 && renderCurve(effW2, effW3, t3Color, "route-2", false, flag_route_2)}
+          {/* Abort Wall Route 2 */}
+          {!isPending && effW2 && effW3 && flag_2 && abort2Data && (
+            <g>
+              <path 
+                id="route-abort-2"
+                d={abort2Data.path} 
+                fill="none" 
+                stroke="#ef4444" 
+                strokeWidth={2} 
+                strokeDasharray="4,4"
+                vectorEffect="non-scaling-stroke"
+                style={{ filter: `drop-shadow(0px 0px 4px #ef4444)` }}
+              />
+              {abort2Data.wx && abort2Data.wy && (
+                <g style={{ transform: `translate(${abort2Data.wx}px, ${abort2Data.wy}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                   <line x1="-10" y1="-10" x2="10" y2="10" stroke="#ef4444" strokeWidth={3} />
                   <line x1="-10" y1="10" x2="10" y2="-10" stroke="#ef4444" strokeWidth={3} />
                 </g>
@@ -366,14 +394,14 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         </g>
 
         <g className="labels" key={`labels-${animKey}`}>
-          {!isPending && w1 && w2 && t1 !== undefined && renderCurveLabel(w1, w2, t1, t1Color, -16)}
-          {!isPending && w2 && visualW3 && t3 !== undefined && !isAbort && renderCurveLabel(w2, visualW3, t3, t3Color, -16)}
+          {!isPending && effW1 && effW2 && effT1 !== undefined && renderCurveLabel(effW1, effW2, effT1, t1Color, -16, flag_route_1)}
+          {!isPending && effW2 && effW3 && effT3 !== undefined && !flag_2 && renderCurveLabel(effW2, effW3, effT3, t3Color, -16, flag_route_2)}
         </g>
 
         {/* Packets and W2 Pulse */}
         <g className="packets" key={`packets-${animKey}`}>
           {/* Packet 1 */}
-          {!isPending && w1 && w2 && (
+          {!isPending && effW1 && effW2 && !flag_1 && (
             <g>
               <circle r={3} fill="#fff" filter={`drop-shadow(0 0 6px ${t1Color})`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                 <animateMotion dur="1s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
@@ -382,8 +410,29 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
               </circle>
             </g>
           )}
+          
+          {/* Packet 1 Abort Shatter */}
+          {flag_1 && abort1Data && (
+            <g>
+              <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                <animateMotion dur={`1000ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;0.5;0.8;1`} calcMode="linear">
+                  <mpath href="#route-abort-1" />
+                </animateMotion>
+                <animate attributeName="opacity" values={`0;0;1;0;0`} keyTimes={`0;0.49;0.5;0.8;1`} dur={`1000ms`} repeatCount="indefinite" />
+              </circle>
+              {abort1Data.wx && abort1Data.wy && (
+                <g style={{ transform: `translate(${abort1Data.wx}px, ${abort1Data.wy}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                  <circle cx={0} cy={0} r={2} fill="#ef4444" opacity="0">
+                    <animate attributeName="opacity" values="0;0;1;0;0" keyTimes={`0;0.79;0.8;0.9;1`} dur={`1000ms`} repeatCount="indefinite" />
+                    <animate attributeName="r" values="2;2;16;16;2" keyTimes={`0;0.79;0.8;0.9;1`} dur={`1000ms`} repeatCount="indefinite" />
+                  </circle>
+                </g>
+              )}
+            </g>
+          )}
+
           {/* Packet 2 */}
-          {!isPending && w2 && visualW3 && !isAbort && (
+          {!isPending && effW2 && effW3 && !flag_2 && (
             <g>
               <circle r={3} fill="#fff" filter={`drop-shadow(0 0 6px ${t3Color})`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                 <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
@@ -393,17 +442,17 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
             </g>
           )}
           
-          {isAbort && abortPath && (
+          {/* Packet 2 Abort Shatter */}
+          {flag_2 && abort2Data && (
             <g>
               <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                 <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
-                  <mpath href="#route-abort" />
+                  <mpath href="#route-abort-2" />
                 </animateMotion>
                 <animate attributeName="opacity" values={`0;0;1;0;0`} keyTimes={`0;${p2Start-0.01};${p2Start};0.8;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
               </circle>
-              {/* Shatter effect */}
-              {wallX && wallY && (
-                <g style={{ transform: `translate(${wallX}px, ${wallY}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              {abort2Data.wx && abort2Data.wy && (
+                <g style={{ transform: `translate(${abort2Data.wx}px, ${abort2Data.wy}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                   <circle cx={0} cy={0} r={2} fill="#ef4444" opacity="0">
                     <animate attributeName="opacity" values="0;0;1;0;0" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
                     <animate attributeName="r" values="2;2;16;16;2" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
@@ -414,8 +463,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           )}
           
           {/* W2 processing pulse */}
-          {!isPending && w2 && !isAbort && projection(w2) && (
-            <g style={{ transform: `translate(${projection(w2)?.[0]}px, ${projection(w2)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+          {!isPending && effW2 && !flag_2 && projection(effW2) && (
+            <g style={{ transform: `translate(${projection(effW2)?.[0]}px, ${projection(effW2)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
               <circle cx={0} cy={0} r={5} fill="none" stroke={t3Color} strokeWidth={2}>
                 <animate attributeName="r" values="0;25" dur="1.5s" repeatCount="indefinite" />
                 <animate attributeName="opacity" values="1;0" dur="1.5s" repeatCount="indefinite" />
@@ -424,8 +473,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           )}
           
           {/* Abort Pulse */}
-          {!isPending && w2 && isAbort && projection(w2) && (
-            <g style={{ transform: `translate(${projection(w2)?.[0]}px, ${projection(w2)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+          {!isPending && effW2 && flag_2 && projection(effW2) && (
+            <g style={{ transform: `translate(${projection(effW2)?.[0]}px, ${projection(effW2)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
               <circle cx={0} cy={0} r={5} fill="none" stroke="#ef4444" strokeWidth={2}>
                 <animate attributeName="r" values="0;40" dur={`${totalCycle}ms`} repeatCount="indefinite" />
                 <animate attributeName="opacity" values="1;0" dur={`${totalCycle}ms`} repeatCount="indefinite" />
@@ -438,9 +487,9 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           {(() => {
             let anchorW1: PinAnchor = 'top';
             let anchorW2: PinAnchor = 'top';
-            if (w1 && w2) {
-              const dx = w1[0] - w2[0];
-              const dy = w1[1] - w2[1];
+            if (effW1 && effW2) {
+              const dx = effW1[0] - effW2[0];
+              const dy = effW1[1] - effW2[1];
               const dist = Math.sqrt(dx*dx + dy*dy);
               if (dist < 2) {
                 anchorW1 = 'top-left';
@@ -450,10 +499,10 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
             return (
               <>
-                {w1 && renderPin(w1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", pinColor, false, undefined, anchorW1)}
+                {effW1 && renderPin(effW1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", pinColor, false, undefined, anchorW1)}
                 
-                {isPending && w1 && projection(w1) && (
-                  <g style={{ transform: `translate(${projection(w1)?.[0]}px, ${projection(w1)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                {isPending && effW1 && projection(effW1) && (
+                  <g style={{ transform: `translate(${projection(effW1)?.[0]}px, ${projection(effW1)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                     <circle cx={0} cy={0} r={20} fill="none" stroke="#10b981" strokeWidth={1.5} opacity="0">
                       <animate attributeName="r" values="0;40" dur="1.5s" repeatCount="indefinite" />
                       <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
@@ -462,9 +511,9 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
                 )}
 
                 {/* Removed visual jitter offsets to prevent map lines and pins from detaching */}
-                {!isPending && w1 && renderPin(w1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", t1Color, false, undefined, anchorW1)}
-                {!isPending && w2 && renderPin(w2, `Edge Gateway (${colo})`, pinColor, false, isPacketLoss ? 'Packet Loss' : fault === 'latency' ? `${t2} ms` : fault === '504' ? `504 Timeout (${t2} ms)` : fault === '502' ? '502 Bad Gateway' : '429 Rate Limit', anchorW2)}
-                {!isPending && visualW3 && renderPin(visualW3, "Upstream Target", isAbort ? "#444" : pinColor, isAbort)}
+                {!isPending && effW1 && renderPin(effW1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", t1Color, false, w1LabelOverride, anchorW1)}
+                {!isPending && effW2 && renderPin(effW2, `Edge Gateway (${colo})`, pinColor, false, w2LabelOverride, anchorW2)}
+                {!isPending && effW3 && renderPin(effW3, "Upstream Target", (flag_2 || isAbort) ? "#444" : pinColor, (flag_2 || isAbort), w3LabelOverride)}
               </>
             );
           })()}
