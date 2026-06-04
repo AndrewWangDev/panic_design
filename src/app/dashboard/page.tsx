@@ -178,6 +178,10 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
   const [testState, setTestState] = useState<'idle' | 'testing' | 'done'>('idle');
   const [testLogs, setTestLogs] = useState<any[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const baselineT1Ref = useRef<number | null>(null);
+  const baselineW2Ref = useRef<[number, number] | null>(null);
+  const baselineW2ColoRef = useRef<string | null>(null);
+  const baselineW2DistRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -235,6 +239,12 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
 
   const handleTest = async () => {
     const isFirst = testState === 'idle';
+    if (isFirst) {
+      baselineT1Ref.current = null;
+      baselineW2Ref.current = null;
+      baselineW2ColoRef.current = null;
+      baselineW2DistRef.current = null;
+    }
     onSimulationStart(isFirst);
     setTestState('testing');
     setTestLogs([
@@ -270,21 +280,50 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         alpha = Math.max(0.02, Math.min(0.98, alpha)); // Bound it
 
         let minDistance = 0;
-        if (w1 && w3 && w1.length === 2 && w3.length === 2 && (w3[0] !== 0 || w3[1] !== 0)) {
-          const w2Lng = (1 - alpha) * w1[0] + alpha * w3[0];
-          const w2Lat = (1 - alpha) * w1[1] + alpha * w3[1];
-          data.telemetry.w2 = [w2Lng, w2Lat];
-          const result = findClosestColo(w2Lat, w2Lng);
-          estimatedColo = result.name;
-          minDistance = result.distance;
-        } else {
-          // If no W3, offset W2 slightly from W1
-          data.telemetry.w2 = [w1[0] + 1.5, w1[1] - 1.5];
-          estimatedColo = data.telemetry.colo;
+        let isHysteresisTriggered = false;
+        let t1DeltaPercent = 0;
+        let t1DeltaSign = '+';
+
+        if (!isFirst && baselineT1Ref.current !== null && baselineW2Ref.current) {
+          const delta = T1 - baselineT1Ref.current;
+          t1DeltaPercent = Math.abs(delta / Math.max(1, baselineT1Ref.current)) * 100;
+          t1DeltaSign = delta >= 0 ? '+' : '-';
+          
+          if (t1DeltaPercent < 40) {
+            isHysteresisTriggered = true;
+          }
         }
+
+        if (isHysteresisTriggered) {
+          data.telemetry.w2 = baselineW2Ref.current;
+          estimatedColo = baselineW2ColoRef.current || 'UNKNOWN';
+          minDistance = baselineW2DistRef.current || 0;
+        } else {
+          if (w1 && w3 && w1.length === 2 && w3.length === 2 && (w3[0] !== 0 || w3[1] !== 0)) {
+            const w2Lng = (1 - alpha) * w1[0] + alpha * w3[0];
+            const w2Lat = (1 - alpha) * w1[1] + alpha * w3[1];
+            data.telemetry.w2 = [w2Lng, w2Lat];
+            const result = findClosestColo(w2Lat, w2Lng);
+            estimatedColo = result.name;
+            minDistance = result.distance;
+          } else {
+            // If no W3, offset W2 slightly from W1
+            data.telemetry.w2 = [w1[0] + 1.5, w1[1] - 1.5];
+            estimatedColo = data.telemetry.colo;
+          }
+          // Update baseline
+          baselineT1Ref.current = T1;
+          baselineW2Ref.current = data.telemetry.w2;
+          baselineW2ColoRef.current = estimatedColo;
+          baselineW2DistRef.current = minDistance;
+        }
+        
         data.telemetry.w2_colo = estimatedColo;
         data.telemetry.w2_distance = minDistance;
         data.telemetry.alpha_weight = alpha;
+        data.telemetry.isHysteresisTriggered = isHysteresisTriggered;
+        data.telemetry.t1DeltaPercent = t1DeltaPercent;
+        data.telemetry.t1DeltaSign = t1DeltaSign;
         realTelemetry = data.telemetry;
       }
       
@@ -303,19 +342,54 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       const w1_colo = realTelemetry.colo || 'UNKNOWN';
       const w2_colo = realTelemetry.w2_colo || 'UNKNOWN';
       const w3_colo = 'Target';
-      const alpha_weight = realTelemetry.alpha_weight ? realTelemetry.alpha_weight.toFixed(3) : 'N/A';
-      const snap_error_km = realTelemetry.w2_distance ? Math.round(realTelemetry.w2_distance) : 0;
+      const alpha_weight = realTelemetry.alpha_weight !== undefined ? realTelemetry.alpha_weight.toFixed(3) : 'N/A';
+      const snap_error_km = realTelemetry.w2_distance !== undefined ? Math.round(realTelemetry.w2_distance) : 0;
+      
+      const isHys = realTelemetry.isHysteresisTriggered;
+      const t1DeltaStr = realTelemetry.t1DeltaPercent ? realTelemetry.t1DeltaPercent.toFixed(1) : '0.0';
+      const t1Sign = realTelemetry.t1DeltaSign || '+';
+      const baseT1 = baselineT1Ref.current ? Math.round(baselineT1Ref.current) : t1_latency;
+
+      let lgpaLogs: string[] = [];
+      if (!isFirst && isHys) {
+        lgpaLogs = [
+          `> [Telemetry] Payload received. Extracting routing metrics...`,
+          `> [Network] Activating LGPA (Latency-Guided Proximity Anchoring) Engine...`,
+          `> [Network] ├─ [Step 1] Latency Computation  : T1 = ${t1_latency}ms (Δ ${t1Sign}${t1DeltaStr}% vs Baseline ${baseT1}ms)`,
+          `> [Network] ├─ [Step 2] Hysteresis Check     : ΔT1 < 40%. Spatial Drift Inhibited.`,
+          `> [Network] └─ [Step 3] Proximity Anchoring  : Sticky Anchor enforced at [${w2_colo}]`,
+          `> `,
+          `> [Chaos] Fault Engine Engaged at Intermediary Node [${w2_colo}]`,
+          `> [Telemetry] SPATIAL TOPOLOGY: ${w1_colo} ➔ ${w2_colo} ➔ ${w3_colo}`
+        ];
+      } else if (!isFirst && !isHys && baselineT1Ref.current !== null) {
+        lgpaLogs = [
+          `> [Telemetry] Payload received. Extracting routing metrics...`,
+          `> [Network] Activating LGPA (Latency-Guided Proximity Anchoring) Engine...`,
+          `> [Network] ├─ [Step 1] Latency Computation  : T1 = ${t1_latency}ms (Δ ${t1Sign}${t1DeltaStr}% vs Baseline ${baseT1}ms)`,
+          `> [Network] ├─ [Step 2] Hysteresis Check     : Threshold Broken! Topology Drift Detected.`,
+          `> [Network] ├─ [Step 3] Spatial Interpolation: Recalculating Absolute Displacement...`,
+          `> [Network] └─ [Step 4] Proximity Anchoring  : Anchor re-snapped to [${w2_colo}] (Δd ≈ ${snap_error_km}km)`,
+          `> `,
+          `> [Chaos] Fault Engine Engaged at Intermediary Node [${w2_colo}]`,
+          `> [Telemetry] SPATIAL TOPOLOGY: ${w1_colo} ➔ ${w2_colo} ➔ ${w3_colo}`
+        ];
+      } else {
+        lgpaLogs = [
+          `> [Telemetry] Payload received. Extracting routing metrics...`,
+          `> [Network] Activating LGPA (Latency-Guided Proximity Anchoring) Engine...`,
+          `> [Network] ├─ [Step 1] Latency Computation  : T1 = ${t1_latency}ms, T3 = ${t3_latency}ms`,
+          `> [Network] ├─ [Step 2] Spatial Interpolation: Weight α ≈ ${alpha_weight} (Virtual Coordinate Derived)`,
+          `> [Network] ├─ [Step 3] Haversine Matrix Scan: Calculating surface distances to topology...`,
+          `> [Network] └─ [Step 4] Proximity Anchoring  : Snapped to [${w2_colo}] (Δd ≈ ${snap_error_km}km)`,
+          `> `,
+          `> [Chaos] Fault Engine Engaged at Intermediary Node [${w2_colo}]`,
+          `> [Telemetry] SPATIAL TOPOLOGY: ${w1_colo} ➔ ${w2_colo} ➔ ${w3_colo}`
+        ];
+      }
 
       const lines = [
-        `> [Telemetry] Payload received. Extracting routing metrics...`,
-        `> [Network] Activating LGPA (Latency-Guided Proximity Anchoring) Engine...`,
-        `> [Network] ├─ [Step 1] Latency Computation  : T1 = ${t1_latency}ms, T3 = ${t3_latency}ms`,
-        `> [Network] ├─ [Step 2] Spatial Interpolation: Weight α ≈ ${alpha_weight} (Virtual Coordinate Derived)`,
-        `> [Network] ├─ [Step 3] Haversine Matrix Scan: Calculating surface distances to topology...`,
-        `> [Network] └─ [Step 4] Proximity Anchoring  : Snapped to [${w2_colo}] (Δd ≈ ${snap_error_km}km)`,
-        `> `,
-        `> [Chaos] Fault Engine Engaged at Intermediary Node [${w2_colo}]`,
-        `> [Telemetry] SPATIAL TOPOLOGY: ${w1_colo} ➔ ${w2_colo} ➔ ${w3_colo}`,
+        ...lgpaLogs,
         `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
         `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'}`,
       ];
