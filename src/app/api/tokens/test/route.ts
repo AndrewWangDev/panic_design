@@ -31,7 +31,8 @@ export async function POST(req: Request) {
         method: 'GET',
         headers: {
           'Accept': '*/*'
-        }
+        },
+        redirect: 'manual'
       });
       status = res.status;
       statusText = res.statusText;
