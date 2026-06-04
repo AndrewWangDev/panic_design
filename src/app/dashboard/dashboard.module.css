@@ -142,14 +142,16 @@
 
 .edgePayloadCardSimulating {
   width: 100%;
-  height: 550px;
+  min-height: 550px;
+  height: auto;
 }
 
 .payloadContent {
   display: flex;
   flex-direction: row;
   width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 380px;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
