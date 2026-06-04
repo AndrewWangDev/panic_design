@@ -334,20 +334,22 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           {/* Actual physical route */}
           {!isPending && w1 && w2 && renderCurve(w1, w2, t1Color, "route-1")}
           {!isPending && w2 && visualW3 && !isAbort && renderCurve(w2, visualW3, t3Color, "route-2")}
-          
           {/* Abort Wall Route */}
           {isAbort && abortPath && (
             <g>
-              <path 
-                id="route-abort"
-                d={abortPath} 
-                fill="none" 
-                stroke="#ef4444" 
-                strokeWidth={2} 
-                strokeDasharray="4,4"
-                vectorEffect="non-scaling-stroke"
-                style={{ filter: `drop-shadow(0px 0px 4px #ef4444)` }}
-              />
+              <g>
+                <animate attributeName="opacity" values={`0;0;1;1`} keyTimes={`0;${p2Start-0.01};${p2Start};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+                <path 
+                  id="route-abort"
+                  d={abortPath} 
+                  fill="none" 
+                  stroke="#ef4444" 
+                  strokeWidth={2} 
+                  strokeDasharray="4,4"
+                  vectorEffect="non-scaling-stroke"
+                  style={{ filter: `drop-shadow(0px 0px 4px #ef4444)` }}
+                />
+              </g>
               <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                 <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
                   <mpath href="#route-abort" />
@@ -355,6 +357,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
               </circle>
               {wallX && wallY && (
                 <g style={{ transform: `translate(${wallX}px, ${wallY}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                  <animate attributeName="opacity" values={`0;0;1;1`} keyTimes={`0;${p2Start-0.01};${p2Start};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
                   <line x1="-10" y1="-10" x2="10" y2="10" stroke="#ef4444" strokeWidth={3} />
                   <line x1="-10" y1="10" x2="10" y2="-10" stroke="#ef4444" strokeWidth={3} />
                 </g>

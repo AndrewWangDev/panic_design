@@ -57,7 +57,7 @@ function findClosestColo(lat: number, lng: number) {
       best = colo;
     }
   }
-  return best;
+  return { name: best, distance: minD };
 }
 
 const renderFaultBadges = (config: any, isRevoked?: boolean) => {
@@ -269,17 +269,22 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         }
         alpha = Math.max(0.02, Math.min(0.98, alpha)); // Bound it
 
+        let minDistance = 0;
         if (w1 && w3 && w1.length === 2 && w3.length === 2 && (w3[0] !== 0 || w3[1] !== 0)) {
           const w2Lng = (1 - alpha) * w1[0] + alpha * w3[0];
           const w2Lat = (1 - alpha) * w1[1] + alpha * w3[1];
           data.telemetry.w2 = [w2Lng, w2Lat];
-          estimatedColo = findClosestColo(w2Lat, w2Lng);
+          const result = findClosestColo(w2Lat, w2Lng);
+          estimatedColo = result.name;
+          minDistance = result.distance;
         } else {
           // If no W3, offset W2 slightly from W1
           data.telemetry.w2 = [w1[0] + 1.5, w1[1] - 1.5];
           estimatedColo = data.telemetry.colo;
         }
         data.telemetry.w2_colo = estimatedColo;
+        data.telemetry.w2_distance = minDistance;
+        data.telemetry.alpha_weight = alpha;
         realTelemetry = data.telemetry;
       }
       
@@ -293,8 +298,24 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         });
       }
       
+      const t1_latency = Math.round(realTelemetry.t1 * 2);
+      const t3_latency = Math.round(realTelemetry.t3 * 2);
+      const w1_colo = realTelemetry.colo || 'UNKNOWN';
+      const w2_colo = realTelemetry.w2_colo || 'UNKNOWN';
+      const w3_colo = 'Target';
+      const alpha_weight = realTelemetry.alpha_weight ? realTelemetry.alpha_weight.toFixed(3) : 'N/A';
+      const snap_error_km = realTelemetry.w2_distance ? Math.round(realTelemetry.w2_distance) : 0;
+
       const lines = [
-        `> [Chaos] Fault Engine Engaged: ${fault === 'latency' ? 'Traffic Degradation' : `HTTP ${fault}`}`,
+        `> [Telemetry] Payload received. Extracting routing metrics...`,
+        `> [Network] Activating LGPA (Latency-Guided Proximity Anchoring) Engine...`,
+        `> [Network] ├─ [Step 1] Latency Computation  : T1 = ${t1_latency}ms, T3 = ${t3_latency}ms`,
+        `> [Network] ├─ [Step 2] Spatial Interpolation: Weight α ≈ ${alpha_weight} (Virtual Coordinate Derived)`,
+        `> [Network] ├─ [Step 3] Haversine Matrix Scan: Calculating surface distances to topology...`,
+        `> [Network] └─ [Step 4] Proximity Anchoring  : Snapped to [${w2_colo}] (Δd ≈ ${snap_error_km}km)`,
+        `> `,
+        `> [Chaos] Fault Engine Engaged at Intermediary Node [${w2_colo}]`,
+        `> [Telemetry] SPATIAL TOPOLOGY: ${w1_colo} ➔ ${w2_colo} ➔ ${w3_colo}`,
         `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
         `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'}`,
       ];
@@ -324,24 +345,24 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       const t3_rtt = Math.round(realTelemetry.t3 * 2);
 
       if (data.status === 444) {
-        lines.push(`[Telemetry] Edge Network RTT: ${t1_rtt}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul: -- (PACKET_DROP)`);
+        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul (T3): -- (PACKET_DROP)`);
         lines.push(`[System] Target Unreachable. Edge payload dropped.`);
       } else if (fault === 'latency') {
-        lines.push(`[Telemetry] Edge Network RTT: ${t1_rtt}ms`);
-        lines.push(`[Telemetry] Injected Latency: ${t2_rtt}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul: ${t3_rtt}ms`);
+        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+        lines.push(`[Telemetry] Injected Latency (T2): ${t2_rtt}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul (T3): ${t3_rtt}ms`);
       } else if (fault === '502') {
-        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(data.totalLatency)}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
+        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul (T3): -- (ABORTED)`);
         lines.push(`[System] Target Unreachable. Edge payload delivered.`);
       } else if (fault === '504') {
-        lines.push(`[Telemetry] Edge Network RTT: ${t1_rtt}ms`);
-        lines.push(`[Telemetry] Edge Processing: ${t2_rtt}ms (Timeout Wait)`);
-        lines.push(`[Telemetry] Upstream Backhaul: -- (TIMEOUT_EXCEEDED)`);
+        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+        lines.push(`[Telemetry] Edge Processing (T2): ${t2_rtt}ms (Timeout Wait)`);
+        lines.push(`[Telemetry] Upstream Backhaul (T3): -- (TIMEOUT_EXCEEDED)`);
       } else if (fault === '429') {
-        lines.push(`[Telemetry] Edge Network RTT: ${Math.round(data.totalLatency)}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul: -- (ABORTED)`);
+        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+        lines.push(`[Telemetry] Upstream Backhaul (T3): -- (ABORTED)`);
         lines.push(`[System] Target Unreachable. Edge payload delivered.`);
       }
       
@@ -387,7 +408,8 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
               else if (l.startsWith('< HTTP/1.1 2')) color = '#10b981';
               else if (l.startsWith('< HTTP/1.1 4')) color = '#f59e0b';
               else if (l.startsWith('[System]')) color = '#38bdf8';
-              else if (l.startsWith('[Telemetry]')) color = '#10b981';
+              else if (l.startsWith('[Telemetry]') || l.startsWith('> [Telemetry]')) color = '#10b981';
+              else if (l.startsWith('> [Network]')) color = '#c084fc'; // Purple for Network LGPA Engine
               else if (l.startsWith('> [Chaos]')) color = '#eab308';
               else if (l.startsWith('>')) color = '#38bdf8';
             }
