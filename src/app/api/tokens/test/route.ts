@@ -62,17 +62,8 @@ export async function POST(req: Request) {
     
     const payload = decodeJwt(token);
 
-    if (hdrT2) {
-      t2 = Number(hdrT2);
-    } else if (payload?.chaosPolicy?.latency?.base) {
-      t2 = payload.chaosPolicy.latency.base;
-    }
-
-    if (hdrT3) {
-      t3 = Number(hdrT3);
-    } else if (status > 0 && status !== 444 && status !== 504 && status !== 502) {
-      t3 = Math.max(10, t1_total - t2 - 50);
-    }
+    if (hdrT2) t2 = Number(hdrT2);
+    if (hdrT3) t3 = Number(hdrT3);
 
     // Fallbacks if data plane headers are missing (e.g. gateway offline or not deployed yet)
     if (!hdrW1) w1 = [-118.2437, 34.0522]; // Mock CF LAX
