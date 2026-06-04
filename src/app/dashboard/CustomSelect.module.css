@@ -24,6 +24,12 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
+.selectTrigger span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .largeTrigger {
   padding: 12px 24px;
   font-size: 1.05rem;
