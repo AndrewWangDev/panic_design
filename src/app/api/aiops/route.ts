@@ -25,19 +25,19 @@ You must return ONLY a raw, valid JSON object (no markdown, no conversation, jus
 The JSON MUST follow this exact schema:
 {
   "map_data": {
-    "T1": number (latency in ms from Cloud Runner to Edge),
-    "T2": number (latency in ms injected by fault),
-    "T3": number (latency in ms from Edge to Upstream, 0 if dropped),
+    "T1": number (latency in ms from Cloud Runner to Edge. If W1➔W2 fails, this can be 0 or high),
+    "T2": number (latency in ms injected by fault at Edge Gateway),
+    "T3": number (latency in ms from Edge to Upstream. 0 if dropped/aborted),
     "W1": [longitude, latitude] (Cloud Runner),
     "W2": [longitude, latitude] (Edge Gateway),
     "W3": [longitude, latitude] (Upstream Target),
     "w2_colo": string (Edge colo code, e.g., "LAX"),
-    "flag_1": boolean (true if the route W1 ➔ W2 is completely broken/aborted),
-    "flag_2": boolean (true if the route W2 ➔ W3 is completely broken/aborted),
+    "flag_1": boolean (true ONLY if the route W1 ➔ W2 is completely broken/aborted. WARNING: For 502/504/429 at Edge Gateway, the packet successfully reaches Edge W2, so W1➔W2 is NOT broken, flag_1 MUST be false!),
+    "flag_2": boolean (true if the route W2 ➔ W3 is broken/aborted. e.g., for 502/504 or Edge Packet Loss, the packet never reaches W3, so flag_2 MUST be true. A dashed line with a red cross will be drawn from W2 to W3),
     "flag_route_1": boolean (true if W1 ➔ W2 route is detoured/inefficient),
     "flag_route_2": boolean (true if W2 ➔ W3 route is detoured/inefficient),
     "W1_label": string (extra label for W1, or ""),
-    "W2_label": string (extra label for W2, e.g., "Packet Loss", or ""),
+    "W2_label": string (extra label for W2, e.g., "502 Bad Gateway", "504 Gateway Timeout", "Packet Loss", or ""),
     "W3_label": string (extra label for W3, e.g., "Unreachable", or "")
   },
   "insight": string (A concise, professional 1-3 sentence AIOps analysis of the impact to display in the COPILOT INSIGHT panel)
