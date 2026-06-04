@@ -725,6 +725,11 @@ const PostMortemPanel = ({ stats }: { stats: any }) => {
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.fastFailCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.fastFailCount} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
         </div>
         
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Fail-Open Triggered</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.failOpenCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.failOpenCount} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
+        </div>
+        
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Payload Mutilation</span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.mutilationCount > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{stats.mutilationCount} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
@@ -857,6 +862,7 @@ export default function Dashboard() {
   const [postMortemStats, setPostMortemStats] = useState({
     fastFailCount: 0,
     mutilationCount: 0,
+    failOpenCount: 0,
     t1Sum: 0,
     t1Count: 0,
     t3Sum: 0,
@@ -1474,6 +1480,7 @@ export default function Dashboard() {
                           setPostMortemStats({
                             fastFailCount: 0,
                             mutilationCount: 0,
+                            failOpenCount: 0,
                             t1Sum: 0,
                             t1Count: 0,
                             t3Sum: 0,
@@ -1496,6 +1503,10 @@ export default function Dashboard() {
                           
                           if ([502, 504, 429].includes(data.status)) {
                             next.fastFailCount++;
+                          }
+
+                          if (data.chaosReason) {
+                            next.failOpenCount++;
                           }
                           
                           if (data.status === 444) {
@@ -1583,7 +1594,7 @@ export default function Dashboard() {
                           trace_origin: "CHENGDU_CONTROL_CENTER"
                         }
                       },
-                      signature: generatedToken ? "V2ZfcGFuaWNfZGVzaWduX2VkamVfc2lnbmF0dXJl" : "..."
+                      signature: generatedToken ? "V2ZfcGFuaWNfZGVzaWduX2VkamVfc2lnbmF0dXJl" : "hx9GqLzV8eT6oN2wM7cK1jP4uR5yY0bE3fA9dX6sV8"
                     }, null, 2))
                   }} />
                 </div>
