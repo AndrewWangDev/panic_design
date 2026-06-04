@@ -872,6 +872,24 @@ export default function Dashboard() {
   const [enableAnimation, setEnableAnimation] = useState(false);
   const [showMobileWarning, setShowMobileWarning] = useState(false);
 
+  const [aiInputValue, setAiInputValue] = useState('');
+  const [showAiOutput, setShowAiOutput] = useState(false);
+  const typeWriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleAiopsClick = (text: string) => {
+    if (typeWriterIntervalRef.current) clearInterval(typeWriterIntervalRef.current);
+    setAiInputValue('');
+    setShowAiOutput(false);
+    let i = 0;
+    typeWriterIntervalRef.current = setInterval(() => {
+      setAiInputValue(text.substring(0, i + 1));
+      i++;
+      if (i >= text.length) {
+        clearInterval(typeWriterIntervalRef.current!);
+      }
+    }, 20);
+  };
+
   // Load state from localStorage on initial render
   useEffect(() => {
     const saved = localStorage.getItem('panic-dashboard-state');
@@ -1383,7 +1401,7 @@ export default function Dashboard() {
                 onClick={handleGenerate}
               >
                 {isGenerating ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '8px', textTransform: 'uppercase' }}>
                     <div className={styles.spinner} />
                     Compiling...
                   </span>
@@ -1578,8 +1596,17 @@ export default function Dashboard() {
                   className={styles.aiInput} 
                   placeholder="Describe a disaster scenario, e.g., Drop 20% traffic from Asia..."
                   disabled={!isSimulating}
+                  value={aiInputValue}
+                  onChange={(e) => setAiInputValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && aiInputValue.trim().length > 0) setShowAiOutput(true);
+                  }}
                 />
-                <button className={styles.aiSendBtn} disabled={!isSimulating}>
+                <button 
+                  className={styles.aiSendBtn} 
+                  disabled={!isSimulating || aiInputValue.trim().length === 0}
+                  onClick={() => setShowAiOutput(true)}
+                >
                   <Send size={16} />
                 </button>
                 {!isSimulating && (
@@ -1594,6 +1621,7 @@ export default function Dashboard() {
                     className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}
                     disabled={!isSimulating}
                     style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
+                    onClick={() => handleAiopsClick("Simulate a catastrophic BGP route leak. Drop 100% of packets globally and enforce 504 Gateway Timeouts to mimic complete unreachability.")}
                   >
                     BGP Route Leak
                   </button>
@@ -1608,6 +1636,7 @@ export default function Dashboard() {
                     className={`${styles.aiopsChip} ${styles.aiopsChipEdge}`}
                     disabled={!isSimulating}
                     style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
+                    onClick={() => handleAiopsClick("Trigger a massive edge node failure. Hijack all responses with 502 Bad Gateway and apply 'Empty Shell' mutation to strip all payload contents.")}
                   >
                     Edge Node Outage
                   </button>
@@ -1622,6 +1651,7 @@ export default function Dashboard() {
                     className={`${styles.aiopsChip} ${styles.aiopsChipCable}`}
                     disabled={!isSimulating}
                     style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
+                    onClick={() => handleAiopsClick("Simulate severe trans-Pacific cable congestion. Degrade traffic with 1000ms base latency, 3ms jitter, and apply Type Poisoning to simulate data corruption during transit.")}
                   >
                     Trans-Pacific Congestion
                   </button>
@@ -1632,6 +1662,18 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
+
+              {/* AI Conversation Output */}
+              {showAiOutput && isSimulating && (
+                <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--color-cyan, #06b6d4)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    💡 COPILOT INSIGHT
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    
+                  </div>
+                </div>
+              )}
             </div>
             
           </div>

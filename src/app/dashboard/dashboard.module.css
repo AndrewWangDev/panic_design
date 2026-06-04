@@ -251,6 +251,7 @@
 
 .aiInput {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   color: var(--text-primary);
