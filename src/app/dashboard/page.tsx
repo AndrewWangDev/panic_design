@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search, Lock, MonitorSmartphone, Sparkles, Send } from 'lucide-react';
+import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search, Lock, MonitorSmartphone, Sparkles, Send, RotateCcw } from 'lucide-react';
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
 import WorldMap from '@/components/WorldMap';
@@ -698,7 +698,7 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
     </div>
   );
 };
-const PostMortemPanel = ({ stats }: { stats: any }) => {
+const PostMortemPanel = ({ stats, onClear }: { stats: any, onClear: () => void }) => {
   if (stats.totalRequests === 0) return null;
 
   const getLatencyColor = (val: number, threshold1: number = 200, threshold2: number = 500) => {
@@ -725,8 +725,18 @@ const PostMortemPanel = ({ stats }: { stats: any }) => {
       border: '1px solid rgba(56, 189, 248, 0.15)',
       boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
     }}>
-      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Activity size={16} /> INJECTION POST-MORTEM
+      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Activity size={16} /> INJECTION POST-MORTEM
+        </div>
+        <button 
+          onClick={onClear} 
+          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#94a3b8', fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textTransform: 'uppercase', fontWeight: 600 }}
+          onMouseOver={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+        >
+          <RotateCcw size={12} /> CLEAR
+        </button>
       </div>
       
       <div style={{ marginBottom: '24px' }}>
@@ -950,11 +960,22 @@ export default function Dashboard() {
           baseline
         })
       });
-      const data = await res.json();
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        throw new Error(await res.text());
+      }
+      
+      if (!res.ok) {
+        throw new Error(data?.error || data || 'Unknown Error');
+      }
+
       setAiState({ isLoading: false, data });
-    } catch (e) {
-      console.error(e);
-      setAiState({ isLoading: false, data: { insight: "AI Service Error: Failed to fetch simulation result." } });
+    } catch (e: any) {
+      console.error('AIOps Error:', e);
+      setAiState({ isLoading: false, data: { insight: `AI Service Error: ${e.message}` } });
     }
   };
 
@@ -1532,21 +1553,7 @@ export default function Dashboard() {
                         setIsSimulating(true);
                         setIsTestPending(true);
                         setSimulationKey(prev => prev + 1);
-                        if (isFirst) {
-                          setPostMortemStats({
-                            fastFailCount: 0,
-                            mutilationCount: 0,
-                            failOpenCount: 0,
-                            t1Sum: 0,
-                            t1Count: 0,
-                            t3Sum: 0,
-                            t3Count: 0,
-                            totalRttSum: 0,
-                            totalRttCount: 0,
-                            packetDropCount: 0,
-                            totalRequests: 0
-                          });
-                        }
+                        // Post-mortem no longer resets automatically, use Clear button
                       }}
                       onTelemetryReceived={(data) => {
                         setTelemetryData(data);
@@ -1777,7 +1784,19 @@ export default function Dashboard() {
                 {/* Post Mortem Panel */}
                 {isSimulating && (
                   <div style={{ width: '400px', flexShrink: 0 }}>
-                    <PostMortemPanel stats={postMortemStats} />
+                    <PostMortemPanel stats={postMortemStats} onClear={() => setPostMortemStats({
+                      fastFailCount: 0,
+                      mutilationCount: 0,
+                      failOpenCount: 0,
+                      t1Sum: 0,
+                      t1Count: 0,
+                      t3Sum: 0,
+                      t3Count: 0,
+                      totalRttSum: 0,
+                      totalRttCount: 0,
+                      packetDropCount: 0,
+                      totalRequests: 0
+                    })} />
                   </div>
                 )}
               </div>
