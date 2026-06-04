@@ -606,7 +606,7 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
   const chartW = w - paddingLeft - paddingRight;
   const chartH = h - paddingTop - paddingBottom;
   
-  const scaleY = (val: number) => h - paddingBottom - (val / maxVal) * chartH;
+  const scaleY = (val: number) => Math.max(0, h - paddingBottom - (val / maxVal) * chartH);
   const scaleX = (idx: number) => paddingLeft + (idx / (dataPoints - 1)) * chartW;
 
   let pathData = '';
