@@ -92,12 +92,8 @@ export async function POST(req: Request) {
     }
     // Calculate Final Timings
     let t1_total_net = t1_total;
-    // Strip TLS and cold-start overhead (approx 200-400ms) to simulate pure network ICMP/TCP ping RTT
-    let overhead = t1_total_net > 150 ? t1_total_net - Math.floor(Math.random() * 20 + 30) : 0; 
-    // Ensure we don't subtract t2 and t3 from the calculation
-    overhead = Math.min(overhead, Math.max(0, t1_total_net - t2 - t3 - 20));
-    t1_total_net -= overhead;
-
+    
+    // Calculate one-way trips for visual map scaling
     const t3_visual = t3 / 2; // W2 -> W3 single trip
     let t1_visual = (t1_total_net - t2 - t3) / 2; // W1 -> W2 single trip
     if (t1_visual < 5) t1_visual = 5; // Prevent negative rendering visually
@@ -125,7 +121,6 @@ export async function POST(req: Request) {
       status,
       statusText,
       totalLatency: t1_total_net,
-      overheadLatency: overhead,
       telemetry: {
          w1, w3,
          t1: t1_visual,
