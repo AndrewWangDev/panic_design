@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search, Lock, MonitorSmartphone } from 'lucide-react';
+import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search, Lock, MonitorSmartphone, Sparkles, Send } from 'lucide-react';
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
 import WorldMap from '@/components/WorldMap';
@@ -867,7 +867,7 @@ export default function Dashboard() {
     totalRequests: 0
   });
   const [isTestPending, setIsTestPending] = useState(false);
-
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [enableAnimation, setEnableAnimation] = useState(false);
   const [showMobileWarning, setShowMobileWarning] = useState(false);
@@ -996,8 +996,8 @@ export default function Dashboard() {
   const isFormValid = targetHost.length > 0 && !targetHostError && fault !== null && (fault !== 'latency' || (packetLoss === '' || (Number.isInteger(Number(packetLoss)) && Number(packetLoss) >= 0 && Number(packetLoss) <= 100)));
 
   const handleGenerate = async () => {
-    if (!isFormValid) return;
-    
+    if (!isFormValid || isGenerating) return;
+    setIsGenerating(true);
     let ttlHours = 0.25;
     if (ttl === '1h') ttlHours = 1;
     if (ttl === '12h') ttlHours = 12;
@@ -1034,6 +1034,8 @@ export default function Dashboard() {
     } catch (err) {
       console.error(err);
       alert('Error generating token');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -1376,11 +1378,16 @@ export default function Dashboard() {
 
             <div className={styles.generateContainer}>
               <button 
-                className={`${styles.generateBtn} ${isFormValid ? styles.ready : styles.disabled}`}
-                disabled={!isFormValid}
+                className={`${styles.generateBtn} ${isFormValid && !isGenerating ? styles.ready : styles.disabled}`}
+                disabled={!isFormValid || isGenerating}
                 onClick={handleGenerate}
               >
-                Deploy Chaos Token
+                {isGenerating ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className={styles.spinner} />
+                    Compiling...
+                  </span>
+                ) : 'Deploy Chaos Token'}
               </button>
             </div>
           </div>
@@ -1561,6 +1568,25 @@ export default function Dashboard() {
             <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--dash-card-border)' }}>
               <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '16px' }}>
                 AIOps What-If Simulation
+              </div>
+
+              {/* AI Instruction Input */}
+              <div className={`${styles.tooltipWrapper} ${styles.aiInputWrapper} ${!isSimulating ? styles.disabled : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
+                <Sparkles size={16} color="var(--color-cyan, #06b6d4)" />
+                <input 
+                  type="text" 
+                  className={styles.aiInput} 
+                  placeholder="Describe a disaster scenario, e.g., Drop 20% traffic from Asia..."
+                  disabled={!isSimulating}
+                />
+                <button className={styles.aiSendBtn} disabled={!isSimulating}>
+                  <Send size={16} />
+                </button>
+                {!isSimulating && (
+                  <div className={styles.tooltipContent}>
+                    Run Cloud Injection First
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <div className={styles.tooltipWrapper}>
