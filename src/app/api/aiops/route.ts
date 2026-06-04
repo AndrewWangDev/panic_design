@@ -12,6 +12,10 @@ export async function POST(req: Request) {
 
     const { instruction, baseline } = await req.json();
 
+    if (instruction === 'DEBUG_PING') {
+      return NextResponse.json({ debug: true, hasAI: !!env.AI });
+    }
+
     const systemPrompt = `You are an AIOps Chaos Engineering Engine. 
 The user is simulating a cloud architecture disaster. They will provide an instruction, and you will output a strict JSON configuration to render the simulated impact on a global network map.
 
@@ -40,7 +44,7 @@ The JSON MUST follow this exact schema:
   "insight": string (A concise, professional 1-3 sentence AIOps analysis of the impact to display in the COPILOT INSIGHT panel)
 }`;
 
-    const response = await env.AI.run('@cf/meta/llama-3-8b-instruct', {
+    const response = await env.AI.run('@cf/meta/llama-2-7b-chat-int8', {
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: instruction }
