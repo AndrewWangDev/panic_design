@@ -961,11 +961,12 @@ export default function Dashboard() {
         })
       });
       
+      const textResponse = await res.text();
       let data;
       try {
-        data = await res.json();
+        data = JSON.parse(textResponse);
       } catch (parseError) {
-        throw new Error(await res.text());
+        throw new Error(textResponse || 'Unknown Error');
       }
       
       if (!res.ok) {
