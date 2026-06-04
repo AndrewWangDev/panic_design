@@ -875,14 +875,22 @@ export default function Dashboard() {
   const [aiInputValue, setAiInputValue] = useState('');
   const [showAiOutput, setShowAiOutput] = useState(false);
   const typeWriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const aiInputRef = useRef<HTMLTextAreaElement>(null);
 
   const handleAiopsClick = (text: string) => {
     if (typeWriterIntervalRef.current) clearInterval(typeWriterIntervalRef.current);
     setAiInputValue('');
     setShowAiOutput(false);
+    if (aiInputRef.current) {
+      aiInputRef.current.style.height = 'auto';
+    }
     let i = 0;
     typeWriterIntervalRef.current = setInterval(() => {
       setAiInputValue(text.substring(0, i + 1));
+      if (aiInputRef.current) {
+        aiInputRef.current.style.height = 'auto';
+        aiInputRef.current.style.height = `${Math.min(aiInputRef.current.scrollHeight, 120)}px`;
+      }
       i++;
       if (i >= text.length) {
         clearInterval(typeWriterIntervalRef.current!);
@@ -1591,16 +1599,25 @@ export default function Dashboard() {
               {/* AI Instruction Input */}
               <div className={`${styles.tooltipWrapper} ${styles.aiInputWrapper} ${!isSimulating ? styles.disabled : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
                 <Sparkles size={16} color="var(--color-cyan, #06b6d4)" />
-                <input 
-                  type="text" 
+                <textarea 
+                  ref={aiInputRef}
                   className={styles.aiInput} 
                   placeholder="Describe a disaster scenario, e.g., Drop 20% traffic from Asia..."
                   disabled={!isSimulating}
                   value={aiInputValue}
-                  onChange={(e) => setAiInputValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && aiInputValue.trim().length > 0) setShowAiOutput(true);
+                  rows={1}
+                  onChange={(e) => {
+                    setAiInputValue(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (aiInputValue.trim().length > 0) setShowAiOutput(true);
+                    }
+                  }}
+                  style={{ maxHeight: '120px', overflowY: 'auto' }}
                 />
                 <button 
                   className={styles.aiSendBtn} 
