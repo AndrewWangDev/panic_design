@@ -1554,7 +1554,7 @@ export default function Dashboard() {
                         setIsSimulating(true);
                         setIsTestPending(true);
                         setSimulationKey(prev => prev + 1);
-                        // Post-mortem no longer resets automatically, use Clear button
+                        setAiState({ isLoading: false, data: null });
                       }}
                       onTelemetryReceived={(data) => {
                         setTelemetryData(data);
