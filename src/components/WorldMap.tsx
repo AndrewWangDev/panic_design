@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as d3Geo from 'd3-geo';
 import * as topojson from 'topojson-client';
+import { Sparkles } from 'lucide-react';
 
 interface WorldMapProps {
   w1?: [number, number] | null; // [lon, lat]
@@ -282,7 +283,15 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const flag_route_2 = aiMapData?.flag_route_2 || false;
 
   const w1LabelOverride = aiMapData?.W1_label;
-  const w2LabelOverride = aiMapData?.W2_label;
+  
+  let defaultW2 = undefined;
+  if (!aiMapData) {
+    if (fault === '502') defaultW2 = "502 Bad Gateway";
+    else if (fault === '504') defaultW2 = "504 Gateway Timeout";
+    else if (fault === '429') defaultW2 = "429 Too Many Requests";
+    else if (isPacketLoss) defaultW2 = "Packet Loss";
+  }
+  const w2LabelOverride = aiMapData?.W2_label || defaultW2;
   const w3LabelOverride = aiMapData?.W3_label;
 
   const getAbortPath = (start: [number, number], end: [number, number], isDetour: boolean = false) => {
@@ -312,10 +321,17 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         
         <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
           <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: fault === 'latency' ? '#eab308' : '#ef4444', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 600, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'right' }}>
             {fault === 'latency' ? 'Traffic Degradation' : fault === '502' ? 'Bad Gateway (502)' : fault === '429' ? 'Rate Limit (429)' : 'Gateway Timeout (504)'}
           </div>
         </div>
+
+        {aiMapData && (
+          <div style={{ position: 'absolute', top: '16px', left: '16px', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '6px 12px', borderRadius: '20px', zIndex: 10 }}>
+            <Sparkles size={14} color="#38bdf8" />
+            <span style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase' }}>AI SIMULATED</span>
+          </div>
+        )}
 
         {fault === 'latency' && latencyParams && (
           <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
