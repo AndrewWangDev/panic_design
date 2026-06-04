@@ -47,6 +47,19 @@ function haversineDist(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * c;
 }
 
+function generateMockSignature(payloadObj: any): string {
+  const str = JSON.stringify(payloadObj);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  const hexHash = Math.abs(hash).toString(16).padStart(8, '0');
+  const deterministicString = `panic_v2_${hexHash}_edje_signature_payload`;
+  return btoa(deterministicString).replace(/=/g, '').padEnd(43, 'A').substring(0, 43);
+}
+
 function findClosestColo(lat: number, lng: number) {
   let minD = Infinity;
   let best = 'UNKNOWN';
@@ -268,8 +281,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
     setTestLogs([
       '> Initiating TLS handshake with gateway.andrewwangdev.com...',
       '> GET / HTTP/1.1',
-      '> Host: gateway.andrewwangdev.com',
-      '> '
+      '> Host: gateway.andrewwangdev.com'
     ]);
     
     try {
@@ -359,7 +371,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       const t3_latency = Math.round(realTelemetry.t3 * 2);
       const w1_colo = realTelemetry.colo || 'UNKNOWN';
       const w2_colo = realTelemetry.w2_colo || 'UNKNOWN';
-      const w3_colo = 'Target';
+      const w3_colo = data.resolvedIp || 'Target';
       const alpha_weight = realTelemetry.alpha_weight !== undefined ? realTelemetry.alpha_weight.toFixed(3) : 'N/A';
       const snap_error_km = realTelemetry.w2_distance !== undefined ? Math.round(realTelemetry.w2_distance) : 0;
       
@@ -407,9 +419,9 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       }
 
       const lines = [
-        ...lgpaLogs,
         `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
         `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'}`,
+        ...lgpaLogs,
       ];
       
       if (data.chaosReason) {
@@ -1450,6 +1462,7 @@ export default function Dashboard() {
                         t2={telemetryData ? telemetryData.t2 : 0}
                         t3={telemetryData ? telemetryData.t3 : 0}
                         colo={telemetryData ? (telemetryData.w2_colo || telemetryData.colo) : 'UNKNOWN'}
+                        w1Colo={telemetryData ? telemetryData.colo : 'UNKNOWN'}
                         fault={telemetryData?.chaosReason ? 'latency' : (fault || 'latency')}
                         targetHost={targetHost}
                         latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
@@ -1558,14 +1571,8 @@ export default function Dashboard() {
                 </div>
                 <div className={styles.codeBlock} style={{ maxHeight: '220px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', fontSize: '12px', color: '#94a3b8' }}>
                   <pre style={{ margin: 0, fontFamily: 'var(--font-mono)' }} dangerouslySetInnerHTML={{
-                    __html: syntaxHighlight(JSON.stringify({
-                      header: {
-                        alg: "HS256",
-                        typ: "JWT",
-                        kid: "panic-sign-v1-primary/",
-                        iss: "panic.andrewwangdev.com/cp"
-                      },
-                      payload: {
+                    __html: (() => {
+                      const payloadObj = {
                         target: {
                           hostname: targetHost || 'pending...',
                           scope: scope,
@@ -1593,9 +1600,18 @@ export default function Dashboard() {
                           nonce: "a7f2-88d4-991c",
                           trace_origin: "CHENGDU_CONTROL_CENTER"
                         }
-                      },
-                      signature: generatedToken ? "V2ZfcGFuaWNfZGVzaWduX2VkamVfc2lnbmF0dXJl" : "hx9GqLzV8eT6oN2wM7cK1jP4uR5yY0bE3fA9dX6sV8"
-                    }, null, 2))
+                      };
+                      return syntaxHighlight(JSON.stringify({
+                        header: {
+                          alg: "HS256",
+                          typ: "JWT",
+                          kid: "panic-sign-v1-primary/",
+                          iss: "panic.andrewwangdev.com/cp"
+                        },
+                        payload: payloadObj,
+                        signature: generateMockSignature({ payload: payloadObj })
+                      }, null, 2));
+                    })()
                   }} />
                 </div>
               </div>
