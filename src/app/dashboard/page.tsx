@@ -209,6 +209,8 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
   const [testState, setTestState] = useState<'idle' | 'testing' | 'done'>('idle');
   const [testLogs, setTestLogs] = useState<any[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const activeTestIdRef = useRef<number>(0);
+
   const baselineT1Ref = useRef<number | null>(null);
   const baselineW2Ref = useRef<[number, number] | null>(null);
   const baselineW2ColoRef = useRef<string | null>(null);
@@ -263,6 +265,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
 
   useEffect(() => {
     if (!isSimulating) {
+      activeTestIdRef.current = 0;
       setTestState('idle');
       setTestLogs([]);
     }
@@ -276,6 +279,9 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       baselineW2ColoRef.current = null;
       baselineW2DistRef.current = null;
     }
+    const testId = Date.now();
+    activeTestIdRef.current = testId;
+
     onSimulationStart(isFirst);
     setTestState('testing');
     setTestLogs([
@@ -475,11 +481,15 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
 
       // Simulate line by line stream
       for (const line of lines) {
+        if (activeTestIdRef.current !== testId) break;
         await new Promise(resolve => setTimeout(resolve, 300));
+        if (activeTestIdRef.current !== testId) break;
         setTestLogs(prev => [...prev, line]);
       }
       
-      setTestState('done');
+      if (activeTestIdRef.current === testId) {
+        setTestState('done');
+      }
     } catch (e: any) {
       setTestLogs(prev => [...prev, `< Error: ${e.message}`, `[System] Test Failed.`]);
       setTestState('done');
