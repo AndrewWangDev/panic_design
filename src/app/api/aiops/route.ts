@@ -25,8 +25,8 @@ You must return ONLY a raw, valid JSON object (no markdown, no conversation, jus
 The JSON MUST follow this exact schema:
 {
   "map_data": {
-    "T1": number (latency in ms from Cloud Runner to Edge. If W1➔W2 fails, this can be 0 or high),
-    "T2": number (latency in ms injected by fault at Edge Gateway),
+    "T1": number (MUST BE PROVIDED. latency in ms from Cloud Runner to Edge. If W1➔W2 fails, this can be 0 or high),
+    "T2": number (MUST BE PROVIDED. latency in ms injected by fault at Edge Gateway. If not related to latency injection, simulate a realistic jitter around 0, e.g. 2 or 1),
     "T3": number (latency in ms from Edge to Upstream. 0 if dropped/aborted),
     "W1": [longitude, latitude] (Cloud Runner),
     "W2": [longitude, latitude] (Edge Gateway),
@@ -40,7 +40,18 @@ The JSON MUST follow this exact schema:
     "W2_label": string (extra label for W2, e.g., "502 Bad Gateway", "504 Gateway Timeout", "Packet Loss", or ""),
     "W3_label": string (extra label for W3, e.g., "Unreachable", or "")
   },
-  "insight": string (A concise, professional 1-3 sentence AIOps analysis of the impact to display in the COPILOT INSIGHT panel)
+  "insight": {
+    "statusCode": string (e.g. "200 -> 502", "200 -> 504", or "200 -> 444"),
+    "w1Colo": string (e.g. "SJC"),
+    "w2Colo": string (e.g. "LAX"),
+    "w3Ip": string (e.g. "1.2.3.4"),
+    "packetLoss": string (e.g. "0.00% -> 100%"),
+    "t1": { "before": number, "after": number },
+    "t2": { "before": number, "after": number },
+    "t3": { "before": number, "after": number },
+    "totalTime": { "before": number, "after": number },
+    "summary": string (A concise 1-sentence AIOps analysis of the influence)
+  }
 }`;
 
     const response = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {

@@ -939,6 +939,10 @@ export default function Dashboard() {
     setShowAiOutput(true);
     setAiState({ isLoading: true, data: null });
 
+    const actualPacketLossRate = postMortemStats.totalRequests > 0 
+      ? ((postMortemStats.packetDropCount / postMortemStats.totalRequests) * 100).toFixed(2) + '%'
+      : '0.00%';
+
     const baseline = {
       targetHost,
       fault,
@@ -946,6 +950,7 @@ export default function Dashboard() {
       jitter,
       distribution,
       packetLoss,
+      actualPacketLossRate,
       telemetry: telemetryData,
       w2_colo: telemetryData?.w2_colo || telemetryData?.colo || 'UNKNOWN',
       t1: telemetryData?.t1,
@@ -1779,7 +1784,47 @@ export default function Dashboard() {
                           </div>
                         ) : aiState.data ? (
                           <div style={{ lineHeight: 1.5 }}>
-                            {aiState.data.insight || (aiState.data.error && <span style={{ color: '#ef4444' }}>{aiState.data.error}</span>)}
+                            {aiState.data.error ? (
+                              <span style={{ color: '#ef4444' }}>{aiState.data.error}</span>
+                            ) : typeof aiState.data.insight === 'object' && aiState.data.insight !== null ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
+                                <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {aiState.data.insight.statusCode}</div>
+                                <div style={{ color: '#38bdf8', marginBottom: '4px' }}>
+                                  {aiState.data.insight.w1Colo} ➔ {aiState.data.insight.w2Colo} ➔ {aiState.data.insight.w3Ip}
+                                </div>
+                                
+                                <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {aiState.data.insight.packetLoss}</div>
+                                
+                                {[
+                                  { label: 'Edge Network RTT', data: aiState.data.insight.t1 },
+                                  { label: 'Injected Latency', data: aiState.data.insight.t2 },
+                                  { label: 'Upstream Backhaul', data: aiState.data.insight.t3 },
+                                  { label: 'Total Round-Trip Time', data: aiState.data.insight.totalTime }
+                                ].map((row, idx) => {
+                                  if (!row.data) return null;
+                                  const diff = row.data.after - row.data.before;
+                                  const sign = diff >= 0 ? '+' : '';
+                                  const diffColor = diff >= 0 ? '#10b981' : '#ef4444'; // As requested: + is green, - is red
+                                  return (
+                                    <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
+                                      <span style={{ color: '#94a3b8', width: '160px' }}>{row.label}:</span> 
+                                      <span style={{ width: '120px' }}>{row.data.before} ms -> {row.data.after} ms</span>
+                                      {diff !== 0 && (
+                                        <span style={{ color: diffColor, fontWeight: 600, marginLeft: '8px', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>
+                                          {sign}{diff} ms
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                                
+                                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
+                                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>Influence:</span> {aiState.data.insight.summary}
+                                </div>
+                              </div>
+                            ) : (
+                              <span>{aiState.data.insight}</span>
+                            )}
                           </div>
                         ) : null}
                       </div>
