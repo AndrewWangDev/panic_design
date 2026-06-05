@@ -41,12 +41,11 @@ The JSON MUST follow this exact schema:
     "W3_label": string (extra label for W3, e.g., "Unreachable", or "")
   },
   "insight": {
-    "statusCode": string (Format "BEFORE -> AFTER". e.g. "200: 100% -> 200: 50%, 444: 50%". The "before" MUST match baseline.statusCodeBreakdown exactly.),
+    "statusCode": string (Format "BEFORE -> AFTER". e.g. "200: 100% -> 200: 50%, 444: 50%". The "before" MUST match baseline.statusCodeBreakdown exactly. The "after" 444 percentage MUST mathematically match the packetLoss percentage EXACTLY.),
     "w1Colo": string (It MUST match baseline.w1_colo exactly. Do not use '->' here),
     "w2Colo": string (e.g. "LAX"),
     "w3Ip": string (It MUST match baseline.resolvedIp exactly. Do not use '->' here),
-    "packetLoss": string (Format "BEFORE -> AFTER". e.g. "0.00% -> 50%". The "before" MUST match baseline.actualPacketLossRate exactly.),
-    "globalEdgeIsolation": string (A short phrase describing the scope of influence, e.g. "Partial Global Disruption", "Target Unreachable", or "Complete Blackout"),
+    "packetLoss": string (Format "BEFORE -> AFTER". e.g. "0.00% -> 50%". The "before" MUST match baseline.actualPacketLossRate exactly. The "after" MUST strictly adhere to the exact percentage requested in the instruction),
     "influence": [
       {
         "object": string (e.g. "Client", "Edge Gateway", "Upstream Database"),

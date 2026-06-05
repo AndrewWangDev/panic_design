@@ -122,15 +122,9 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
       return { p1, p2, cx: p1[0], cy: p1[1] - 20, dist }; // Tiny loop if same point
     }
 
-    // Normal vector
-    let nx = -dy / dist;
-    let ny = dx / dist;
-
-    // Force the normal vector to point UP in SVG (negative Y)
-    if (ny > 0) {
-      nx = -nx;
-      ny = -ny;
-    }
+    // Normal vector (always points to the 'left' of the directed segment)
+    const nx = -dy / dist;
+    const ny = dx / dist;
 
     // Arc height (15% of distance normally, 45% for detour)
     const arcHeight = dist * (isDetour ? 0.45 : 0.15);
@@ -138,7 +132,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     const cx = (p1[0] + p2[0]) / 2 + nx * arcHeight;
     const cy = (p1[1] + p2[1]) / 2 + ny * arcHeight;
 
-    return { p1, p2, cx, cy, dist };
+    return { p1, p2, cx, cy, nx, ny, dist };
   };
 
   const renderCurve = (start: [number, number], end: [number, number], color: string, id: string, dash?: boolean, isDetour?: boolean) => {
@@ -165,21 +159,25 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const renderCurveLabel = (start: [number, number], end: [number, number], ms: number, color: string, dy: number = -8, isDetour?: boolean) => {
     const params = getBezierParams(start, end, isDetour);
     if (!params) return null;
-    const { p1, p2, cx, cy } = params;
+    const { p1, p2, cx, cy, nx, ny } = params;
 
     // Midpoint of quadratic bezier at t=0.5
     const midX = 0.25 * p1[0] + 0.5 * cx + 0.25 * p2[0];
     const midY = 0.25 * p1[1] + 0.5 * cy + 0.25 * p2[1];
+
+    // Push label outwards along the normal vector by 16px instead of hardcoded UP
+    const labelOffsetX = nx !== undefined ? nx * 16 : 0;
+    const labelOffsetY = ny !== undefined ? ny * 16 : dy;
 
     const text = `${ms} ms`;
     const width = text.length * 7.5 + 16;
     const height = 20;
 
     return (
-      <g style={{ transform: `translate(${midX}px, ${midY}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+      <g style={{ transform: `translate(${midX + labelOffsetX}px, ${midY + labelOffsetY}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
         <rect 
           x={-width/2} 
-          y={dy - 14} 
+          y={-height/2} 
           width={width} 
           height={height} 
           rx={height/2} 
@@ -189,7 +187,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         />
         <text 
           x={0}
-          y={dy} 
+          y={4} 
           textAnchor="middle" 
           fill={color} 
           fontSize="12px" 
