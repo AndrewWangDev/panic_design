@@ -37,11 +37,11 @@ The JSON MUST follow this exact schema:
   "resolution": "string | null (Populate ONLY if status is warning)",
   "error_message": "string | null (Populate ONLY if status is error)",
   "data": {
-    "targetHostname": "string (Extract from input or keep current state. Default if none: ec2.ap-northeast-1.amazonaws.com)",
-    "scope": "string (e.g. 'global', 'asia-east')",
+    "targetHostname": "string (Extract from input or keep current state)",
+    "scope": "Global" | "Cloud ASNs" | "Cellular" | "Cross-Region" | "Bots Only",
     "tokenTtl": "number (in minutes)",
     "faultType": "latency" | "502" | "504" | "429",
-    "distribution": "Uniform" | "Normal" | "Pareto" | null (MUST BE null if faultType is NOT latency),
+    "distribution": "Uniform" | "Normal" | "Spikes" | null (MUST BE null if faultType is NOT latency),
     "baseLatency": "number (0-10000) | null (MUST BE null if faultType is NOT latency)",
     "jitter": "number | null (MUST BE strictly <= baseLatency. MUST BE null if faultType is NOT latency)",
     "packetLoss": "number (0-100) | null (MUST BE null if faultType is NOT latency)"
