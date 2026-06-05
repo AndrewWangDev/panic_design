@@ -21,7 +21,7 @@ The user is simulating a cloud architecture disaster. They will provide an instr
 Baseline Telemetry:
 ${JSON.stringify(baseline, null, 2)}
 
-You must return ONLY a raw, valid JSON object (no markdown, no conversation, just the JSON).
+You must return ONLY a raw, perfectly valid JSON object. DO NOT output any conversational text. DO NOT wrap in markdown code blocks. DO NOT add trailing commas.
 The JSON MUST follow this exact schema:
 {
   "map_data": {
