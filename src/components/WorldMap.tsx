@@ -40,6 +40,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const isPacketLoss = fault === 'latency' && t3 === 0 && !isPending;
   const isAbort = fault === '502' || fault === '504' || fault === '429' || isPacketLoss;
 
+
+
   useEffect(() => {
     fetch('/world-110m.json')
       .then(res => res.json())
@@ -284,14 +286,14 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
   const w1LabelOverride = aiMapData?.W1_label;
   
-  let defaultW2 = undefined;
-  if (!aiMapData) {
-    if (fault === '502') defaultW2 = "502 Bad Gateway";
-    else if (fault === '504') defaultW2 = "504 Gateway Timeout";
-    else if (fault === '429') defaultW2 = "429 Too Many Requests";
-    else if (isPacketLoss) defaultW2 = "Packet Loss";
-  }
-  const w2LabelOverride = aiMapData?.W2_label || defaultW2;
+  let defaultW2Label: string | undefined = undefined;
+  if (fault === '502') defaultW2Label = "502 Bad Gateway";
+  else if (fault === '504') defaultW2Label = "504 Gateway Timeout";
+  else if (fault === '429') defaultW2Label = "429 Too Many Requests";
+  else if (isPacketLoss) defaultW2Label = "Packet Loss";
+  else if (t2 && t2 > 0) defaultW2Label = `Latency +${t2}ms`;
+  
+  const w2LabelOverride = aiMapData?.W2_label || defaultW2Label;
   const w3LabelOverride = aiMapData?.W3_label;
 
   const getAbortPath = (start: [number, number], end: [number, number], isDetour: boolean = false) => {

@@ -37,14 +37,14 @@ The JSON MUST follow this exact schema:
     "flag_route_1": boolean (true if W1 ➔ W2 route is detoured/inefficient),
     "flag_route_2": boolean (true if W2 ➔ W3 route is detoured/inefficient),
     "W1_label": string (extra label for W1, or ""),
-    "W2_label": string (extra label for W2, e.g., "502 Bad Gateway", "504 Gateway Timeout", "Packet Loss", or ""),
+    "W2_label": string (extra label for W2, e.g., "502 Bad Gateway", "504 Gateway Timeout", "Packet Loss". If T2 > 0, it MUST include "+X ms", e.g. "Latency +500ms"),
     "W3_label": string (extra label for W3, e.g., "Unreachable", or "")
   },
   "insight": {
-    "statusCode": string (e.g. "200 -> 502", "200 -> 504", or "200 -> 444"),
+    "statusCode": string (e.g. "200: 50%, 444: 50%". The "before" MUST match baseline.statusCodeBreakdown exactly),
     "w1Colo": string (e.g. "SJC"),
     "w2Colo": string (e.g. "LAX"),
-    "w3Ip": string (e.g. "1.2.3.4"),
+    "w3Ip": string (e.g. "1.2.3.4". The "before" MUST match baseline.resolvedIp exactly),
     "packetLoss": string (e.g. "0.00% -> 100%". The "before" MUST match baseline.actualPacketLossRate),
     "t1": { "before": number, "after": number }, // "before" MUST exactly match baseline.t1_rtt
     "t2": { "before": number, "after": number }, // "before" MUST exactly match baseline.t2
