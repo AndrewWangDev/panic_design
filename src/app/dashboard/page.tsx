@@ -203,7 +203,7 @@ const ExpandablePayload = ({ payload }: { payload: string }) => {
   );
 };
 
-const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart, onTelemetryReceived, fault, t1, t2, t3 }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: (isFirst: boolean) => void, onTelemetryReceived?: (data: any) => void, fault: string, t1: number, t2: number, t3: number }) => {
+const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart, onTelemetryReceived, fault, t1, t2, t3, isInvalid }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: (isFirst: boolean) => void, onTelemetryReceived?: (data: any) => void, fault: string, t1: number, t2: number, t3: number, isInvalid?: boolean }) => {
   const [text, setText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [testState, setTestState] = useState<'idle' | 'testing' | 'done'>('idle');
@@ -499,9 +499,10 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
           <button 
             className={styles.runTestBtn} 
             onClick={handleTest} 
-            disabled={testState === 'testing'}
+            disabled={testState === 'testing' || isInvalid}
+            style={{ opacity: isInvalid ? 0.5 : 1, cursor: isInvalid ? 'not-allowed' : 'pointer' }}
           >
-            <Activity size={14} /> {testState === 'testing' ? 'TEST IN PROGRESS...' : 'RUN CLOUD INJECTION'}
+            <Activity size={14} /> {testState === 'testing' ? 'TEST IN PROGRESS...' : (isInvalid ? 'INVALID CONFIGURATION' : 'RUN CLOUD INJECTION')}
           </button>
         </div>
       )}
@@ -704,7 +705,6 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
   );
 };
 const PostMortemPanel = ({ stats, onClear }: { stats: any, onClear: () => void }) => {
-  if (stats.totalRequests === 0) return null;
 
   const getLatencyColor = (val: number, threshold1: number = 200, threshold2: number = 500) => {
     if (val < threshold1) return '#10b981'; // Green
@@ -980,7 +980,8 @@ export default function Dashboard() {
       }
       
       if (!res.ok) {
-        throw new Error(data?.error || data || 'Unknown Error');
+        const errorMsg = data?.error ? `${data.error}\nRaw AI Output:\n${data.raw || 'None'}` : (data || 'Unknown Error');
+        throw new Error(errorMsg);
       }
 
       setAiState({ isLoading: false, data });
@@ -1448,20 +1449,27 @@ export default function Dashboard() {
                         <div className={styles.latencyControlRow}>
                           <div className={styles.latencyLabel}>Network Jitter</div>
                           <div style={{flex: 1}} />
-                          <div className={styles.inputWithUnit}>
-                            <input 
-                              type="number" 
-                              min="0"
-                              placeholder="± 0"
-                              value={jitter === 0 ? '' : jitter}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setJitter(val === '' ? 0 : Number(val));
-                              }}
-                              className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
-                              style={{ width: '110px', textAlign: 'left' }}
-                            />
-                            <span className={styles.unitLabel} style={{ display: 'inline-block', width: '20px' }}>ms</span>
+                          <div className={styles.inputWithUnit} style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <input 
+                                type="number" 
+                                min="0"
+                                placeholder="± 0"
+                                value={jitter === 0 ? '' : jitter}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setJitter(val === '' ? 0 : Number(val));
+                                }}
+                                className={`${styles.latencyInput} ${isFlashing ? styles.inputFlash : ''}`}
+                                style={{ width: '110px', textAlign: 'left', color: (jitter < 0 || jitter > latency) ? '#ef4444' : undefined, borderColor: (jitter < 0 || jitter > latency) ? '#ef4444' : undefined }}
+                              />
+                              <span className={styles.unitLabel} style={{ display: 'inline-block', width: '20px' }}>ms</span>
+                            </div>
+                            {(jitter < 0 || jitter > latency) && (
+                              <div style={{ color: '#ef4444', fontSize: '0.65rem', marginTop: '4px', marginRight: '24px' }}>
+                                Invalid: [0, {latency}ms]
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1560,6 +1568,7 @@ export default function Dashboard() {
                       fullToken={generatedToken} 
                       targetHost={targetHost} 
                       isSimulating={isSimulating}
+                      isInvalid={jitter < 0 || jitter > latency}
                       onSimulationStart={(isFirst) => {
                         setIsSimulating(true);
                         setIsTestPending(true);
