@@ -1833,7 +1833,7 @@ export default function Dashboard() {
                                     <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
                                       <span style={{ color: '#94a3b8', width: '160px' }}>{row.label}:</span> 
                                       <span style={{ width: '120px' }}>{row.data.before} ms {'->'} {row.data.after} ms</span>
-                                      {diff !== 0 && (
+                                      {diff !== 0 && row.data.after !== 0 && (
                                         <span style={{ color: diffColor, fontWeight: 600, marginLeft: '8px', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>
                                           {sign}{diff} ms
                                         </span>
