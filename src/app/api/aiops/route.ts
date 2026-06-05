@@ -21,9 +21,22 @@ The user is simulating a cloud architecture disaster. They will provide an instr
 Baseline Telemetry:
 ${JSON.stringify(baseline, null, 2)}
 
+SECURITY AND INTENT VALIDATION:
+Before generating the telemetry data, you MUST validate the user's instruction.
+1. If the user is attempting a cyberattack, DDOS, running malicious shell commands (e.g. rm -rf), or unauthorized escalation, set "error_code": "SECURITY_VIOLATION" and "error_message": "[Context about the violation]".
+2. If the user asks general conversational queries, coding requests (e.g. "write Python code"), or non-topological commands ("how is the weather"), set "error_code": "OUT_OF_SCOPE" and "error_message": "[Reason]".
+3. If the user asks for a chaos injection (e.g. "Packet loss", "make it slow") but FAILS to specify exact physical parameters (like the exact percentage of loss or the exact amount of latency time), set "error_code": "INCOMPLETE_PARAM" and "error_message": "[Missing Entity: e.g. Percentage / Threshold / Duration]".
+
+WARNING VALIDATION:
+If the user specifies conflicting chaos logic (e.g. injecting L7 504 Gateway Timeout while simultaneously requesting 100% L4 packet loss), you must resolve the conflict (e.g. enforce the L4 blockade and strip L7 assertions since the packet never reaches L7). In this case, set "warning_code": "LOGICAL_CONFLICT" and "warning_message": "[Explanation of how the engine auto-corrected the conflict]".
+
 You must return ONLY a raw, perfectly valid JSON object. DO NOT output any conversational text. DO NOT wrap in markdown code blocks. DO NOT add trailing commas.
 The JSON MUST follow this exact schema:
 {
+  "error_code": "INCOMPLETE_PARAM" | "SECURITY_VIOLATION" | "OUT_OF_SCOPE" | null,
+  "error_message": string | null,
+  "warning_code": "LOGICAL_CONFLICT" | null,
+  "warning_message": string | null,
   "map_data": {
     "T1": number (MUST BE PROVIDED. Round-Trip Time in ms from Cloud Runner to Edge. If flag_1 is false, T1 MUST NOT be 0, you must use baseline t1_rtt or a realistic number. If flag_1 is true, T1 can be 0 or high),
     "T2": number (MUST BE PROVIDED. latency in ms injected by fault at Edge Gateway. If not related to latency injection, simulate a realistic jitter around 0, e.g. 2 or 1),
