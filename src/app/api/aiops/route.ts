@@ -41,11 +41,11 @@ The JSON MUST follow this exact schema:
     "W3_label": string (extra label for W3, e.g., "Unreachable", or "")
   },
   "insight": {
-    "statusCode": string (e.g. "200: 50%, 444: 50%". The "before" MUST match baseline.statusCodeBreakdown exactly),
+    "statusCode": string (Format "BEFORE -> AFTER". e.g. "200: 50%, 444: 50% -> 504: 100%". The "before" MUST match baseline.statusCodeBreakdown exactly. The "after" must be logically derived from your simulated fault),
     "w1Colo": string (e.g. "SJC"),
     "w2Colo": string (e.g. "LAX"),
-    "w3Ip": string (e.g. "1.2.3.4". The "before" MUST match baseline.resolvedIp exactly),
-    "packetLoss": string (e.g. "0.00% -> 100%". The "before" MUST match baseline.actualPacketLossRate),
+    "w3Ip": string (It MUST match baseline.resolvedIp exactly. Do not use '->' here),
+    "packetLoss": string (Format "BEFORE -> AFTER". e.g. "0.00% -> 100%". The "before" MUST match baseline.actualPacketLossRate exactly. The "after" must be your simulated packet loss),
     "t1": { "before": number, "after": number }, // "before" MUST exactly match baseline.t1_rtt
     "t2": { "before": number, "after": number }, // "before" MUST exactly match baseline.t2
     "t3": { "before": number, "after": number }, // "before" MUST exactly match baseline.t3_rtt
