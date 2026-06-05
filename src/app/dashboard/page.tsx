@@ -939,14 +939,13 @@ export default function Dashboard() {
     setShowAiOutput(true);
     setAiState({ isLoading: true, data: null });
 
-    const actualPacketLossRateNum = postMortemStats.totalRequests > 0 
-      ? ((postMortemStats.packetDropCount / postMortemStats.totalRequests) * 100)
-      : 0;
-    const actualPacketLossRate = actualPacketLossRateNum.toFixed(2) + '%';
+    // Use theoretical UI values for the Baseline to prevent issues when Post-Mortem is cleared
+    const theoreticalPacketLoss = Number(packetLoss) || 0;
+    const actualPacketLossRate = theoreticalPacketLoss.toFixed(2) + '%';
 
     let statusCodeBreakdown = '';
-    if (fault === 'latency' && Number(packetLoss) > 0) {
-      statusCodeBreakdown = `200: ${(100 - actualPacketLossRateNum).toFixed(0)}%, 444: ${actualPacketLossRateNum.toFixed(0)}%`;
+    if (fault === 'latency' && theoreticalPacketLoss > 0) {
+      statusCodeBreakdown = `200: ${(100 - theoreticalPacketLoss).toFixed(0)}%, 444: ${theoreticalPacketLoss.toFixed(0)}%`;
     } else if (fault === '502') {
       statusCodeBreakdown = `502: 100%`;
     } else if (fault === '504') {
@@ -966,11 +965,11 @@ export default function Dashboard() {
       packetLoss,
       actualPacketLossRate,
       statusCodeBreakdown,
-      resolvedIp: telemetryData?.resolvedIp || 'Unknown',
+      resolvedIp: telemetryData?.resolvedIp && telemetryData.resolvedIp !== 'Unknown IP' ? telemetryData.resolvedIp : targetHost,
       telemetry: telemetryData,
       w2_colo: telemetryData?.w2_colo || telemetryData?.colo || 'UNKNOWN',
       t1_rtt: telemetryData?.t1 ? Math.round(telemetryData.t1 * 2) : 0,
-      t2: telemetryData?.t2 || 0,
+      t2: fault === 'latency' ? latency : 0,
       t3_rtt: telemetryData?.t3 ? Math.round(telemetryData.t3 * 2) : 0,
       w1: telemetryData?.w1,
       w2: telemetryData?.w2,
@@ -1753,7 +1752,7 @@ export default function Dashboard() {
                         className={`${styles.aiopsChip} ${styles.aiopsChipBgp}`}
                         disabled={!isSimulating}
                         style={{ pointerEvents: !isSimulating ? 'none' : 'auto' }}
-                        onClick={() => handleAiopsClick("Simulate a catastrophic BGP route leak. Drop 100% of packets globally and enforce 504 Gateway Timeouts to mimic complete unreachability.")}
+                        onClick={() => handleAiopsClick("Simulate a catastrophic BGP route leak. Drop 50% of packets globally.")}
                       >
                         BGP Route Leak
                       </button>
