@@ -1564,6 +1564,7 @@ export default function Dashboard() {
                         fault={telemetryData?.chaosReason ? 'latency' : (fault || 'latency')}
                         targetHost={targetHost}
                         latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
+                        mutilationStrategy={mutilationStrategy}
                         aiMapData={aiState.data?.map_data}
                     />
                   )}
