@@ -368,7 +368,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       
       const t1_latency = Math.round(realTelemetry.t1 * 2);
       const t3_latency = Math.round(realTelemetry.t3 * 2);
-      const w1_colo = realTelemetry.colo || 'UNKNOWN';
+      const w1_colo = realTelemetry.w1_colo || 'UNKNOWN';
       const w2_colo = realTelemetry.w2_colo || 'UNKNOWN';
       const w3_colo = data.resolvedIp || 'Target';
       const alpha_weight = realTelemetry.alpha_weight !== undefined ? realTelemetry.alpha_weight.toFixed(3) : 'N/A';
