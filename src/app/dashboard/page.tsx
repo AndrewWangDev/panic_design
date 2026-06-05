@@ -953,9 +953,9 @@ export default function Dashboard() {
       actualPacketLossRate,
       telemetry: telemetryData,
       w2_colo: telemetryData?.w2_colo || telemetryData?.colo || 'UNKNOWN',
-      t1: telemetryData?.t1,
-      t2: telemetryData?.t2,
-      t3: telemetryData?.t3,
+      t1_rtt: telemetryData?.t1 ? Math.round(telemetryData.t1 * 2) : 0,
+      t2: telemetryData?.t2 || 0,
+      t3_rtt: telemetryData?.t3 ? Math.round(telemetryData.t3 * 2) : 0,
       w1: telemetryData?.w1,
       w2: telemetryData?.w2,
       w3: telemetryData?.w3
