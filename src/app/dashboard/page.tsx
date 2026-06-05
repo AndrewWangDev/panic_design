@@ -967,6 +967,7 @@ export default function Dashboard() {
       statusCodeBreakdown,
       resolvedIp: telemetryData?.resolvedIp && telemetryData.resolvedIp !== 'Unknown IP' ? telemetryData.resolvedIp : targetHost,
       telemetry: telemetryData,
+      w1_colo: telemetryData?.colo || 'UNKNOWN',
       w2_colo: telemetryData?.w2_colo || telemetryData?.colo || 'UNKNOWN',
       t1_rtt: telemetryData?.t1 ? Math.round(telemetryData.t1 * 2) : 0,
       t2: fault === 'latency' ? latency : 0,
