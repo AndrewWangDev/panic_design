@@ -939,9 +939,23 @@ export default function Dashboard() {
     setShowAiOutput(true);
     setAiState({ isLoading: true, data: null });
 
-    const actualPacketLossRate = postMortemStats.totalRequests > 0 
-      ? ((postMortemStats.packetDropCount / postMortemStats.totalRequests) * 100).toFixed(2) + '%'
-      : '0.00%';
+    const actualPacketLossRateNum = postMortemStats.totalRequests > 0 
+      ? ((postMortemStats.packetDropCount / postMortemStats.totalRequests) * 100)
+      : 0;
+    const actualPacketLossRate = actualPacketLossRateNum.toFixed(2) + '%';
+
+    let statusCodeBreakdown = '';
+    if (fault === 'packet_loss' || packetLoss > 0) {
+      statusCodeBreakdown = `200: ${(100 - actualPacketLossRateNum).toFixed(0)}%, 444: ${actualPacketLossRateNum.toFixed(0)}%`;
+    } else if (fault === '502') {
+      statusCodeBreakdown = `502: 100%`;
+    } else if (fault === '504') {
+      statusCodeBreakdown = `504: 100%`;
+    } else if (fault === '429') {
+      statusCodeBreakdown = `429: 100%`;
+    } else {
+      statusCodeBreakdown = `200: 100%`;
+    }
 
     const baseline = {
       targetHost,
@@ -951,6 +965,8 @@ export default function Dashboard() {
       distribution,
       packetLoss,
       actualPacketLossRate,
+      statusCodeBreakdown,
+      resolvedIp: telemetryData?.resolvedIp || 'Unknown',
       telemetry: telemetryData,
       w2_colo: telemetryData?.w2_colo || telemetryData?.colo || 'UNKNOWN',
       t1_rtt: telemetryData?.t1 ? Math.round(telemetryData.t1 * 2) : 0,
@@ -1812,8 +1828,8 @@ export default function Dashboard() {
                                 ].map((row, idx) => {
                                   if (!row.data) return null;
                                   const diff = row.data.after - row.data.before;
-                                  const sign = diff >= 0 ? '+' : '';
-                                  const diffColor = diff >= 0 ? '#10b981' : '#ef4444'; // As requested: + is green, - is red
+                                  const sign = diff > 0 ? '+' : '';
+                                  const diffColor = diff > 0 ? '#ef4444' : '#10b981'; // Delay is negative: + is red, - is green
                                   return (
                                     <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
                                       <span style={{ color: '#94a3b8', width: '160px' }}>{row.label}:</span> 
