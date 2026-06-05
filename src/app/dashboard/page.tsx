@@ -1820,10 +1820,7 @@ export default function Dashboard() {
                                 
                                 <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {aiState.data.insight.packetLoss}</div>
                                 
-                                <div style={{ marginTop: '12px', color: '#f87171', fontWeight: 600, letterSpacing: '0.5px' }}>
-                                  GLOBAL EDGE ISOLATION: {aiState.data.insight.globalEdgeIsolation || ''}
-                                </div>
-                                
+
                                 <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
                                   <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: '4px' }}>Influence:</div>
                                   {aiState.data.insight.influence?.map((inf: any, idx: number) => (
