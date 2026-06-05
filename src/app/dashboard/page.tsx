@@ -845,6 +845,14 @@ const AiAutofillModal = ({
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'warning' | 'error'>('idle');
   const [aiData, setAiData] = useState<any>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      setInstruction('');
+      setStatus('idle');
+      setAiData(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
@@ -1036,7 +1044,10 @@ export default function Dashboard() {
   const handleAiApply = (data: any) => {
     if (data.targetHostname !== undefined) setTargetHost(data.targetHostname);
     if (data.scope !== undefined) setScope(data.scope);
-    if (data.tokenTtl !== undefined) setCustomTtl(data.tokenTtl);
+    if (data.tokenTtl !== undefined) {
+      setTtl('custom');
+      setCustomTtl(data.tokenTtl);
+    }
     if (data.faultType !== undefined) setFault(data.faultType);
     if (data.distribution !== undefined && data.distribution !== null) setDistribution(data.distribution);
     if (data.baseLatency !== undefined && data.baseLatency !== null) setLatency(Number(data.baseLatency));
