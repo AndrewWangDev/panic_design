@@ -1573,7 +1573,11 @@ export default function Dashboard() {
             <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
               <span>Edge Payload {isSimulating && '- Global Telemetry'}</span>
               {isSimulating && (
-                <button className={styles.cancelBtn} onClick={() => setIsSimulating(false)}>
+                <button className={styles.cancelBtn} onClick={() => {
+                  setIsSimulating(false);
+                  setAiInputValue('');
+                  setShowAiOutput(false);
+                }}>
                   Cancel Test
                 </button>
               )}
@@ -1749,37 +1753,39 @@ export default function Dashboard() {
                   </div>
 
                   {/* AI Instruction Input */}
-                  <div className={`${styles.tooltipWrapper} ${styles.aiInputWrapper} ${!isSimulating ? styles.disabled : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
-                    <Sparkles size={16} color="var(--color-cyan, #06b6d4)" />
-                    <textarea 
-                      ref={aiInputRef}
-                      className={styles.aiInput} 
-                      placeholder="Describe a disaster scenario, e.g., Drop 20% traffic from Asia..."
-                      disabled={!isSimulating}
-                      value={aiInputValue}
-                      rows={1}
-                      onChange={(e) => {
-                        setAiInputValue(e.target.value);
-                        e.target.style.height = 'auto';
-                        e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleAiSubmit();
-                        }
-                      }}
-                      style={{ maxHeight: '120px', overflowY: 'auto' }}
-                    />
-                    <button 
-                      className={styles.aiSendBtn} 
-                      disabled={!isSimulating || aiInputValue.trim().length === 0 || aiState.isLoading}
-                      onClick={handleAiSubmit}
-                    >
-                      <Send size={16} />
-                    </button>
+                  <div className={styles.tooltipWrapper} style={{ width: '100%' }}>
+                    <div className={`${styles.aiInputWrapper} ${!isSimulating ? styles.disabled : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
+                      <Sparkles size={16} color="var(--color-cyan, #06b6d4)" />
+                      <textarea 
+                        ref={aiInputRef}
+                        className={styles.aiInput} 
+                        placeholder="Describe a disaster scenario, e.g., Drop 20% traffic from Asia..."
+                        disabled={!isSimulating}
+                        value={aiInputValue}
+                        rows={1}
+                        onChange={(e) => {
+                          setAiInputValue(e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAiSubmit();
+                          }
+                        }}
+                        style={{ maxHeight: '120px', overflowY: 'auto' }}
+                      />
+                      <button 
+                        className={styles.aiSendBtn} 
+                        disabled={!isSimulating || aiInputValue.trim().length === 0 || aiState.isLoading}
+                        onClick={handleAiSubmit}
+                      >
+                        <Send size={16} />
+                      </button>
+                    </div>
                     {!isSimulating && (
-                      <div className={styles.tooltipContent}>
+                      <div className={styles.tooltipContent} style={{ zIndex: 10 }}>
                         Run Cloud Injection First
                       </div>
                     )}
@@ -1937,14 +1943,11 @@ export default function Dashboard() {
                                 ) : null}
                               </>
                             )}
-                              </div>
-                            ) : (
-                              <span>{aiState.data.insight}</span>
-                            )}
                           </div>
                         ) : null}
                       </div>
                     </div>
+                    </>
                   )}
                 </div>
 
@@ -1962,7 +1965,9 @@ export default function Dashboard() {
                       totalRttSum: 0,
                       totalRttCount: 0,
                       packetDropCount: 0,
-                      totalRequests: 0
+                      totalRequests: 0,
+                      sentCount: 0,
+                      receivedCount: 0
                     })} />
                   </div>
                 )}
