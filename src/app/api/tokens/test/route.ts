@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 
 function decodeJwt(token: string) {
@@ -118,8 +119,16 @@ export async function POST(req: Request) {
       }
     }
 
-    const w1ColoRaw = req.headers.get('cf-ray')?.split('-')[1] || req.headers.get('x-vercel-id')?.split('::')[0];
-    const w1_colo = w1ColoRaw ? w1ColoRaw.toUpperCase() : colo;
+    let w1_colo = 'UNKNOWN';
+    try {
+      const ctx = getCloudflareContext() as any;
+      if (ctx?.cf?.colo) w1_colo = ctx.cf.colo;
+    } catch(e) {}
+    
+    if (w1_colo === 'UNKNOWN') {
+      const w1ColoRaw = req.headers.get('cf-ray')?.split('-')[1] || req.headers.get('x-vercel-id')?.split('::')[0];
+      w1_colo = w1ColoRaw ? w1ColoRaw.toUpperCase() : colo;
+    }
     return NextResponse.json({
       success: true,
       status,
