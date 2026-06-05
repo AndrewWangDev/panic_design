@@ -324,41 +324,47 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     <div ref={containerRef} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       
       {/* Top HUD */}
-      <div style={{ padding: '24px 24px 24px 24px', display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'flex-start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 200px', minWidth: 0 }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>TARGET HOSTNAME</div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary, #fff)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{targetHost || 'N/A'}</div>
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
-          <div style={{ fontSize: '1rem', fontWeight: 600, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'right' }}>
-            {fault === 'latency' ? 'Traffic Degradation' : fault === '502' ? 'Bad Gateway (502)' : fault === '429' ? 'Rate Limit (429)' : 'Gateway Timeout (504)'}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '24px', display: 'flex', justifyContent: 'space-between', zIndex: 10, background: 'linear-gradient(to bottom, rgba(15,23,42,0.9) 0%, transparent 100%)', pointerEvents: 'none' }}>
+        {/* Left Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>TARGET HOSTNAME</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary, #fff)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{targetHost || 'N/A'}</div>
           </div>
+          
+          {fault === 'latency' && latencyParams && (
+            <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
+              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>PARAMS</div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary, #fff)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+                Base: {latencyParams.base}ms | Jitter: {latencyParams.jitter}ms {latencyParams.distribution ? `| Dist: ${latencyParams.distribution}` : ''}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'flex-end', paddingRight: aiMapData ? '140px' : '0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto', alignItems: 'flex-start' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
+            <div style={{ fontSize: '1rem', fontWeight: 600, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'left' }}>
+              {fault === 'latency' ? 'Traffic Degradation' : fault === '502' ? 'Bad Gateway (502)' : fault === '429' ? 'Rate Limit (429)' : 'Gateway Timeout (504)'}
+            </div>
+          </div>
+
+          {mutilationStrategy && mutilationStrategy !== 'None' && (
+            <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto', alignItems: 'flex-start', width: '100%' }}>
+              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>MUTILATION STRATEGY</div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ef4444', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+                {mutilationStrategy}
+              </div>
+            </div>
+          )}
         </div>
 
         {aiMapData && (
           <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '6px 12px', borderRadius: '20px', zIndex: 10 }}>
             <Sparkles size={14} color="#38bdf8" />
             <span style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase' }}>AI SIMULATED</span>
-          </div>
-        )}
-
-        {fault === 'latency' && latencyParams && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>PARAMS</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary, #fff)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
-              Base: {latencyParams.base}ms | Jitter: {latencyParams.jitter}ms {latencyParams.distribution ? `| Dist: ${latencyParams.distribution}` : ''}
-            </div>
-          </div>
-        )}
-
-        {mutilationStrategy && mutilationStrategy !== 'None' && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>MUTILATION STRATEGY</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ef4444', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
-              {mutilationStrategy}
-            </div>
           </div>
         )}
       </div>
