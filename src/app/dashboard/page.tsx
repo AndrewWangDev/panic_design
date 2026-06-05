@@ -1542,7 +1542,7 @@ export default function Dashboard() {
                         w3={telemetryData ? telemetryData.w3 : null}
                         t1={['429', '502'].includes(fault || '') && !telemetryData?.chaosReason ? Math.round(telemetryData?.totalLatency || 0) : Math.round((telemetryData?.t1 || 0) * 2)}
                         t2={telemetryData ? telemetryData.t2 : 0}
-                        t3={telemetryData ? telemetryData.t3 : 0}
+                        t3={telemetryData ? Math.round(telemetryData.t3 * 2) : 0}
                         colo={telemetryData ? (telemetryData.w2_colo || telemetryData.colo) : 'UNKNOWN'}
                         w1Colo={telemetryData ? telemetryData.colo : 'UNKNOWN'}
                         fault={telemetryData?.chaosReason ? 'latency' : (fault || 'latency')}
