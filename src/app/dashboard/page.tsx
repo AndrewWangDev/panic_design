@@ -967,7 +967,7 @@ export default function Dashboard() {
       statusCodeBreakdown,
       resolvedIp: telemetryData?.resolvedIp && telemetryData.resolvedIp !== 'Unknown IP' ? telemetryData.resolvedIp : targetHost,
       telemetry: telemetryData,
-      w1_colo: 'Cloud Runner',
+      w1_colo: telemetryData?.w1_colo || 'UNKNOWN',
       w2_colo: telemetryData?.w2_colo || telemetryData?.colo || 'UNKNOWN',
       t1_rtt: telemetryData?.t1 ? Math.round(telemetryData.t1 * 2) : 0,
       t2: fault === 'latency' ? latency : 0,
@@ -1560,7 +1560,7 @@ export default function Dashboard() {
                         t2={telemetryData ? telemetryData.t2 : 0}
                         t3={telemetryData ? Math.round(telemetryData.t3 * 2) : 0}
                         colo={telemetryData ? (telemetryData.w2_colo || telemetryData.colo) : 'UNKNOWN'}
-                        w1Colo={'UNKNOWN'}
+                        w1Colo={telemetryData ? telemetryData.w1_colo : 'UNKNOWN'}
                         fault={telemetryData?.chaosReason ? 'latency' : (fault || 'latency')}
                         targetHost={targetHost}
                         latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
