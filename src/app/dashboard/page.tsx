@@ -945,7 +945,7 @@ export default function Dashboard() {
     const actualPacketLossRate = actualPacketLossRateNum.toFixed(2) + '%';
 
     let statusCodeBreakdown = '';
-    if (fault === 'packet_loss' || packetLoss > 0) {
+    if (fault === 'latency' && packetLoss > 0) {
       statusCodeBreakdown = `200: ${(100 - actualPacketLossRateNum).toFixed(0)}%, 444: ${actualPacketLossRateNum.toFixed(0)}%`;
     } else if (fault === '502') {
       statusCodeBreakdown = `502: 100%`;
