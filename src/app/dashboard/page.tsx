@@ -203,6 +203,26 @@ const ExpandablePayload = ({ payload }: { payload: string }) => {
   );
 };
 
+const LoadingCycleText = () => {
+  const steps = [
+    "Parsing intent...",
+    "Scanning candidates...",
+    "Pruning routing vectors...",
+    "Generating payload...",
+    "Awaiting telemetry..."
+  ];
+  const [stepIdx, setStepIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStepIdx(prev => (prev + 1) % steps.length);
+    }, 1500); // rotate every 1.5s
+    return () => clearInterval(timer);
+  }, [steps.length]);
+
+  return <span>{steps[stepIdx]}</span>;
+};
+
 const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationStart, onTelemetryReceived, fault, t1, t2, t3, isInvalid }: { fullToken: string, targetHost: string, isSimulating: boolean, onSimulationStart: (isFirst: boolean) => void, onTelemetryReceived?: (data: any) => void, fault: string, t1: number, t2: number, t3: number, isInvalid?: boolean }) => {
   const [text, setText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
@@ -745,6 +765,18 @@ const PostMortemPanel = ({ stats, onClear }: { stats: any, onClear: () => void }
       </div>
       
       <div style={{ marginBottom: '24px' }}>
+        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>General</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Send Packets</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#38bdf8', fontWeight: 500 }}>{stats.sentCount || 0} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Received Packets</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#10b981', fontWeight: 500 }}>{stats.receivedCount || 0} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '24px' }}>
         <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>L7 Application Faults</div>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -897,7 +929,9 @@ export default function Dashboard() {
     totalRttSum: 0,
     totalRttCount: 0,
     packetDropCount: 0,
-    totalRequests: 0
+    totalRequests: 0,
+    sentCount: 0,
+    receivedCount: 0
   });
   const [isTestPending, setIsTestPending] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1591,6 +1625,7 @@ export default function Dashboard() {
                         setIsTestPending(true);
                         setSimulationKey(prev => prev + 1);
                         setAiState({ isLoading: false, data: null });
+                        setPostMortemStats(prev => ({ ...prev, sentCount: prev.sentCount + 1 }));
                       }}
                       onTelemetryReceived={(data) => {
                         setTelemetryData(data);
@@ -1600,6 +1635,7 @@ export default function Dashboard() {
                         setPostMortemStats(prev => {
                           const next = { ...prev };
                           next.totalRequests++;
+                          next.receivedCount++;
                           
                           if ([502, 504, 429].includes(data.status)) {
                             next.fastFailCount++;
@@ -1798,7 +1834,26 @@ export default function Dashboard() {
 
                   {/* AI Conversation Output */}
                   {showAiOutput && isSimulating && (
-                    <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <>
+                    <style>{`
+                      @keyframes shakeCritical {
+                        0%, 100% { transform: translateX(0); }
+                        20% { transform: translateX(-5px); }
+                        40% { transform: translateX(5px); }
+                        60% { transform: translateX(-5px); }
+                        80% { transform: translateX(5px); }
+                      }
+                    `}</style>
+                    <div 
+                      style={{ 
+                        marginTop: '20px', 
+                        padding: '16px', 
+                        background: 'rgba(0,0,0,0.2)', 
+                        borderRadius: '12px', 
+                        border: `1px solid ${aiState.data?.error_code === 'INCOMPLETE_PARAM' ? '#f59e0b' : aiState.data?.error_code === 'SECURITY_VIOLATION' ? '#ef4444' : aiState.data?.error_code === 'OUT_OF_SCOPE' ? '#64748b' : 'rgba(255,255,255,0.05)'}`,
+                        animation: aiState.data?.error_code === 'SECURITY_VIOLATION' ? 'shakeCritical 0.4s ease-in-out' : 'none'
+                      }}
+                    >
                       <div style={{ fontSize: '11px', color: 'var(--color-cyan, #06b6d4)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         💡 COPILOT INSIGHT
                       </div>
@@ -1806,42 +1861,82 @@ export default function Dashboard() {
                         {aiState.isLoading ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div className={styles.spinner} style={{ width: '12px', height: '12px', borderTopColor: 'var(--color-cyan)' }} />
-                            Thinking...
+                            <LoadingCycleText />
                           </div>
                         ) : aiState.data ? (
                           <div style={{ lineHeight: 1.5 }}>
                             {aiState.data.error ? (
                               <span style={{ color: '#ef4444' }}>{aiState.data.error}</span>
-                            ) : typeof aiState.data.insight === 'object' && aiState.data.insight !== null ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
-                                <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {aiState.data.insight.statusCode}</div>
-                                <div style={{ color: '#38bdf8', marginBottom: '4px' }}>
-                                  {aiState.data.insight.w1Colo} ➔ {aiState.data.insight.w2Colo} ➔ {aiState.data.insight.w3Ip}
-                                </div>
-                                
-                                <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {aiState.data.insight.packetLoss}</div>
-                                
-
-                                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
-                                  <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: '4px' }}>Influence:</div>
-                                  {aiState.data.insight.influence?.map((inf: any, idx: number) => (
-                                    <div key={idx} style={{ paddingLeft: '8px', marginBottom: '4px' }}>
-                                      ► <span style={{ color: '#cbd5e1' }}>{inf.object}:</span> {inf.severity} {inf.content}
+                            ) : aiState.data.error_code ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'var(--font-sans)', fontSize: '0.85rem' }}>
+                                {aiState.data.error_code === 'INCOMPLETE_PARAM' && (
+                                  <>
+                                    <div style={{ color: '#f59e0b', fontWeight: 600, fontSize: '0.95rem' }}>⚠️ PARAMETER MISSING</div>
+                                    <div style={{ color: '#e2e8f0' }}>Chaos injection intent detected, but required physical parameters are missing.</div>
+                                    <div style={{ color: '#f87171' }}>Missing Entity: [ {aiState.data.error_message} ]</div>
+                                    <div style={{ color: '#94a3b8' }}>The engine refuses to execute blind faults. Please specify the exact blast radius or injection target.</div>
+                                  </>
+                                )}
+                                {aiState.data.error_code === 'SECURITY_VIOLATION' && (
+                                  <>
+                                    <div style={{ color: '#ef4444', fontWeight: 600, fontSize: '0.95rem' }}>🛑 SECURITY OVERRIDE ENGAGED</div>
+                                    <div style={{ color: '#f87171' }}>FATAL: Outbound attack or unauthorized escalation detected.</div>
+                                    <div style={{ color: '#94a3b8' }}>{aiState.data.error_message}</div>
+                                    <div style={{ color: '#94a3b8' }}>The panic.design engine is strictly constrained to internal resilience testing within the authorized topology.</div>
+                                  </>
+                                )}
+                                {aiState.data.error_code === 'OUT_OF_SCOPE' && (
+                                  <>
+                                    <div style={{ color: '#94a3b8', fontWeight: 600, fontSize: '0.95rem' }}>⏸️ UNKNOWN DIRECTIVE</div>
+                                    <div style={{ color: '#e2e8f0' }}>Input exceeds the semantic boundaries of L4-L7 chaos network orchestration.</div>
+                                    <div style={{ color: '#64748b' }}>{aiState.data.error_message}</div>
+                                    <div style={{ color: '#64748b' }}>The Edge Copilot rejects general conversational queries, coding requests, or non-topological commands. Please input a valid network blackhole, routing leak, or application-layer degradation directive.</div>
+                                  </>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                {aiState.data.warning_code === 'LOGICAL_CONFLICT' && (
+                                  <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed rgba(255,255,255,0.1)' }}>
+                                    <div style={{ color: '#f59e0b', fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px' }}>⚡ LOGIC RECALIBRATED</div>
+                                    <div style={{ color: '#e2e8f0', marginBottom: '4px' }}>OSI model layer conflict detected.</div>
+                                    <div style={{ color: '#94a3b8' }}>{aiState.data.warning_message}</div>
+                                    <div style={{ color: '#94a3b8', marginTop: '4px' }}>Automatically stripped unreachable L7 status assertions. Enforcing L4 physical layer blockade. Geodesic topology simulation and secondary risk predictions have been updated accordingly.</div>
+                                  </div>
+                                )}
+                                {typeof aiState.data.insight === 'object' && aiState.data.insight !== null ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
+                                    <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {aiState.data.insight.statusCode}</div>
+                                    <div style={{ color: '#38bdf8', marginBottom: '4px' }}>
+                                      {aiState.data.insight.w1Colo} ➔ {aiState.data.insight.w2Colo} ➔ {aiState.data.insight.w3Ip}
                                     </div>
-                                  ))}
-                                </div>
+                                    
+                                    <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {aiState.data.insight.packetLoss}</div>
+                                    
+                                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
+                                      <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: '4px' }}>Influence:</div>
+                                      {aiState.data.insight.influence?.map((inf: any, idx: number) => (
+                                        <div key={idx} style={{ paddingLeft: '8px', marginBottom: '4px' }}>
+                                          ► <span style={{ color: '#cbd5e1' }}>{inf.object}:</span> {inf.severity} {inf.content}
+                                        </div>
+                                      ))}
+                                    </div>
 
-                                {aiState.data.insight.secondaryRisks && (
-                                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
-                                    <span style={{ color: '#ec4899', fontWeight: 600 }}>Secondary Risks:</span> {aiState.data.insight.secondaryRisks}
-                                  </div>
-                                )}
+                                    {aiState.data.insight.secondaryRisks && (
+                                      <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
+                                        <span style={{ color: '#ec4899', fontWeight: 600 }}>Secondary Risks:</span> {aiState.data.insight.secondaryRisks}
+                                      </div>
+                                    )}
 
-                                {aiState.data.insight.suggestion && (
-                                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
-                                    <span style={{ color: '#10b981', fontWeight: 600 }}>Suggestion:</span> {aiState.data.insight.suggestion}
+                                    {aiState.data.insight.suggestion && (
+                                      <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
+                                        <span style={{ color: '#10b981', fontWeight: 600 }}>Suggestion:</span> {aiState.data.insight.suggestion}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                ) : null}
+                              </>
+                            )}
                               </div>
                             ) : (
                               <span>{aiState.data.insight}</span>
