@@ -127,7 +127,7 @@ export async function POST(req: Request) {
     
     if (w1_colo === 'UNKNOWN') {
       const w1ColoRaw = req.headers.get('cf-ray')?.split('-')[1] || req.headers.get('x-vercel-id')?.split('::')[0];
-      w1_colo = w1ColoRaw ? w1ColoRaw.toUpperCase() : colo;
+      w1_colo = w1ColoRaw ? w1ColoRaw.toUpperCase() : 'UNKNOWN';
     }
     return NextResponse.json({
       success: true,

@@ -1827,14 +1827,15 @@ export default function Dashboard() {
                                   { label: 'Total Round-Trip Time', data: aiState.data.insight.totalTime }
                                 ].map((row, idx) => {
                                   if (!row.data) return null;
-                                  const diff = row.data.after - row.data.before;
+                                  const isNaNValue = row.data.after === 'NaN';
+                                  const diff = isNaNValue ? 0 : (row.data.after - row.data.before);
                                   const sign = diff > 0 ? '+' : '';
                                   const diffColor = diff > 0 ? '#ef4444' : '#10b981'; // Delay is negative: + is red, - is green
                                   return (
                                     <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
                                       <span style={{ color: '#94a3b8', width: '160px' }}>{row.label}:</span> 
                                       <span style={{ width: '120px' }}>{row.data.before} ms {'->'} {row.data.after} ms</span>
-                                      {diff !== 0 && row.data.after !== 0 && (
+                                      {diff !== 0 && row.data.after !== 0 && !isNaNValue && (
                                         <span style={{ color: diffColor, fontWeight: 600, marginLeft: '8px', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>
                                           {sign}{diff} ms
                                         </span>
