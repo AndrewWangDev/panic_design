@@ -227,14 +227,7 @@ const TypewriterPayload = ({ fullToken, targetHost, isSimulating, onSimulationSt
     }
   }, [testLogs, testState]);
 
-  // If simulation is cancelled from parent, reset testState
-  useEffect(() => {
-    if (!isSimulating && testState === 'testing') {
-      setTestState('done');
-      setTestLogs(prev => [...prev, '', '< Simulation Cancelled']);
-    }
-  }, [isSimulating, testState]);
-  
+
   const tokenDisplay = fullToken.length > 12 
     ? fullToken.substring(0, 8) + '...' + fullToken.slice(-4) 
     : fullToken;
@@ -491,8 +484,10 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         setTestState('done');
       }
     } catch (e: any) {
-      setTestLogs(prev => [...prev, `< Error: ${e.message}`, `[System] Test Failed.`]);
-      setTestState('done');
+      if (activeTestIdRef.current === testId) {
+        setTestLogs(prev => [...prev, `< Error: ${e.message}`, `[System] Test Failed.`]);
+        setTestState('done');
+      }
     }
   };
 
