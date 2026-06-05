@@ -15,6 +15,7 @@ interface WorldMapProps {
   fault?: string;
   targetHost?: string;
   latencyParams?: { base: number, jitter: number, distribution: string };
+  mutilationStrategy?: string;
   isPending?: boolean;
   animKey?: number;
   colo?: string;
@@ -28,7 +29,7 @@ function getLatencyColor(ms: number) {
   return "#ef4444"; // red
 }
 
-export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, isPending = false, animKey = 0, colo = 'UNKNOWN', w1Colo = 'UNKNOWN', aiMapData }: WorldMapProps) {
+export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, mutilationStrategy, isPending = false, animKey = 0, colo = 'UNKNOWN', w1Colo = 'UNKNOWN', aiMapData }: WorldMapProps) {
   const [geographies, setGeographies] = useState<any[]>([]);
   const [viewport, setViewport] = useState({ x: 0, y: 0, k: 1 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -261,24 +262,34 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     );
   };
 
-  // Fixed visual timings
-  const totalCycle = 2000; // 800ms + 400ms + 800ms
-  const p1End = 0.4; // 800 / 2000
-  const p2Start = 0.6; // 1200 / 2000
-
-  const t1Color = isPending ? "#cbd5e1" : getLatencyColor(t1 || 0);
-  const t3Color = getLatencyColor(t3 || 0);
-  const pinColor = "#cbd5e1"; // Neutral slate-300
-
   // Effective overrides from AI
   const effW1 = aiMapData?.W1 || w1;
   const effW2 = aiMapData?.W2 || w2;
   const effW3 = aiMapData?.W3 || visualW3;
   const effT1 = aiMapData?.T1 !== undefined ? aiMapData.T1 : t1;
+  const effT2 = aiMapData?.T2 !== undefined ? aiMapData.T2 : t2;
   const effT3 = aiMapData?.T3 !== undefined ? aiMapData.T3 : t3;
 
   const flag_1 = aiMapData?.flag_1 || false;
   const flag_2 = aiMapData ? aiMapData.flag_2 : (fault === '502' || fault === '504' || fault === '429' || isPacketLoss);
+
+  // Dynamic visual timings scaled by actual latency
+  const baseScale = 4; // 1ms real = 4ms animation
+  const dur1 = Math.max((effT1 || 0) * baseScale, 400); // 400ms min
+  const dur2 = (effT2 && effT2 > 0) ? Math.max(effT2 * baseScale, 200) : 0;
+  const dur3 = (effT3 && effT3 > 0) ? Math.max(effT3 * baseScale, 400) : 0;
+  
+  const totalCycle = Math.max(dur1 + dur2 + dur3 + 200, 1000); // pad 200ms
+  
+  // Ratios for keyTimes (must be strictly monotonically increasing)
+  const p1End = Number((dur1 / totalCycle).toFixed(4));
+  const p1EndHalf = Number(((dur1 / 2) / totalCycle).toFixed(4));
+  const p2Start = Number(((dur1 + dur2) / totalCycle).toFixed(4));
+  const p2End = Number(((dur1 + dur2 + Math.max(dur3, 10)) / totalCycle).toFixed(4));
+
+  const t1Color = isPending ? "#cbd5e1" : getLatencyColor(t1 || 0);
+  const t3Color = getLatencyColor(t3 || 0);
+  const pinColor = "#cbd5e1"; // Neutral slate-300
   const flag_route_1 = aiMapData?.flag_route_1 || false;
   const flag_route_2 = aiMapData?.flag_route_2 || false;
 
@@ -316,7 +327,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
       <div style={{ padding: '24px 24px 24px 24px', display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'flex-start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 200px', minWidth: 0 }}>
           <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>TARGET HOSTNAME</div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{targetHost || 'N/A'}</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary, #fff)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{targetHost || 'N/A'}</div>
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
@@ -336,8 +347,17 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         {fault === 'latency' && latencyParams && (
           <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>PARAMS</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary, #fff)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
               Base: {latencyParams.base}ms | Jitter: {latencyParams.jitter}ms {latencyParams.distribution ? `| Dist: ${latencyParams.distribution}` : ''}
+            </div>
+          </div>
+        )}
+
+        {mutilationStrategy && mutilationStrategy !== 'None' && (
+          <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>MUTILATION STRATEGY</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ef4444', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+              {mutilationStrategy}
             </div>
           </div>
         )}
@@ -420,9 +440,10 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           {!isPending && effW1 && effW2 && !flag_1 && (
             <g>
               <circle r={3} fill="#fff" filter={`drop-shadow(0 0 6px ${t1Color})`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                <animateMotion dur="1s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;1;1;1" keyTimes={`0;${p1End};${p1End+0.001};1`} calcMode="linear">
                   <mpath href="#route-1" />
                 </animateMotion>
+                <animate attributeName="opacity" values="1;1;0;0" keyTimes={`0;${p1End-0.001};${p1End};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
               </circle>
             </g>
           )}
@@ -431,16 +452,16 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           {flag_1 && abort1Data && (
             <g>
               <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                <animateMotion dur={`1000ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;0.5;0.8;1`} calcMode="linear">
+                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p1EndHalf};${p1End};1`} calcMode="linear">
                   <mpath href="#route-abort-1" />
                 </animateMotion>
-                <animate attributeName="opacity" values={`0;0;1;0;0`} keyTimes={`0;0.49;0.5;0.8;1`} dur={`1000ms`} repeatCount="indefinite" />
+                <animate attributeName="opacity" values={`0;0;1;0;0`} keyTimes={`0;${p1EndHalf-0.001};${p1EndHalf};${p1End};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
               </circle>
               {abort1Data.wx && abort1Data.wy && (
                 <g style={{ transform: `translate(${abort1Data.wx}px, ${abort1Data.wy}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                   <circle cx={0} cy={0} r={2} fill="#ef4444" opacity="0">
-                    <animate attributeName="opacity" values="0;0;1;0;0" keyTimes={`0;0.79;0.8;0.9;1`} dur={`1000ms`} repeatCount="indefinite" />
-                    <animate attributeName="r" values="2;2;16;16;2" keyTimes={`0;0.79;0.8;0.9;1`} dur={`1000ms`} repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0;0;1;0;0" keyTimes={`0;${p1End-0.001};${p1End};${Math.min(p1End+0.1, 1)};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+                    <animate attributeName="r" values="2;2;16;16;2" keyTimes={`0;${p1End-0.001};${p1End};${Math.min(p1End+0.1, 1)};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
                   </circle>
                 </g>
               )}
@@ -448,12 +469,13 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           )}
 
           {/* Packet 2 */}
-          {!isPending && effW2 && effW3 && !flag_2 && (
+          {!isPending && effW2 && effW3 && !flag_2 && effT3 > 0 && (
             <g>
               <circle r={3} fill="#fff" filter={`drop-shadow(0 0 6px ${t3Color})`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
+                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};${p2End};1`} calcMode="linear">
                   <mpath href="#route-2" />
                 </animateMotion>
+                <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes={`0;${p2Start-0.001};${p2Start};${p2End-0.001};${p2End};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
               </circle>
             </g>
           )}
@@ -462,16 +484,16 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           {flag_2 && abort2Data && (
             <g>
               <circle r={5} fill="#fff" filter={`drop-shadow(0 0 6px #ef4444)`} style={{ transform: `scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};0.8;1`} calcMode="linear">
+                <animateMotion dur={`${totalCycle}ms`} repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes={`0;${p2Start};${(p2Start + p2End)/2};1`} calcMode="linear">
                   <mpath href="#route-abort-2" />
                 </animateMotion>
-                <animate attributeName="opacity" values={`0;0;1;0;0`} keyTimes={`0;${p2Start-0.01};${p2Start};0.8;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+                <animate attributeName="opacity" values={`0;0;1;0;0`} keyTimes={`0;${p2Start-0.001};${p2Start};${(p2Start + p2End)/2};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
               </circle>
               {abort2Data.wx && abort2Data.wy && (
                 <g style={{ transform: `translate(${abort2Data.wx}px, ${abort2Data.wy}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                   <circle cx={0} cy={0} r={2} fill="#ef4444" opacity="0">
-                    <animate attributeName="opacity" values="0;0;1;0;0" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
-                    <animate attributeName="r" values="2;2;16;16;2" keyTimes={`0;0.79;0.8;0.9;1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0;0;1;0;0" keyTimes={`0;${((p2Start + p2End)/2)-0.001};${(p2Start + p2End)/2};${Math.min(((p2Start + p2End)/2)+0.1, 1)};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
+                    <animate attributeName="r" values="2;2;16;16;2" keyTimes={`0;${((p2Start + p2End)/2)-0.001};${(p2Start + p2End)/2};${Math.min(((p2Start + p2End)/2)+0.1, 1)};1`} dur={`${totalCycle}ms`} repeatCount="indefinite" />
                   </circle>
                 </g>
               )}
