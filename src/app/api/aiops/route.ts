@@ -25,14 +25,14 @@ You must return ONLY a raw, perfectly valid JSON object. DO NOT output any conve
 The JSON MUST follow this exact schema:
 {
   "map_data": {
-    "T1": number (MUST BE PROVIDED. latency in ms from Cloud Runner to Edge. If W1➔W2 fails, this can be 0 or high),
+    "T1": number (MUST BE PROVIDED. latency in ms from Cloud Runner to Edge. If flag_1 is false, T1 MUST NOT be 0, you must use baseline t1 or a realistic number. If flag_1 is true, T1 can be 0 or high),
     "T2": number (MUST BE PROVIDED. latency in ms injected by fault at Edge Gateway. If not related to latency injection, simulate a realistic jitter around 0, e.g. 2 or 1),
-    "T3": number (latency in ms from Edge to Upstream. 0 if dropped/aborted),
+    "T3": number (latency in ms from Edge to Upstream. If flag_2 is false, T3 MUST NOT be 0. If flag_2 is true, the packet is dropped so T3 is 0),
     "W1": [longitude, latitude] (Cloud Runner),
     "W2": [longitude, latitude] (Edge Gateway),
     "W3": [longitude, latitude] (Upstream Target),
     "w2_colo": string (Edge colo code, e.g., "LAX"),
-    "flag_1": boolean (true ONLY if the route W1 ➔ W2 is completely broken/aborted. WARNING: For 502/504/429 at Edge Gateway, the packet successfully reaches Edge W2, so W1➔W2 is NOT broken, flag_1 MUST be false!),
+    "flag_1": boolean (true ONLY if the route W1 ➔ W2 is completely broken/aborted. WARNING: For 502/504/429/444 at Edge Gateway, the packet successfully reaches Edge W2, so W1➔W2 is NOT broken, flag_1 MUST be false!),
     "flag_2": boolean (true if the route W2 ➔ W3 is broken/aborted. e.g., for 502/504 or Edge Packet Loss, the packet never reaches W3, so flag_2 MUST be true. A dashed line with a red cross will be drawn from W2 to W3),
     "flag_route_1": boolean (true if W1 ➔ W2 route is detoured/inefficient),
     "flag_route_2": boolean (true if W2 ➔ W3 route is detoured/inefficient),
