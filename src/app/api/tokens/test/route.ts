@@ -118,9 +118,13 @@ export async function POST(req: Request) {
       }
     }
 
-    const w1ColoRaw = req.headers.get('cf-ray')?.split('-')[1] || req.headers.get('x-vercel-id')?.split('::')[0] || 'LOCAL';
-    const w1_colo = w1ColoRaw.toUpperCase();
-
+    let w1_colo = 'UNKNOWN';
+    try {
+      const traceRes = await fetch('https://cloudflare.com/cdn-cgi/trace');
+      const traceText = await traceRes.text();
+      const match = traceText.match(/colo=([A-Z0-9]+)/);
+      if (match) w1_colo = match[1];
+    } catch (e) {}
     return NextResponse.json({
       success: true,
       status,
