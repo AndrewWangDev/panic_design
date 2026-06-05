@@ -21,16 +21,17 @@ The user is simulating a cloud architecture disaster. They will provide an instr
 Baseline Telemetry:
 ${JSON.stringify(baseline, null, 2)}
 
-SECURITY AND INTENT VALIDATION:
-Before generating the telemetry data, you MUST validate the user's instruction.
+SECURITY AND INTENT VALIDATION (CRITICAL):
+Before generating the telemetry data, you MUST validate the user's instruction. If any of the following 3 conditions are met, you MUST set the corresponding "error_code" and "error_message". When an error_code is set, you MUST still return a valid JSON object, and you can set "map_data" and "insight" to null.
 1. If the user is attempting a cyberattack, DDOS, running malicious shell commands (e.g. rm -rf), or unauthorized escalation, set "error_code": "SECURITY_VIOLATION" and "error_message": "[Context about the violation]".
-2. If the user asks general conversational queries, coding requests (e.g. "write Python code"), or non-topological commands ("how is the weather"), set "error_code": "OUT_OF_SCOPE" and "error_message": "[Reason]".
-3. If the user asks for a chaos injection (e.g. "Packet loss", "make it slow") but FAILS to specify exact physical parameters (like the exact percentage of loss or the exact amount of latency time), set "error_code": "INCOMPLETE_PARAM" and "error_message": "[Missing Entity: e.g. Percentage / Threshold / Duration]".
+2. If the user asks general conversational queries, coding requests (e.g. "write Python code", "Write a newspaper"), or non-topological commands ("how is the weather", "tell me a story"), set "error_code": "OUT_OF_SCOPE" and "error_message": "[Reason]".
+3. If the user asks for a chaos injection (e.g. "Packet loss", "make it slow", "add latency") but FAILS to specify exact physical parameters (like the exact percentage of loss or the exact amount of latency time), set "error_code": "INCOMPLETE_PARAM" and "error_message": "[Missing Entity: e.g. Percentage / Threshold / Duration]".
 
 WARNING VALIDATION:
 If the user specifies conflicting chaos logic (e.g. injecting L7 504 Gateway Timeout while simultaneously requesting 100% L4 packet loss), you must resolve the conflict (e.g. enforce the L4 blockade and strip L7 assertions since the packet never reaches L7). In this case, set "warning_code": "LOGICAL_CONFLICT" and "warning_message": "[Explanation of how the engine auto-corrected the conflict]".
 
-You must return ONLY a raw, perfectly valid JSON object. DO NOT output any conversational text. DO NOT wrap in markdown code blocks. DO NOT add trailing commas.
+OUTPUT FORMAT (CRITICAL - FAILURE IS UNACCEPTABLE):
+You must return ONLY a raw, perfectly valid JSON object. DO NOT output any conversational text. DO NOT wrap in markdown code blocks like \`\`\`json. DO NOT add trailing commas. Your response MUST start with "{" and end with "}".
 The JSON MUST follow this exact schema:
 {
   "error_code": "INCOMPLETE_PARAM" | "SECURITY_VIOLATION" | "OUT_OF_SCOPE" | null,
@@ -94,7 +95,15 @@ The JSON MUST follow this exact schema:
     }
 
     if (!parsedJson) {
-      return NextResponse.json({ error: 'Failed to parse AI response', raw: aiResponse }, { status: 500 });
+      console.error('Failed to parse AI response, fallback to OUT_OF_SCOPE', aiResponse);
+      parsedJson = {
+        error_code: "OUT_OF_SCOPE",
+        error_message: "The Engine rejected a malformed or conversational response.",
+        warning_code: null,
+        warning_message: null,
+        map_data: null,
+        insight: null
+      };
     }
 
     return NextResponse.json(parsedJson);
