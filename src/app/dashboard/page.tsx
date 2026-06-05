@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search, Lock, MonitorSmartphone, Sparkles, Send, RotateCcw } from 'lucide-react';
+import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search, Lock, MonitorSmartphone, Sparkles, Send, RotateCcw, X } from 'lucide-react';
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
 import WorldMap from '@/components/WorldMap';
@@ -830,6 +830,133 @@ const PostMortemPanel = ({ stats, onClear }: { stats: any, onClear: () => void }
   );
 };
 
+const AiAutofillModal = ({ 
+  isOpen, 
+  onClose, 
+  currentFormState, 
+  onApply 
+}: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  currentFormState: any, 
+  onApply: (data: any) => void 
+}) => {
+  const [instruction, setInstruction] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'warning' | 'error'>('idle');
+  const [aiData, setAiData] = useState<any>(null);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async () => {
+    if (!instruction.trim()) return;
+    setStatus('loading');
+    setAiData(null);
+
+    try {
+      const res = await fetch('/api/aiops/autofill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, currentFormState })
+      });
+      const data = await res.json();
+      
+      if (data.status) {
+        setStatus(data.status);
+        setAiData(data);
+      } else {
+        setStatus('error');
+        setAiData({ error_message: 'Failed to parse AI output structure.' });
+      }
+    } catch (e: any) {
+      setStatus('error');
+      setAiData({ error_message: e.message || 'Network error occurred.' });
+    }
+  };
+
+  const handleApply = () => {
+    if (aiData?.data) {
+      onApply(aiData.data);
+    }
+    onClose();
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)' }}>
+      <div style={{ width: '500px', background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+        
+        <div style={{ padding: '20px', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}><Sparkles size={16} color="#38bdf8" /> AI Control Plane Autofill</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><X size={20} /></button>
+        </div>
+
+        <div style={{ padding: '20px' }}>
+          <textarea
+            placeholder="E.g., Inject 200ms latency and 5% packet loss for Asia region..."
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            disabled={status === 'loading'}
+            style={{ width: '100%', height: '100px', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '12px', color: '#f8fafc', fontFamily: 'var(--font-sans)', fontSize: '14px', resize: 'none', marginBottom: '16px' }}
+          />
+
+          {status === 'loading' && (
+            <div style={{ padding: '16px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '8px', color: '#38bdf8', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className={styles.spinner} style={{ width: '16px', height: '16px', borderWidth: '2px' }} />
+              <LoadingCycleText />
+            </div>
+          )}
+
+          {status === 'success' && aiData && (
+            <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px', color: '#10b981', fontSize: '14px' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>[ ✓ CONFIGURATION COMPILED ]</div>
+              <div>Intent matched perfectly. Extracted {aiData.data?.faultType === 'latency' ? 'Traffic Degradation' : aiData.data?.faultType} metrics. Ready to patch Control Plane.</div>
+            </div>
+          )}
+
+          {status === 'warning' && aiData && (
+            <div style={{ padding: '16px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px', color: '#f59e0b', fontSize: '14px' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>[ ⚠️ LOGIC RECALIBRATED ]</div>
+              <div style={{ marginBottom: '8px' }}><strong>Conflict detected:</strong> {aiData.conflict_reason}</div>
+              <div><strong>Resolution:</strong> {aiData.resolution}</div>
+            </div>
+          )}
+
+          {status === 'error' && aiData && (
+            <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: '#ef4444', fontSize: '14px' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>[ 🛑 PARSING FAILED ]</div>
+              <div>{aiData.error_message}</div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding: '16px 20px', borderTop: '1px solid #1e293b', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: '#020617' }}>
+          {status === 'idle' || status === 'loading' ? (
+            <button 
+              onClick={handleSubmit} 
+              disabled={status === 'loading'}
+              style={{ background: '#38bdf8', color: '#0f172a', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: status === 'loading' ? 'not-allowed' : 'pointer', opacity: status === 'loading' ? 0.7 : 1 }}
+            >
+              GENERATE
+            </button>
+          ) : status === 'success' ? (
+            <button onClick={handleApply} style={{ background: '#10b981', color: '#0f172a', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+              APPLY & CLOSE
+            </button>
+          ) : status === 'warning' ? (
+            <button onClick={handleApply} style={{ background: '#f59e0b', color: '#0f172a', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+              ACKNOWLEDGE & APPLY
+            </button>
+          ) : status === 'error' ? (
+            <button onClick={onClose} style={{ background: '#ef4444', color: '#0f172a', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+              ABORT & MANUAL ENTRY
+            </button>
+          ) : null}
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const [targetHost, setTargetHost] = useState('');
   const [fault, setFault] = useState<'502' | '504' | '429' | 'latency' | null>(null);
@@ -841,6 +968,9 @@ export default function Dashboard() {
   const [scope, setScope] = useState('Global');
   const [ttl, setTtl] = useState('15m');
   const [customTtl, setCustomTtl] = useState(24);
+
+  const [isAiAutofillOpen, setIsAiAutofillOpen] = useState(false);
+  const [highlightAutofill, setHighlightAutofill] = useState(false);
 
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationKey, setSimulationKey] = useState(0);
@@ -901,6 +1031,20 @@ export default function Dashboard() {
     setTimeout(() => {
       setIsFlashing(false);
     }, 400); 
+  };
+  
+  const handleAiApply = (data: any) => {
+    if (data.targetHostname !== undefined) setTargetHost(data.targetHostname);
+    if (data.scope !== undefined) setScope(data.scope);
+    if (data.tokenTtl !== undefined) setCustomTtl(data.tokenTtl);
+    if (data.faultType !== undefined) setFault(data.faultType);
+    if (data.distribution !== undefined && data.distribution !== null) setDistribution(data.distribution);
+    if (data.baseLatency !== undefined && data.baseLatency !== null) setLatency(Number(data.baseLatency));
+    if (data.jitter !== undefined && data.jitter !== null) setJitter(Number(data.jitter));
+    if (data.packetLoss !== undefined && data.packetLoss !== null) setPacketLoss(Number(data.packetLoss));
+    
+    setHighlightAutofill(true);
+    setTimeout(() => setHighlightAutofill(false), 2000);
   };
   
   // Clear generated token when form inputs change, resetting terminal to MOCK_LOGS
@@ -1305,15 +1449,30 @@ export default function Dashboard() {
         <div className={styles.gridTop} ref={topGridRef}>
           
           {/* Left: Control Plane */}
-          <div className={`${styles.card} ${styles.controlPlaneCard} ${isSimulating ? styles.controlPlaneCardSimulating : ''}`}>
+          <div 
+            className={`${styles.card} ${styles.controlPlaneCard} ${isSimulating ? styles.controlPlaneCardSimulating : ''}`}
+            style={highlightAutofill ? { boxShadow: '0 0 20px 4px rgba(16, 185, 129, 0.6)', transition: 'box-shadow 0.3s ease-in-out' } : { transition: 'box-shadow 0.5s ease-in-out' }}
+          >
             <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 Control Plane <div className={styles.blinkDot} />
               </div>
-              <button className={styles.quickDemoBtn} onClick={handleQuickDemo}>
-                <Zap size={14} fill="currentColor" /> Quick Demo
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className={styles.quickDemoBtn} onClick={() => setIsAiAutofillOpen(true)}>
+                  <Sparkles size={14} fill="currentColor" /> AI AutoFill
+                </button>
+                <button className={styles.quickDemoBtn} onClick={handleQuickDemo}>
+                  <Zap size={14} fill="currentColor" /> Quick Demo
+                </button>
+              </div>
             </div>
+
+            <AiAutofillModal 
+              isOpen={isAiAutofillOpen} 
+              onClose={() => setIsAiAutofillOpen(false)} 
+              currentFormState={{ targetHostname: targetHost, scope, tokenTtl: customTtl, faultType: fault, distribution, baseLatency: latency, jitter, packetLoss }} 
+              onApply={handleAiApply} 
+            />
 
             <div className={styles.inputGroup}>
               <div className={styles.targetRow}>
