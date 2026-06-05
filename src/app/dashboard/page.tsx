@@ -1559,8 +1559,8 @@ export default function Dashboard() {
                         t1={['429', '502'].includes(fault || '') && !telemetryData?.chaosReason ? Math.round(telemetryData?.totalLatency || 0) : Math.round((telemetryData?.t1 || 0) * 2)}
                         t2={telemetryData ? telemetryData.t2 : 0}
                         t3={telemetryData ? Math.round(telemetryData.t3 * 2) : 0}
-                        colo={telemetryData ? (telemetryData.w2_colo || telemetryData.colo) : 'UNKNOWN'}
-                        w1Colo={telemetryData ? telemetryData.w1_colo : 'UNKNOWN'}
+                        colo={aiState.data?.insight?.w2Colo || (telemetryData ? (telemetryData.w2_colo || telemetryData.colo) : 'UNKNOWN')}
+                        w1Colo={aiState.data?.insight?.w1Colo || (telemetryData ? telemetryData.w1_colo : 'UNKNOWN')}
                         fault={telemetryData?.chaosReason ? 'latency' : (fault || 'latency')}
                         targetHost={targetHost}
                         latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
@@ -1820,33 +1820,30 @@ export default function Dashboard() {
                                 
                                 <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {aiState.data.insight.packetLoss}</div>
                                 
-                                {[
-                                  { label: 'Edge Network RTT', data: aiState.data.insight.t1 },
-                                  { label: 'Injected Latency', data: aiState.data.insight.t2 },
-                                  { label: 'Upstream Backhaul', data: aiState.data.insight.t3 },
-                                  { label: 'Total Round-Trip Time', data: aiState.data.insight.totalTime }
-                                ].map((row, idx) => {
-                                  if (!row.data) return null;
-                                  const isNaNValue = row.data.after === 'NaN';
-                                  const diff = isNaNValue ? 0 : (row.data.after - row.data.before);
-                                  const sign = diff > 0 ? '+' : '';
-                                  const diffColor = diff > 0 ? '#ef4444' : '#10b981'; // Delay is negative: + is red, - is green
-                                  return (
-                                    <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
-                                      <span style={{ color: '#94a3b8', width: '160px' }}>{row.label}:</span> 
-                                      <span style={{ width: '120px' }}>{row.data.before} ms {'->'} {row.data.after} ms</span>
-                                      {diff !== 0 && row.data.after !== 0 && !isNaNValue && (
-                                        <span style={{ color: diffColor, fontWeight: 600, marginLeft: '8px', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>
-                                          {sign}{diff} ms
-                                        </span>
-                                      )}
-                                    </div>
-                                  );
-                                })}
+                                <div style={{ marginTop: '12px', color: '#f87171', fontWeight: 600, letterSpacing: '0.5px' }}>
+                                  GLOBAL EDGE ISOLATION: {aiState.data.insight.globalEdgeIsolation || ''}
+                                </div>
                                 
                                 <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
-                                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>Influence:</span> {aiState.data.insight.summary}
+                                  <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: '4px' }}>Influence:</div>
+                                  {aiState.data.insight.influence?.map((inf: any, idx: number) => (
+                                    <div key={idx} style={{ paddingLeft: '8px', marginBottom: '4px' }}>
+                                      ► <span style={{ color: '#cbd5e1' }}>{inf.object}:</span> {inf.severity} {inf.content}
+                                    </div>
+                                  ))}
                                 </div>
+
+                                {aiState.data.insight.secondaryRisks && (
+                                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
+                                    <span style={{ color: '#ec4899', fontWeight: 600 }}>Secondary Risks:</span> {aiState.data.insight.secondaryRisks}
+                                  </div>
+                                )}
+
+                                {aiState.data.insight.suggestion && (
+                                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
+                                    <span style={{ color: '#10b981', fontWeight: 600 }}>Suggestion:</span> {aiState.data.insight.suggestion}
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <span>{aiState.data.insight}</span>

@@ -41,16 +41,21 @@ The JSON MUST follow this exact schema:
     "W3_label": string (extra label for W3, e.g., "Unreachable", or "")
   },
   "insight": {
-    "statusCode": string (Format "BEFORE -> AFTER". e.g. "200: 100% -> 200: 50%, 444: 50%". The "before" MUST match baseline.statusCodeBreakdown exactly. The "after" must logically match the exact packet loss percentage requested),
+    "statusCode": string (Format "BEFORE -> AFTER". e.g. "200: 100% -> 200: 50%, 444: 50%". The "before" MUST match baseline.statusCodeBreakdown exactly.),
     "w1Colo": string (It MUST match baseline.w1_colo exactly. Do not use '->' here),
     "w2Colo": string (e.g. "LAX"),
     "w3Ip": string (It MUST match baseline.resolvedIp exactly. Do not use '->' here),
-    "packetLoss": string (Format "BEFORE -> AFTER". e.g. "0.00% -> 50%". The "before" MUST match baseline.actualPacketLossRate exactly. The "after" MUST strictly adhere to the exact percentage requested in the instruction),
-    "t1": { "before": number, "after": number }, // "before" MUST exactly match baseline.t1_rtt
-    "t2": { "before": number, "after": number | string }, // "before" MUST exactly match baseline.t2. "after" MUST ignore packet loss completely and remain its original value (unless the instruction explicitly asks to increase/decrease latency). However, if packetLoss is exactly 100%, then "after" MUST be the string "NaN".
-    "t3": { "before": number, "after": number }, // "before" MUST exactly match baseline.t3_rtt
-    "totalTime": { "before": number, "after": number }, // "before" MUST exactly be t1_rtt + t2 + t3_rtt. "after" MUST exactly be map_data's T1 + T2 + T3.
-    "summary": string (A concise 1-sentence AIOps analysis of the influence)
+    "packetLoss": string (Format "BEFORE -> AFTER". e.g. "0.00% -> 50%". The "before" MUST match baseline.actualPacketLossRate exactly.),
+    "globalEdgeIsolation": string (A short phrase describing the scope of influence, e.g. "Partial Global Disruption", "Target Unreachable", or "Complete Blackout"),
+    "influence": [
+      {
+        "object": string (e.g. "Client", "Edge Gateway", "Upstream Database"),
+        "severity": string (Use exactly one emoji: "🔴" for critical, "🟡" for warning, "🟢" for normal),
+        "content": string (e.g. "Connection Pool Exhaustion", "Timeout Cascade")
+      }
+    ],
+    "secondaryRisks": string (A short description of cascaded secondary disasters),
+    "suggestion": string (Actionable mitigation advice for the current network environment)
   }
 }`;
 
