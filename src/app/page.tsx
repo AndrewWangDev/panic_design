@@ -162,7 +162,9 @@ function HomeContent() {
                 <Turnstile
                   siteKey="0x4AAAAAADgKGlhfvExJwp8F"
                   onSuccess={(token) => setTurnstileToken(token)}
-                  options={{ theme: 'dark' }}
+                  onExpire={() => setTurnstileToken(null)}
+                  onError={() => setTurnstileToken(null)}
+                  options={{ theme: 'dark', size: 'invisible' }}
                 />
               </div>
             </div>

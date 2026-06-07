@@ -989,6 +989,7 @@ export default function Dashboard() {
   const activeTokensRef = useRef<HTMLDivElement>(null);
 
   const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<{title: string, message: string} | null>(null);
   const [showConcurrentModal, setShowConcurrentModal] = useState(false);
 
   const ttlOptions = [
@@ -1348,7 +1349,10 @@ export default function Dashboard() {
     if (!isFormValid || isGenerating) return;
 
     if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
-      alert('Security verification pending. Please wait.');
+      setGlobalError({
+        title: 'SECURITY CHECK PENDING',
+        message: 'The anti-bot verification has not completed or failed to load. Please check your network connection, disable ad-blockers, and try again.'
+      });
       return;
     }
 
@@ -1395,12 +1399,18 @@ export default function Dashboard() {
         } else if (errData.error === 'CONCURRENT_CAP_EXCEEDED') {
           setShowConcurrentModal(true);
         } else {
-          alert('Failed to generate token: ' + (errData.error || ''));
+          setGlobalError({
+            title: 'GENERATION FAILED',
+            message: 'Failed to generate token: ' + (errData.error || 'Unknown error')
+          });
         }
       }
     } catch (err) {
       console.error(err);
-      alert('Error generating token');
+      setGlobalError({
+        title: 'GENERATION FAILED',
+        message: 'A network or internal error occurred while generating the token.'
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -1461,7 +1471,15 @@ export default function Dashboard() {
           ref={turnstileRef}
           siteKey="0x4AAAAAADgKGlhfvExJwp8F"
           onSuccess={(token) => setTurnstileToken(token)}
-          options={{ theme: 'dark' }}
+          onExpire={() => {
+            setTurnstileToken(null);
+            turnstileRef.current?.reset();
+          }}
+          onError={() => {
+            setTurnstileToken(null);
+            setTimeout(() => turnstileRef.current?.reset(), 2000);
+          }}
+          options={{ theme: 'dark', size: 'invisible' }}
         />
       </div>
 
@@ -1477,6 +1495,24 @@ export default function Dashboard() {
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setQuotaError(null)} style={{ padding: '10px 16px', borderRadius: '8px', background: 'rgba(255,165,0,0.1)', color: '#ffa500', border: '1px solid rgba(255,165,0,0.3)', cursor: 'pointer', fontWeight: 600 }}>
+                DISMISS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {globalError && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,165,0,0.5)', borderRadius: '16px', padding: '32px', maxWidth: '500px', width: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ffa500', fontSize: '1.25rem', margin: '0 0 16px 0' }}>
+              ⚠️ {globalError.title}
+            </h2>
+            <p style={{ color: '#a1a1aa', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '24px' }}>
+              {globalError.message}
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setGlobalError(null)} style={{ padding: '10px 16px', borderRadius: '8px', background: 'rgba(255,165,0,0.1)', color: '#ffa500', border: '1px solid rgba(255,165,0,0.3)', cursor: 'pointer', fontWeight: 600 }}>
                 DISMISS
               </button>
             </div>
