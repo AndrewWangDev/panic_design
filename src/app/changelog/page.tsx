@@ -1,8 +1,6 @@
 "use client";
 
 import React from 'react';
-import Link from 'next/link';
-import { ArrowLeft, GitCommit } from 'lucide-react';
 
 const releases = [
   {
@@ -67,20 +65,12 @@ export default function Changelog() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#000', color: '#ededed', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '64px 24px' }}>
-        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#a1a1aa', textDecoration: 'none', marginBottom: '48px', fontSize: '0.9rem', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#ededed'} onMouseOut={e => e.currentTarget.style.color = '#a1a1aa'}>
-          <ArrowLeft size={16} /> Back to Home
-        </Link>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-          <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-            <GitCommit size={32} color="#fff" />
-          </div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>Changelog</h1>
+        <div style={{ marginBottom: '64px' }}>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 700, margin: '0 0 16px 0', letterSpacing: '-0.02em', color: '#fff' }}>About panic.design</h1>
+          <p style={{ color: '#a1a1aa', fontSize: '1.05rem', lineHeight: 1.6, margin: 0 }}>
+            Built for engineering teams who understand that failure is not an option—it is a guarantee.
+          </p>
         </div>
-        
-        <p style={{ color: '#a1a1aa', marginBottom: '64px', fontSize: '1.05rem', lineHeight: 1.6 }}>
-          The chronological evolution of the panic.design control plane.
-        </p>
 
         <div style={{ position: 'relative', paddingLeft: '32px' }}>
           {/* Vertical Timeline Line */}
