@@ -1456,12 +1456,12 @@ export default function Dashboard() {
 
   return (
     <div className={styles.dashboard}>
-      <div style={{ display: 'none' }}>
+      <div>
         <Turnstile
           ref={turnstileRef}
           siteKey="0x4AAAAAADgKGlhfvExJwp8F"
           onSuccess={(token) => setTurnstileToken(token)}
-          options={{ theme: 'dark' }}
+          options={{ theme: 'dark', size: 'invisible' }}
         />
       </div>
 
