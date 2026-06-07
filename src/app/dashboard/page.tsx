@@ -2329,7 +2329,7 @@ export default function Dashboard() {
                             onClick={() => handleRevoke(token.id)}
                             disabled={token.isRevoked}
                           >
-                            {token.isRevoked ? '[ Revoked ]' : 'Revoke'}
+                            {token.isRevoked ? 'Revoked' : 'Revoke'}
                           </button>
                         </td>
                       </tr>
