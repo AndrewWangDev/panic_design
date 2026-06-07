@@ -20,23 +20,39 @@ export async function GET() {
       }
     });
 
-    // 2. Get current month usage
-    const now = new Date();
-    const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    
-    const usage = await prisma.usage.findUnique({
-      where: {
-        userId_month: {
-          userId: session.user.id,
-          month: monthStr
-        }
-      }
+    // 2. Get quota usage from User table
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { dailyQuota: true, hourlyQuota: true, lastQuotaReset: true }
     });
+
+    const now = new Date();
+    const lastReset = user?.lastQuotaReset || new Date(0);
+
+    const isNewDay = now.getUTCFullYear() !== lastReset.getUTCFullYear() || 
+                     now.getUTCMonth() !== lastReset.getUTCMonth() || 
+                     now.getUTCDate() !== lastReset.getUTCDate();
+                     
+    const isNewHour = isNewDay || now.getUTCHours() !== lastReset.getUTCHours();
+
+    let dailyUsage = isNewDay ? 0 : (user?.dailyQuota || 0);
+    let hourlyUsage = isNewHour ? 0 : (user?.hourlyQuota || 0);
+
+    const nextHourReset = new Date(now);
+    nextHourReset.setUTCHours(now.getUTCHours() + 1, 0, 0, 0);
+
+    const nextDayReset = new Date(now);
+    nextDayReset.setUTCDate(now.getUTCDate() + 1);
+    nextDayReset.setUTCHours(0, 0, 0, 0);
 
     return NextResponse.json({
       tokens: activeTokens,
-      usage: usage?.requestCount || 0,
-      limit: usage?.limit || 10000
+      dailyUsage,
+      dailyLimit: 100,
+      hourlyUsage,
+      hourlyLimit: 30,
+      nextHourReset: nextHourReset.toISOString(),
+      nextDayReset: nextDayReset.toISOString()
     });
   } catch (error) {
     console.error('Fetch Stats Error:', error);

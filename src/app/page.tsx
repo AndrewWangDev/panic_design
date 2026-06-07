@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Zap, ShieldAlert, Globe2, ArrowRight } from 'lucide-react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import styles from './page.module.css';
 import { Turnstile } from '@marsidev/react-turnstile';
 
@@ -315,7 +316,9 @@ export default function Home() {
         <footer className={styles.footer}>
           <div className={styles.footerLinks}>
             <a href="#" className={styles.footerLink}>© 2026 Panic.Design</a>
-            <a href="https://github.com/placeholder" className={styles.footerLink}>GitHub</a>
+            <a href="https://github.com/AndrewWangDev/panic_design" className={styles.footerLink}>GitHub</a>
+            <Link href="/privacy" className={styles.footerLink}>Privacy Policy</Link>
+            <Link href="/terms" className={styles.footerLink}>Terms of Service</Link>
           </div>
           <div>
             <span className={styles.footerLink} style={{ cursor: 'pointer' }}>English (US)</span>

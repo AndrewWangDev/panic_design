@@ -18,7 +18,15 @@ interface UserDropdownProps {
 
 export default function UserDropdown({ user }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [stats, setStats] = useState({ tokens: user.tokens, usage: user.usage, limit: 10000 });
+  const [stats, setStats] = useState({ 
+    tokens: user.tokens, 
+    dailyUsage: 0, 
+    dailyLimit: 100,
+    hourlyUsage: 0,
+    hourlyLimit: 30,
+    nextHourReset: '',
+    nextDayReset: ''
+  });
   const [isRevoking, setIsRevoking] = useState(false);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -41,7 +49,15 @@ export default function UserDropdown({ user }: UserDropdownProps) {
       fetch('/api/user/stats')
         .then(res => res.ok ? res.json() : null)
         .then((data: any) => {
-          if (data) setStats({ tokens: data.tokens, usage: data.usage, limit: data.limit });
+          if (data) setStats({ 
+            tokens: data.tokens, 
+            dailyUsage: data.dailyUsage, 
+            dailyLimit: data.dailyLimit,
+            hourlyUsage: data.hourlyUsage,
+            hourlyLimit: data.hourlyLimit,
+            nextHourReset: data.nextHourReset,
+            nextDayReset: data.nextDayReset
+          });
         })
         .catch(console.error);
     }
@@ -94,7 +110,8 @@ export default function UserDropdown({ user }: UserDropdownProps) {
     setShowDeleteModal(false);
   };
 
-  const usagePercent = Math.min((stats.usage / stats.limit) * 100, 100);
+  const hourlyPercent = Math.min((stats.hourlyUsage / Math.max(stats.hourlyLimit, 1)) * 100, 100);
+  const dailyPercent = Math.min((stats.dailyUsage / Math.max(stats.dailyLimit, 1)) * 100, 100);
 
   return (
     <div className={styles.dropdownContainer} ref={dropdownRef}>
@@ -141,14 +158,35 @@ export default function UserDropdown({ user }: UserDropdownProps) {
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
               <div className={styles.sectionTitle}>
-                <Activity size={14} /> Usage
+                <Activity size={14} /> Hourly Quota
               </div>
-              <span className={styles.usageText}>{stats.usage} / {stats.limit.toLocaleString()}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <span className={styles.usageText}>{stats.hourlyUsage} / {stats.hourlyLimit}</span>
+                {stats.nextHourReset && <span style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>Resets at {new Date(stats.nextHourReset).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+              </div>
             </div>
             <div className={styles.progressBarBg}>
               <div 
                 className={styles.progressBarFill} 
-                style={{ width: `${usagePercent}%` }} 
+                style={{ width: `${hourlyPercent}%` }} 
+              />
+            </div>
+          </div>
+
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionTitle}>
+                <Activity size={14} /> Daily Quota
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <span className={styles.usageText}>{stats.dailyUsage} / {stats.dailyLimit}</span>
+                {stats.nextDayReset && <span style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>Resets at {new Date(stats.nextDayReset).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+              </div>
+            </div>
+            <div className={styles.progressBarBg}>
+              <div 
+                className={styles.progressBarFill} 
+                style={{ width: `${dailyPercent}%` }} 
               />
             </div>
           </div>
