@@ -1461,7 +1461,7 @@ export default function Dashboard() {
           ref={turnstileRef}
           siteKey="0x4AAAAAADgKGlhfvExJwp8F"
           onSuccess={(token) => setTurnstileToken(token)}
-          options={{ theme: 'dark', size: 'invisible' }}
+          options={{ theme: 'dark' }}
         />
       </div>
 
