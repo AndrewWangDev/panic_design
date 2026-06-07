@@ -38,6 +38,18 @@ function getAuthInstance() {
         const login = profile.login as string;
         
         const prisma = getPrisma();
+
+        const existingUser = await prisma.user.findUnique({
+          where: { githubId }
+        });
+
+        if (!existingUser) {
+          const totalUsers = await prisma.user.count();
+          if (totalUsers >= 100) {
+            return "/?error=EnrollmentFull";
+          }
+        }
+
         await prisma.user.upsert({
           where: { githubId },
           update: {

@@ -17,6 +17,11 @@ model User {
   // For stateless JWT instant "Revoke All"
   jwtSalt       Int        @default(0) 
 
+  // Rate limiting (Quota)
+  dailyQuota    Int        @default(0)
+  hourlyQuota   Int        @default(0)
+  lastQuotaReset DateTime  @default(now())
+
   tokens        Token[]
   usages        Usage[]
   logs          ChaosLog[]

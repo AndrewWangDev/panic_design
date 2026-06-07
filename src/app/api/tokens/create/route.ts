@@ -14,18 +14,44 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json() as any;
-    const { targetHost, scope, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, customTtl } = body;
+    const { targetHost, scope, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, customTtl, turnstileToken } = body;
 
     if (!targetHost || !fault) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
-    // Default TTL is 15 minutes if not specified
-    const ttlHours = customTtl || 0.25; 
+    // Turnstile Check
+    if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
+      return NextResponse.json({ error: 'Security verification missing' }, { status: 403 });
+    }
+    if (turnstileToken) {
+      const { verifyTurnstileToken } = await import('@/lib/turnstile');
+      const isValid = await verifyTurnstileToken(turnstileToken);
+      if (!isValid) return NextResponse.json({ error: 'Security verification failed' }, { status: 403 });
+    }
 
     const prisma = getPrisma();
 
-    // Fetch latest user salt just in case (optional, we could use session salt but db is safer)
+    // Check concurrent active tokens
+    const activeTokens = await prisma.token.count({
+      where: {
+        userId: session.user.id,
+        isRevoked: false
+      }
+    });
+
+    if (activeTokens >= 5) {
+      return NextResponse.json({ error: 'CONCURRENT_CAP_EXCEEDED' }, { status: 403 });
+    }
+
+    // Check rate limiting quota
+    const { checkAndUpdateQuota } = await import('@/lib/quota');
+    const quota = await checkAndUpdateQuota(session.user.id);
+    if (!quota.allowed) {
+      return NextResponse.json({ error: 'QUOTA_EXCEEDED', message: quota.reason }, { status: 429 });
+    }
+
+    // Fetch latest user salt
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { jwtSalt: true }
@@ -34,6 +60,9 @@ export async function POST(req: Request) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
+    // Default TTL is 15 minutes if not specified
+    const ttlHours = customTtl || 0.25;
 
     // Prepare Token config JSON
     const config = JSON.stringify({
