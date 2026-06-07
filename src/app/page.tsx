@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { Zap, ShieldAlert, Globe2, ArrowRight } from 'lucide-react';
 import { useSession, signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "", isFloat = false, initial = 0 }: any) => {
   const [count, setCount] = useState(initial);
@@ -32,13 +33,50 @@ const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "", isFlo
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [terminalStep, setTerminalStep] = useState(0);
   const isLoggedIn = !!session;
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
-  const handleLogin = () => {
+  useEffect(() => {
+    if (searchParams?.get('error') === 'EnrollmentFull') {
+      setShowLimitModal(true);
+    }
+  }, [searchParams]);
+
+  const handleLogin = async () => {
     setIsLoggingIn(true);
+    if (!turnstileToken) {
+      // If we don't have a token, we might have to wait for it or just fail gracefully if in dev
+      if (process.env.NODE_ENV !== 'development') {
+        alert('Security verification pending. Please wait a second and try again.');
+        setIsLoggingIn(false);
+        return;
+      }
+    }
+
+    if (turnstileToken) {
+      try {
+        const res = await fetch('/api/turnstile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: turnstileToken })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          alert('Security verification failed.');
+          setIsLoggingIn(false);
+          return;
+        }
+      } catch (e) {
+        setIsLoggingIn(false);
+        return;
+      }
+    }
+
     signIn('github', { callbackUrl: '/dashboard' });
   };
 
@@ -68,6 +106,27 @@ export default function Home() {
 
   return (
     <div className={styles.main}>
+      {showLimitModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,59,48,0.5)', borderRadius: '16px', padding: '32px', maxWidth: '500px', width: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ff3b30', fontSize: '1.25rem', margin: '0 0 16px 0' }}>
+              <ShieldAlert size={24} /> 🛑 BETA ENROLLMENT LIMIT REACHED
+            </h2>
+            <p style={{ color: '#a1a1aa', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '24px' }}>
+              The panic.design sandbox has reached its maximum compliance allocation. Current platform access is restricted to 100 total participants to enforce strict network infrastructure sandboxing.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowLimitModal(false)} style={{ padding: '10px 16px', borderRadius: '8px', background: 'transparent', color: '#a1a1aa', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+                DISMISS
+              </button>
+              <a href="mailto:support@andrewwangdev.com?subject=panic.design Beta Access Request" style={{ padding: '10px 16px', borderRadius: '8px', background: 'rgba(255,59,48,0.1)', color: '#ff3b30', border: '1px solid rgba(255,59,48,0.3)', textDecoration: 'none', fontWeight: 600, display: 'inline-block' }}>
+                CONTACT ADMINISTRATOR
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Screen 1: Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroBg} />
@@ -97,6 +156,14 @@ export default function Home() {
                   {isLoggingIn ? 'Redirecting...' : 'Authenticate with GitHub'}
                 </button>
               )}
+              {/* Invisible Turnstile */}
+              <div style={{ display: 'none' }}>
+                <Turnstile
+                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                  onSuccess={(token) => setTurnstileToken(token)}
+                  options={{ theme: 'dark' }}
+                />
+              </div>
             </div>
           </div>
           

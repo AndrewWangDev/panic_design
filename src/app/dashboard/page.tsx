@@ -5,6 +5,7 @@ import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Sea
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
 import WorldMap from '@/components/WorldMap';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 const MOCK_LOGS = [
   "[SYSTEM] Initiating global telemetry stream...",
@@ -983,6 +984,13 @@ export default function Dashboard() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationKey, setSimulationKey] = useState(0);
 
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<any>(null);
+  const activeTokensRef = useRef<HTMLDivElement>(null);
+
+  const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [showConcurrentModal, setShowConcurrentModal] = useState(false);
+
   const ttlOptions = [
     { value: '15m', label: '15 Minutes' },
     { value: '1h', label: '1 Hour' },
@@ -1166,16 +1174,27 @@ export default function Dashboard() {
       w3: telemetryData?.w3
     };
 
+    if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
+      alert('Security verification pending. Please wait.');
+      setAiState({ isLoading: false, data: null });
+      return;
+    }
+
     try {
       const res = await fetch('/api/aiops', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           instruction: aiInputValue,
-          baseline
+          baseline,
+          turnstileToken
         })
       });
-      
+
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
+
       const textResponse = await res.text();
       let data;
       try {
@@ -1183,7 +1202,13 @@ export default function Dashboard() {
       } catch (parseError) {
         throw new Error(textResponse || 'Unknown Error');
       }
-      
+
+      if (res.status === 429) {
+        setQuotaError(data.error_message || 'Rate limit exceeded');
+        setAiState({ isLoading: false, data: null });
+        return;
+      }
+
       if (!res.ok) {
         const errorMsg = data?.error ? `${data.error}\nRaw AI Output:\n${data.raw || 'None'}` : (data || 'Unknown Error');
         throw new Error(errorMsg);
@@ -1321,6 +1346,12 @@ export default function Dashboard() {
 
   const handleGenerate = async () => {
     if (!isFormValid || isGenerating) return;
+
+    if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
+      alert('Security verification pending. Please wait.');
+      return;
+    }
+
     setIsGenerating(true);
     let ttlHours = 0.25;
     if (ttl === '1h') ttlHours = 1;
@@ -1341,9 +1372,14 @@ export default function Dashboard() {
           distribution,
           packetLoss: Number(packetLoss) || 0,
           mutilationStrategy,
-          customTtl: ttlHours
+          customTtl: ttlHours,
+          turnstileToken
         })
       });
+
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
 
       if (res.ok) {
         const data = await res.json() as any;
@@ -1353,7 +1389,14 @@ export default function Dashboard() {
         setShowModal(true);
         fetchTokens();
       } else {
-        alert('Failed to generate token');
+        const errData = await res.json() as any;
+        if (res.status === 429 || errData.error === 'QUOTA_EXCEEDED') {
+          setQuotaError(errData.message || 'Rate limit exceeded');
+        } else if (errData.error === 'CONCURRENT_CAP_EXCEEDED') {
+          setShowConcurrentModal(true);
+        } else {
+          alert('Failed to generate token: ' + (errData.error || ''));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -1412,7 +1455,57 @@ export default function Dashboard() {
   const totalPages = Math.ceil(filteredTokens.length / pageSize);
 
   return (
-    <div className={styles.dashboard}>
+    <div className={styles.dashboardContainer}>
+      <div style={{ display: 'none' }}>
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+          onSuccess={(token) => setTurnstileToken(token)}
+          options={{ theme: 'dark' }}
+        />
+      </div>
+
+      {quotaError && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,165,0,0.5)', borderRadius: '16px', padding: '32px', maxWidth: '500px', width: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ffa500', fontSize: '1.25rem', margin: '0 0 16px 0' }}>
+              ⚠️ QUOTA EXCEEDED
+            </h2>
+            <p style={{ color: '#a1a1aa', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '24px' }}>
+              Your Edge Compute Quota has been exhausted. To prevent abuse, the free tier has been restricted.<br/><br/>
+              Reason: {quotaError}
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setQuotaError(null)} style={{ padding: '10px 16px', borderRadius: '8px', background: 'rgba(255,165,0,0.1)', color: '#ffa500', border: '1px solid rgba(255,165,0,0.3)', cursor: 'pointer', fontWeight: 600 }}>
+                DISMISS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConcurrentModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,165,0,0.5)', borderRadius: '16px', padding: '32px', maxWidth: '500px', width: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ffa500', fontSize: '1.25rem', margin: '0 0 16px 0' }}>
+              ⚠️ CONCURRENT TOKEN CAP EXCEEDED
+            </h2>
+            <p style={{ color: '#a1a1aa', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '24px' }}>
+              Maximum active threshold reached. To maintain edge network stability and prevent proxy abuse, a single developer account cannot sustain more than 5 concurrently active chaos tokens. Please revoke dormant configurations below before provisioning a new payload.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => {
+                setShowConcurrentModal(false);
+                activeTokensRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }} style={{ padding: '10px 16px', borderRadius: '8px', background: 'rgba(255,165,0,0.1)', color: '#ffa500', border: '1px solid rgba(255,165,0,0.3)', cursor: 'pointer', fontWeight: 600 }}>
+                MANAGE ACTIVE TOKENS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid Layout */}
       {showMobileWarning && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
@@ -2150,7 +2243,7 @@ export default function Dashboard() {
 
         {/* Bottom Grid: Active Edge Tokens */}
         {!isSimulating && (
-          <div className={styles.gridBottom}>
+          <div className={styles.gridBottom} ref={activeTokensRef}>
             <div className={styles.card}>
               <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Active Edge Tokens</span>

@@ -1,14 +1,37 @@
 import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { auth } from '@/auth';
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { env } = getCloudflareContext() as any;
     if (!env || !env.AI) {
       return NextResponse.json({ error: 'Cloudflare AI environment not found' }, { status: 500 });
     }
 
-    const { instruction, currentFormState } = await req.json();
+    const { instruction, currentFormState, turnstileToken } = await req.json();
+
+    // Turnstile Check
+    if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
+      return NextResponse.json({ error: 'Security verification missing' }, { status: 403 });
+    }
+    if (turnstileToken) {
+      const { verifyTurnstileToken } = await import('@/lib/turnstile');
+      const isValid = await verifyTurnstileToken(turnstileToken);
+      if (!isValid) return NextResponse.json({ error: 'Security verification failed' }, { status: 403 });
+    }
+
+    // Check rate limiting quota
+    const { checkAndUpdateQuota } = await import('@/lib/quota');
+    const quota = await checkAndUpdateQuota(session.user.id);
+    if (!quota.allowed) {
+      return NextResponse.json({ status: 'error', error_message: 'QUOTA_EXCEEDED: ' + quota.reason, data: null }, { status: 429 });
+    }
 
     const systemPrompt = `You are a strict Chaos Engineering Form AutoFill Engine. 
 The user is instructing you to configure a cloud network fault. You will output a strict JSON configuration based on their instruction.
