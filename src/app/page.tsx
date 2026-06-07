@@ -31,7 +31,7 @@ const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "", isFlo
   return <span>{prefix}{isFloat ? count.toFixed(1) : Math.floor(count)}{suffix}</span>;
 };
 
-export default function Home() {
+function HomeContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -160,7 +160,7 @@ export default function Home() {
               {/* Invisible Turnstile */}
               <div style={{ display: 'none' }}>
                 <Turnstile
-                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAADgKGlhfvExJwp8F'}
                   onSuccess={(token) => setTurnstileToken(token)}
                   options={{ theme: 'dark' }}
                 />
@@ -326,5 +326,13 @@ export default function Home() {
         </footer>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <React.Suspense fallback={<div style={{ minHeight: '100vh', background: '#000' }} />}>
+      <HomeContent />
+    </React.Suspense>
   );
 }
