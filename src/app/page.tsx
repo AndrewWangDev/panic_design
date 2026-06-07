@@ -158,11 +158,11 @@ function HomeContent() {
                 </button>
               )}
               {/* Invisible Turnstile */}
-              <div style={{ display: 'none' }}>
+              <div>
                 <Turnstile
                   siteKey="0x4AAAAAADgKGlhfvExJwp8F"
                   onSuccess={(token) => setTurnstileToken(token)}
-                  options={{ theme: 'dark' }}
+                  options={{ theme: 'dark', size: 'invisible' }}
                 />
               </div>
             </div>
