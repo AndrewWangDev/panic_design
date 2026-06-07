@@ -1455,7 +1455,7 @@ export default function Dashboard() {
   const totalPages = Math.ceil(filteredTokens.length / pageSize);
 
   return (
-    <div className={styles.dashboardContainer}>
+    <div className={styles.dashboard}>
       <div style={{ display: 'none' }}>
         <Turnstile
           ref={turnstileRef}
