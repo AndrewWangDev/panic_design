@@ -33,22 +33,34 @@ export async function POST(req: Request) {
     const prisma = getPrisma();
 
     // Check concurrent active tokens
-    const activeTokens = await prisma.token.count({
+    const unrevokedTokens = await prisma.token.findMany({
       where: {
         userId: session.user.id,
         isRevoked: false
+      },
+      select: {
+        createdAt: true,
+        config: true
       }
     });
 
-    if (activeTokens >= 5) {
-      return NextResponse.json({ error: 'CONCURRENT_CAP_EXCEEDED' }, { status: 403 });
+    let activeCount = 0;
+    const nowMs = Date.now();
+    for (const t of unrevokedTokens) {
+      try {
+        const conf = JSON.parse(t.config);
+        const ttlHours = conf.ttl || 0.25;
+        const expiresAtMs = new Date(t.createdAt).getTime() + (ttlHours * 60 * 60 * 1000);
+        if (expiresAtMs > nowMs) {
+          activeCount++;
+        }
+      } catch(e) {
+        activeCount++;
+      }
     }
 
-    // Check rate limiting quota
-    const { checkAndUpdateQuota } = await import('@/lib/quota');
-    const quota = await checkAndUpdateQuota(session.user.id);
-    if (!quota.allowed) {
-      return NextResponse.json({ error: 'QUOTA_EXCEEDED', message: quota.reason }, { status: 429 });
+    if (activeCount >= 5) {
+      return NextResponse.json({ error: 'CONCURRENT_CAP_EXCEEDED' }, { status: 403 });
     }
 
     // Fetch latest user salt
