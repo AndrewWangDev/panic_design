@@ -21,39 +21,39 @@ export default function PrivacyPolicy() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', lineHeight: 1.7 }}>
           <section>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>1. Introduction</h2>
-            <p style={{ color: '#d4d4d8' }}>Welcome to Panic.Design. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you as to how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.</p>
+            <p style={{ color: '#d4d4d8' }}>At panic.design, we build tools for resilience, and that philosophy extends to your data. We adhere to a strict data-minimization architecture. This Privacy Policy outlines what we collect, why we need it, and how we protect it.</p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>2. Data We Collect</h2>
-            <p style={{ color: '#d4d4d8' }}>We may collect, use, store and transfer different kinds of personal data about you which we have grouped together as follows:</p>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>1. Data Collection & Authentication</h2>
             <ul style={{ color: '#d4d4d8', paddingLeft: '24px', marginTop: '12px' }}>
-              <li style={{ marginBottom: '8px' }}><strong>Identity Data:</strong> includes first name, last name, username or similar identifier (via GitHub OAuth).</li>
-              <li style={{ marginBottom: '8px' }}><strong>Contact Data:</strong> includes email address.</li>
-              <li style={{ marginBottom: '8px' }}><strong>Technical Data:</strong> includes internet protocol (IP) address, your login data, browser type and version, time zone setting and location, browser plug-in types and versions, operating system and platform.</li>
-              <li style={{ marginBottom: '8px' }}><strong>Usage Data:</strong> includes information about how you use our website, APIs, and chaos engineering services.</li>
+              <li style={{ marginBottom: '8px' }}><strong>Third-Party OAuth:</strong> We use GitHub OAuth exclusively for registration and login. We retrieve only your baseline profile (Email, Name, Avatar) to establish your developer identity.</li>
+              <li style={{ marginBottom: '8px' }}><strong>Cookies:</strong> We utilize secure, HTTP-only cookies strictly for session management and identity authentication. We do not use tracking or advertising cookies.</li>
+              <li style={{ marginBottom: '8px' }}><strong>Bot Protection:</strong> To defend our control plane against automated abuse, we implement Cloudflare Turnstile. This service operates in a non-interactive mode and may collect ephemeral telemetry, including your IP address and browser fingerprint, solely for human-verification purposes.</li>
+              <li style={{ marginBottom: '8px' }}><strong>Anti-Abuse Telemetry:</strong> We collect necessary environmental metadata (e.g., request rates, geographic origin) to validate environment security and enforce our rate-limiting quotas.</li>
             </ul>
           </section>
 
           <section>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>3. How We Use Your Data</h2>
-            <p style={{ color: '#d4d4d8' }}>We will only use your personal data when the law allows us to. Most commonly, we will use your personal data in the following circumstances:</p>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>2. Edge Passthrough & Upstream Disclosure</h2>
+            <div style={{ padding: '16px', background: 'rgba(255, 59, 48, 0.1)', borderLeft: '4px solid #ff3b30', borderRadius: '4px' }}>
+              <p style={{ color: '#d4d4d8', margin: 0 }}><strong>CRITICAL NOTICE:</strong> When you execute a RUN Cloud Injection directive, our Cloudflare Workers act as a proxy. To prevent our infrastructure from being utilized as an anonymous attack vector, we actively pass through the request.cf object to your specified Target Hostname. This means the target server will receive metadata including your approximate geographic coordinates (Longitude/Latitude) and IP reputation. This is a mandatory upstream anti-abuse mechanism.</p>
+            </div>
+          </section>
+
+          <section>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>3. Data Retention & Cryptographic Anonymization</h2>
+            <p style={{ color: '#d4d4d8' }}>We believe in the right to be forgotten. Upon account deletion:</p>
             <ul style={{ color: '#d4d4d8', paddingLeft: '24px', marginTop: '12px' }}>
-              <li style={{ marginBottom: '8px' }}>Where we need to perform the contract we are about to enter into or have entered into with you (e.g., providing edge compute tokens).</li>
-              <li style={{ marginBottom: '8px' }}>Where it is necessary for our legitimate interests (or those of a third party) and your interests and fundamental rights do not override those interests (e.g., preventing abuse, enforcing quota limits).</li>
-              <li style={{ marginBottom: '8px' }}>Where we need to comply with a legal obligation.</li>
+              <li style={{ marginBottom: '8px' }}>All active Edge Chaos Tokens (JWTs) are instantaneously revoked and blacklisted.</li>
+              <li style={{ marginBottom: '8px' }}>Your Personally Identifiable Information (PII) — including your email, name, and avatar — is permanently scrubbed from our active databases.</li>
+              <li style={{ marginBottom: '8px' }}>To preserve the integrity of our systemic audit logs, your records are retained but cryptographically anonymized, replaced entirely by unidentifiable random hashes.</li>
             </ul>
           </section>
 
           <section>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>4. Data Security</h2>
-            <p style={{ color: '#d4d4d8' }}>We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used or accessed in an unauthorised way, altered or disclosed. In addition, we limit access to your personal data to those employees, agents, contractors and other third parties who have a business need to know. We use Cloudflare Turnstile to prevent automated abuse.</p>
-          </section>
-
-          <section>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>5. Contact Us</h2>
-            <p style={{ color: '#d4d4d8' }}>If you have any questions about this privacy policy or our privacy practices, please contact us at support@andrewwangdev.com.</p>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>4. California Privacy Rights (CCPA/CPRA)</h2>
+            <p style={{ color: '#d4d4d8' }}>If you are a California resident, you have the right to request access to your data and request its deletion (which is executed via the cryptographic anonymization detailed above). We do not, and will never, sell your personal information.</p>
           </section>
         </div>
       </div>
