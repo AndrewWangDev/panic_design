@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 
 
+import { auth } from '@/auth';
+
 function decodeJwt(token: string) {
   try {
     const payload = token.split('.')[1];
@@ -12,9 +14,21 @@ function decodeJwt(token: string) {
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { token } = await req.json() as any;
     if (!token) {
       return NextResponse.json({ error: 'Missing token' }, { status: 400 });
+    }
+
+    // Check rate limiting quota
+    const { checkAndUpdateQuota } = await import('@/lib/quota');
+    const quota = await checkAndUpdateQuota(session.user.id);
+    if (!quota.allowed) {
+      return NextResponse.json({ error: 'QUOTA_EXCEEDED', message: quota.reason }, { status: 429 });
     }
 
     const baseUrl = process.env.DATA_PLANE_URL || 'https://gateway.andrewwangdev.com';
