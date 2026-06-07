@@ -319,6 +319,7 @@ function HomeContent() {
           <div className={styles.footerLinks}>
             <a href="#" className={styles.footerLink}>© 2026 Panic.Design</a>
             <a href="https://github.com/AndrewWangDev/panic_design" className={styles.footerLink}>GitHub</a>
+            <Link href="/changelog" className={styles.footerLink}>Changelog</Link>
             <Link href="/privacy" className={styles.footerLink}>Privacy Policy</Link>
             <Link href="/terms" className={styles.footerLink}>Terms of Service</Link>
           </div>
