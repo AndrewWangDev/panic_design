@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Shield } from 'lucide-react';
@@ -29,7 +31,7 @@ export default function PrivacyPolicy() {
             <ul style={{ color: '#d4d4d8', paddingLeft: '24px', marginTop: '12px' }}>
               <li style={{ marginBottom: '8px' }}><strong>Third-Party OAuth:</strong> We use GitHub OAuth exclusively for registration and login. We retrieve only your baseline profile (Email, Name, Avatar) to establish your developer identity.</li>
               <li style={{ marginBottom: '8px' }}><strong>Cookies:</strong> We utilize secure, HTTP-only cookies strictly for session management and identity authentication. We do not use tracking or advertising cookies.</li>
-              <li style={{ marginBottom: '8px' }}><strong>Bot Protection:</strong> To defend our control plane against automated abuse, we implement Cloudflare Turnstile. This service operates in a non-interactive mode and may collect ephemeral telemetry, including your IP address and browser fingerprint, solely for human-verification purposes.</li>
+              <li style={{ marginBottom: '8px' }}><strong>Bot Protection:</strong> To defend our control plane against automated abuse, we implement Cloudflare Turnstile. This service operates in a non-interactive mode and may collect ephemeral telemetry, including your IP address and browser fingerprint, solely for human-verification purposes. For more details, please review the <a href="https://www.cloudflare.com/en-gb/turnstile-privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: '#a1a1aa' }}>Cloudflare Turnstile Privacy Policy</a>.</li>
               <li style={{ marginBottom: '8px' }}><strong>Anti-Abuse Telemetry:</strong> We collect necessary environmental metadata (e.g., request rates, geographic origin) to validate environment security and enforce our rate-limiting quotas.</li>
             </ul>
           </section>
