@@ -95,7 +95,7 @@ export default function Docs() {
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>fault</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
                   <td style={{ padding: '16px 0', color: '#ef4444', fontSize: '0.8rem' }}>required</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Fault pattern (e.g., <code style={codeStyle}>latency</code>, <code style={codeStyle}>packet_loss</code>, <code style={codeStyle}>502</code>).</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Fault pattern: <code style={codeStyle}>502 Bad Gateway</code>, <code style={codeStyle}>504 Gateway Timeout</code>, <code style={codeStyle}>429 Rate Limit</code>, or <code style={codeStyle}>Traffic Degradation</code>.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>latency</code></td>
@@ -119,13 +119,13 @@ export default function Docs() {
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>distribution</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
                   <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Statistical distribution: <code style={codeStyle}>normal</code> or <code style={codeStyle}>pareto</code>.</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Statistical distribution: <code style={codeStyle}>uniform</code>, <code style={codeStyle}>normal</code> or <code style={codeStyle}>spikes</code>.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>mutilationStrategy</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
                   <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Strategy for payload mutilation (e.g., <code style={codeStyle}>bitflip</code>, <code style={codeStyle}>truncate</code>).</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Strategy for payload mutilation: <code style={codeStyle}>None</code>, <code style={codeStyle}>Unexpected EOF</code>, <code style={codeStyle}>Type Poisoning</code>, <code style={codeStyle}>Empty Shell</code>.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>customTtl</code></td>
@@ -170,7 +170,12 @@ export default function Docs() {
                   <div style={{ lineHeight: 1.6 }}>
                     <span style={{ color: '#a78bfa' }}>payload</span> = {'{'}<br/>
                     &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"targetHost"</span>: <span style={{ color: '#a3e635' }}>"api.yourbackend.com"</span>,<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"fault"</span>: <span style={{ color: '#a3e635' }}>"latency_500ms"</span><br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"fault"</span>: <span style={{ color: '#a3e635' }}>"Traffic Degradation"</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"latency"</span>: <span style={{ color: '#f59e0b' }}>500</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"jitter"</span>: <span style={{ color: '#f59e0b' }}>50</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"packetLoss"</span>: <span style={{ color: '#f59e0b' }}>5</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"distribution"</span>: <span style={{ color: '#a3e635' }}>"normal"</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"mutilationStrategy"</span>: <span style={{ color: '#a3e635' }}>"Type Poisoning"</span><br/>
                     {'}'}<br/>
                     <span style={{ color: '#a78bfa' }}>headers</span> = {'{"Authorization": "Bearer $PANIC_TOKEN"}'}<br/>
                     <br/>
@@ -214,10 +219,15 @@ export default function Docs() {
               <td style={{ padding: '20px 24px' }}><code style={codeStyle}>QUOTA_EXCEEDED</code></td>
               <td style={{ padding: '20px 24px', color: '#d4d4d8', lineHeight: 1.5 }}>Concurrent active token limit reached (Max 5). Wait for expiration.</td>
             </tr>
-            <tr>
+            <tr style={{ borderBottom: '1px solid #222' }}>
               <td style={{ padding: '20px 24px', color: '#ef4444', fontWeight: 600 }}>502 Bad Gateway</td>
               <td style={{ padding: '20px 24px' }}><code style={codeStyle}>EDGE_ROUTING_FAILED</code></td>
               <td style={{ padding: '20px 24px', color: '#d4d4d8', lineHeight: 1.5 }}>Simulated or real upstream failure during chaotic injection.</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '20px 24px', color: '#ef4444', fontWeight: 600 }}>504 Gateway Timeout</td>
+              <td style={{ padding: '20px 24px' }}><code style={codeStyle}>UPSTREAM_TIMEOUT</code></td>
+              <td style={{ padding: '20px 24px', color: '#d4d4d8', lineHeight: 1.5 }}>Upstream server failed to respond within the Edge TTL threshold.</td>
             </tr>
           </tbody>
         </table>
