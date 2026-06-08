@@ -274,13 +274,13 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const flag_1 = aiMapData?.flag_1 || false;
   const flag_2 = aiMapData ? aiMapData.flag_2 : (fault === '502' || fault === '504' || fault === '429' || isPacketLoss);
 
-  // Dynamic visual timings scaled by actual latency
+  // Dynamic visual timings scaled by actual latency with reasonable caps
   const baseScale = 4; // 1ms real = 4ms animation
-  const dur1 = Math.max((effT1 || 0) * baseScale, 400); // 400ms min
-  const dur2 = (effT2 && effT2 > 0) ? Math.max(effT2 * baseScale, 200) : 0;
-  const dur3 = (effT3 && effT3 > 0) ? Math.max(effT3 * baseScale, 400) : 0;
+  const dur1 = Math.min(Math.max((effT1 || 0) * baseScale, 400), 1200); // 400ms min, 1200ms max
+  const dur2 = (effT2 && effT2 > 0) ? Math.min(Math.max(effT2 * baseScale, 200), 2000) : 0;
+  const dur3 = (effT3 && effT3 > 0) ? Math.min(Math.max(effT3 * baseScale, 400), 1200) : 0;
   
-  const totalCycle = Math.max(dur1 + dur2 + dur3 + 200, 1000); // pad 200ms
+  const totalCycle = Math.min(Math.max(dur1 + dur2 + dur3 + 200, 800), 4000); // Cap total cycle to 4s
   
   // Ratios for keyTimes (must be strictly monotonically increasing)
   const p1End = Number((dur1 / totalCycle).toFixed(4));
