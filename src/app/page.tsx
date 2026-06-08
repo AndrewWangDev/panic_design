@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Zap, ShieldAlert, Globe2, ArrowRight } from 'lucide-react';
+import { Zap, ShieldAlert, Globe2, ArrowRight, Cpu } from 'lucide-react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -253,6 +253,30 @@ function HomeContent() {
                 <div style={{ position: 'absolute', left: '25px', top: '55px', width: '30px', height: '30px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--surface-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, fontSize: '12px' }}>💻</div>
                 <div style={{ position: 'absolute', left: '105px', top: '55px', width: '30px', height: '30px', borderRadius: '8px', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, boxShadow: '0 0 20px rgba(255,59,48,0.4)' }}><Zap size={16} color="#fff" /></div>
                 <div style={{ position: 'absolute', right: '25px', top: '55px', width: '30px', height: '30px', borderRadius: '8px', background: 'var(--surface)', border: '2px solid var(--surface-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, fontSize: '12px' }}>🗄️</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 1.5: Intent-Driven AIOps (Large) */}
+          <div className={`${styles.bentoCard} ${styles.large}`}>
+            <div>
+              <Cpu size={32} className={styles.bentoIcon} />
+              <h3 className={styles.bentoTitle}>Intent-Driven AIOps</h3>
+              <p className={styles.bentoDesc}>
+                Powered by Cloudflare AI. Describe your disaster scenario in natural language. Our embedded Llama-3.1 engine instantly translates semantic intent into deterministic L4/L7 fault parameters, fully sandboxed by strict edge guardrails.
+              </p>
+            </div>
+            {/* Minimal CSS AI Vector */}
+            <div style={{ flex: 1, minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <div style={{ position: 'relative', width: '240px', height: '140px' }}>
+                <svg width="100%" height="100%" viewBox="0 0 240 140" style={{ position: 'absolute', top: 0, left: 0 }}>
+                  <path d="M40 70 Q120 10 200 70" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2" strokeDasharray="4 4" />
+                  <path d="M40 70 Q120 130 200 70" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2" strokeDasharray="4 4" />
+                  <line x1="40" y1="70" x2="200" y2="70" stroke="rgba(255,59,48,0.4)" strokeWidth="2" strokeDasharray="4 4" />
+                </svg>
+                <div style={{ position: 'absolute', left: '25px', top: '55px', width: '30px', height: '30px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--surface-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, fontSize: '12px' }}>🗣️</div>
+                <div style={{ position: 'absolute', left: '105px', top: '55px', width: '30px', height: '30px', borderRadius: '8px', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, boxShadow: '0 0 20px rgba(255,59,48,0.4)' }}><Cpu size={16} color="#fff" /></div>
+                <div style={{ position: 'absolute', right: '25px', top: '55px', width: '30px', height: '30px', borderRadius: '8px', background: 'var(--surface)', border: '2px solid var(--surface-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, fontSize: '12px' }}>⚙️</div>
               </div>
             </div>
           </div>
