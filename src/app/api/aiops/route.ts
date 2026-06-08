@@ -48,18 +48,12 @@ export async function POST(req: Request) {
 Baseline Telemetry:
 ${JSON.stringify(baseline, null, 2)}
 
-RULE 1: SECURITY (HIGHEST PRIORITY)
-If instruction contains ANY hacking, DDOS, malicious intent, or shell commands like "rm -rf", "drop table", you MUST set "error_code": "SECURITY_VIOLATION". This overrides all other rules.
-
-RULE 2: OUT OF SCOPE
-If instruction is a normal conversation ("hello"), coding ("write python"), or non-topological, set "error_code": "OUT_OF_SCOPE".
-
-RULE 3: INCOMPLETE PARAMS
-If instruction asks for "packet loss" or "latency" but provides NO EXACT NUMBER (e.g., missing "50%" or "1000ms"), set "error_code": "INCOMPLETE_PARAM".
-
-RULE 4: GEOGRAPHIC & LOGICAL CONFLICTS
-If instruction asks for "trans-Pacific" or "trans-Atlantic" but the Baseline Telemetry W1/W2/W3 are in the SAME region (e.g., all US), DO NOT change coordinates! Set "warning_code": "LOGICAL_CONFLICT" and "warning_message": "⚠️ [Requested Geography] routing impossible for intra-[Actual Region] path."
-If instruction asks for L7 faults while L4 packet loss is 100%, set "warning_code": "LOGICAL_CONFLICT".
+RULES:
+1. SECURITY: If instruction contains real OS cyberattacks ("rm -rf", "drop table"), set "error_code": "SECURITY_VIOLATION". EXCEPTION: "hijack responses", "empty shell", "type poisoning" are VALID chaos engineering terms, DO NOT flag them as security violations!
+2. OUT OF SCOPE: For normal conversation or coding, set "error_code": "OUT_OF_SCOPE".
+3. INCOMPLETE PARAMS: If missing exact numbers (e.g., missing "50%" or "1000ms"), set "error_code": "INCOMPLETE_PARAM".
+4. LOGICAL_CONFLICT (GEOGRAPHY): If Baseline nodes are in the SAME region (e.g., all US) but instruction asks for "trans-Pacific" or "trans-Atlantic", DO NOT change coordinates! You MUST set "warning_code": "LOGICAL_CONFLICT" and "warning_message": "⚠️ [Requested Geography] routing impossible for intra-[Actual Region] path."
+5. STATUS CODE (CRITICAL): Format MUST be "BEFORE_STR -> AFTER_STR". Left side = baseline.statusCodeBreakdown. Right side MUST use baseline.fault (if 502/504/429) AND 444 (for dropped packets). NEVER use 200 on right side if baseline is an error code!
 
 JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
 {
@@ -68,27 +62,27 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
   "warning_code": "LOGICAL_CONFLICT" | null,
   "warning_message": string | null,
   "map_data": {
-    "T1": number (Round-Trip Time from Cloud to Edge),
-    "T2": number (Latency injected at Edge. 0 if none),
-    "T3": number (Round-Trip Time from Edge to Upstream),
-    "W1": [longitude, latitude] (Keep baseline unless failover is requested),
-    "W2": [longitude, latitude] (Keep baseline),
-    "W3": [longitude, latitude] (Keep baseline),
+    "T1": number,
+    "T2": number,
+    "T3": number,
+    "W1": [longitude, latitude],
+    "W2": [longitude, latitude],
+    "W3": [longitude, latitude],
     "w2_colo": string,
     "flag_1": boolean,
-    "flag_2": boolean (True if 502/504/429 or Edge packet loss drops the packet),
+    "flag_2": boolean,
     "flag_route_1": boolean,
     "flag_route_2": boolean,
     "W1_label": string,
-    "W2_label": string (e.g. "Latency +1000ms", "504 Gateway Timeout"),
+    "W2_label": string,
     "W3_label": string
   },
   "insight": {
-    "statusCode": string (CRITICAL FORMAT: "BEFORE_STR -> AFTER_STR". Left side MUST exactly match baseline.statusCodeBreakdown. Right side MUST reflect current fault. e.g. "200: 100% -> 429: 50%, 444: 50%". If baseline.fault is an error code, use it! Do NOT use 200 on right side if fault is 502/504/429.),
-    "w1Colo": string (Exact baseline w1_colo. No ->),
+    "statusCode": string (e.g. "504: 100% -> 504: 50%, 444: 50%"),
+    "w1Colo": string (Exact baseline w1_colo),
     "w2Colo": string,
     "w3Ip": string,
-    "packetLoss": string (Format: "BEFORE_STR -> AFTER_STR". e.g. "0.00% -> 50%"),
+    "packetLoss": string (e.g. "0.00% -> 50%"),
     "influence": [
       {
         "object": string,
@@ -98,6 +92,38 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
     ],
     "secondaryRisks": string,
     "suggestion": string
+  }
+}
+
+EXAMPLE 1:
+Input: "Simulate trans-Pacific route leak. Drop 50% of packets." (Assuming Baseline is 504: 100%, US nodes)
+Output:
+{
+  "error_code": null,
+  "error_message": null,
+  "warning_code": "LOGICAL_CONFLICT",
+  "warning_message": "⚠️ Trans-Pacific routing impossible for intra-US path.",
+  "map_data": {
+    "T1": 100, "T2": 0, "T3": 0,
+    "W1": [-118.24, 34.05], "W2": [-118.24, 34.05], "W3": [-118.24, 34.05],
+    "w2_colo": "LAX", "flag_1": false, "flag_2": true, "flag_route_1": false, "flag_route_2": false,
+    "W1_label": "", "W2_label": "Packet Loss", "W3_label": "Unreachable"
+  },
+  "insight": {
+    "statusCode": "504: 100% -> 504: 50%, 444: 50%",
+    "w1Colo": "LAX",
+    "w2Colo": "LAX",
+    "w3Ip": "1.1.1.1",
+    "packetLoss": "0.00% -> 50%",
+    "influence": [
+      {
+        "object": "Client",
+        "severity": "🔴",
+        "content": "Packet loss"
+      }
+    ],
+    "secondaryRisks": "None",
+    "suggestion": "Fix routing"
   }
 }`;
 
