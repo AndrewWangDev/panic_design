@@ -21,6 +21,7 @@ interface WorldMapProps {
   colo?: string;
   w1Colo?: string;
   aiMapData?: any;
+  isNxDomain?: boolean;
 }
 
 function getLatencyColor(ms: number) {
@@ -29,7 +30,7 @@ function getLatencyColor(ms: number) {
   return "#ef4444"; // red
 }
 
-export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, mutilationStrategy, isPending = false, animKey = 0, colo = 'UNKNOWN', w1Colo = 'UNKNOWN', aiMapData }: WorldMapProps) {
+export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, mutilationStrategy, isPending = false, animKey = 0, colo = 'UNKNOWN', w1Colo = 'UNKNOWN', aiMapData, isNxDomain = false }: WorldMapProps) {
   const [geographies, setGeographies] = useState<any[]>([]);
   const [viewport, setViewport] = useState({ x: 0, y: 0, k: 1 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -229,7 +230,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
   type PinAnchor = 'top' | 'top-left' | 'bottom-right' | 'bottom';
 
-  const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string, anchor: PinAnchor = 'top') => {
+  const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string, anchor: PinAnchor = 'top', forceRedSubLabel: boolean = false) => {
     const projected = projection(coords);
     if (!projected) return null;
     const [x, y] = projected;
@@ -257,7 +258,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         />
         <circle cx="0" cy="-14" r="3" fill={isDimmed ? "#888" : "#fff"} />
         {renderPinText(lblDx, lblDy, label, isDimmed ? "#aaa" : "var(--text-primary, #fff)")}
-        {subLabel && renderPinText(subDx, subDy, subLabel, isDimmed ? "#ef4444" : "#eab308", true)}
+        {subLabel && renderPinText(subDx, subDy, subLabel, (isDimmed || forceRedSubLabel) ? "#ef4444" : "#eab308", true)}
       </g>
     );
   };
@@ -543,11 +544,11 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
             return (
               <>
-                {effW1 && renderPin(effW1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", pinColor, false, undefined, anchorW1)}
+                {effW1 && !isNxDomain && renderPin(effW1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", pinColor, false, undefined, anchorW1)}
                 
-                {isPending && effW1 && projection(effW1) && (
+                {(isPending || isNxDomain) && effW1 && projection(effW1) && (
                   <g style={{ transform: `translate(${projection(effW1)?.[0]}px, ${projection(effW1)?.[1]}px) scale(${1 / viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                    <circle cx={0} cy={0} r={20} fill="none" stroke="#10b981" strokeWidth={1.5} opacity="0">
+                    <circle cx={0} cy={0} r={20} fill="none" stroke={isNxDomain ? "#ef4444" : "#10b981"} strokeWidth={1.5} opacity="0">
                       <animate attributeName="r" values="0;40" dur="1.5s" repeatCount="indefinite" />
                       <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
                     </circle>
@@ -555,9 +556,11 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
                 )}
 
                 {/* Removed visual jitter offsets to prevent map lines and pins from detaching */}
-                {!isPending && effW1 && renderPin(effW1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", t1Color, false, w1LabelOverride, anchorW1)}
-                {!isPending && effW2 && renderPin(effW2, `Edge Gateway (${colo})`, pinColor, false, w2LabelOverride, anchorW2)}
-                {!isPending && effW3 && renderPin(effW3, "Upstream Target", (flag_2 || isAbort) ? "#444" : pinColor, (flag_2 || isAbort), w3LabelOverride)}
+                {!isPending && !isNxDomain && effW1 && renderPin(effW1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", t1Color, false, w1LabelOverride, anchorW1)}
+                {!isPending && !isNxDomain && effW2 && renderPin(effW2, `Edge Gateway (${colo})`, pinColor, false, w2LabelOverride, anchorW2)}
+                {!isPending && !isNxDomain && effW3 && renderPin(effW3, "Upstream Target", (flag_2 || isAbort) ? "#444" : pinColor, (flag_2 || isAbort), w3LabelOverride)}
+
+                {isNxDomain && effW1 && renderPin(effW1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", "#ef4444", false, "[ NULL DESTINATION ]", anchorW1, true)}
               </>
             );
           })()}
