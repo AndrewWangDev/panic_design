@@ -13,9 +13,11 @@ export default function Docs() {
     const handleScroll = () => {
       const injRect = injectionRef.current?.getBoundingClientRect();
       
-      // The right-side sticky container aligns at top: 39px (effectively 100px visual).
-      // Switch the code block to 'injection' EXACTLY when the left title comes to 100px of the viewport top.
-      if (injRect && injRect.top <= 100) {
+      // The right-side sticky container aligns at top: 100px. 
+      // The internal offset to the first line of code is 61px (37px header + 24px padding).
+      // So 'payload = {' is at exactly 161px from the viewport top.
+      // Switch the code block to 'injection' EXACTLY when the left title comes to 161px.
+      if (injRect && injRect.top <= 161) {
         setActiveSection('injection');
       } else {
         setActiveSection('auth');
@@ -145,7 +147,7 @@ export default function Docs() {
         <div style={{ position: 'relative', minWidth: 0 }}>
           <div style={{ 
             position: 'sticky', 
-            top: '39px', 
+            top: '100px', 
             background: '#000000', 
             borderRadius: '16px', 
             border: '1px solid rgba(255,255,255,0.08)', 
