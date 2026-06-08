@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Microscope, CheckCircle2 } from 'lucide-react';
+import { Microscope, CheckCircle2 } from 'lucide-react';
 
 export default function Docs() {
   const [activeSection, setActiveSection] = useState('auth');
@@ -17,7 +16,7 @@ export default function Docs() {
           setActiveSection(entry.target.id);
         }
       });
-    }, { rootMargin: '-20% 0px -60% 0px' });
+    }, { rootMargin: '-100px 0px -60% 0px' });
 
     if (authRef.current) observer.observe(authRef.current);
     if (injectionRef.current) observer.observe(injectionRef.current);
@@ -28,13 +27,10 @@ export default function Docs() {
   return (
     <div style={{ backgroundColor: '#000', color: '#ededed', fontFamily: 'Inter, sans-serif', minHeight: '100vh', paddingBottom: '120px' }}>
       
-      {/* 1. Global Hero Section */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '80px 24px 40px 24px' }}>
-        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#a1a1aa', textDecoration: 'none', marginBottom: '40px', fontSize: '0.9rem', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#ededed'} onMouseOut={e => e.currentTarget.style.color = '#a1a1aa'}>
-          <ArrowLeft size={16} /> Back to Home
-        </Link>
-        <h1 style={{ fontSize: '3.5rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', margin: '0 0 16px 0' }}>API Reference</h1>
-        <p style={{ color: '#a1a1aa', fontSize: '1.2rem', margin: '0 0 40px 0', maxWidth: '600px' }}>
+      {/* 1. Global Hero Section (Aligned with Dashboard) */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 40px 40px 40px' }}>
+        <h1 style={{ fontSize: '3rem', fontWeight: 800, color: '#fff', letterSpacing: '-1px', margin: '0 0 12px 0' }}>API Documentation</h1>
+        <p style={{ color: '#a1a1aa', fontSize: '1.1rem', margin: '0 0 40px 0', maxWidth: '600px' }}>
           Integrating panic.design requires zero code changes.
         </p>
         
@@ -55,19 +51,19 @@ export default function Docs() {
       </div>
 
       {/* 2. Split-Pane Layout */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '7fr 5fr', gap: '64px', position: 'relative' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 40px', display: 'grid', gridTemplateColumns: '7fr 5fr', gap: '64px', position: 'relative' }}>
         
         {/* Left Column (Prose & Tables) */}
         <div style={{ paddingBottom: '120px' }}>
           
-          <div id="auth" ref={authRef} style={{ marginBottom: '80px', paddingTop: '40px' }}>
+          <div id="auth" ref={authRef} style={{ marginBottom: '80px', scrollMarginTop: '100px' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>1. Authentication</h2>
             <p style={{ color: '#d4d4d8', lineHeight: 1.7, marginBottom: '24px' }}>
               All requests to the control plane and data plane must be authenticated using your <code style={codeStyle}>PANIC_TOKEN</code>. Pass it via the standard HTTP Authorization header.
             </p>
           </div>
 
-          <div id="injection" ref={injectionRef} style={{ paddingTop: '40px', minHeight: '600px' }}>
+          <div id="injection" ref={injectionRef} style={{ minHeight: '800px', scrollMarginTop: '100px' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>2. Proxy Data Plane Integration</h2>
             <p style={{ color: '#d4d4d8', lineHeight: 1.7, marginBottom: '24px' }}>
               Create an ephemeral edge token to initiate a chaos proxy session.
@@ -99,7 +95,43 @@ export default function Docs() {
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>fault</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
                   <td style={{ padding: '16px 0', color: '#ef4444', fontSize: '0.8rem' }}>required</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Fault pattern e.g., <code style={codeStyle}>latency_2000ms</code>.</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Fault pattern (e.g., <code style={codeStyle}>latency</code>, <code style={codeStyle}>packet_loss</code>, <code style={codeStyle}>502</code>).</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #222' }}>
+                  <td style={{ padding: '16px 0' }}><code style={codeStyle}>latency</code></td>
+                  <td style={{ padding: '16px 0', color: '#60a5fa' }}>integer</td>
+                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Target latency in ms (required if fault is latency).</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #222' }}>
+                  <td style={{ padding: '16px 0' }}><code style={codeStyle}>jitter</code></td>
+                  <td style={{ padding: '16px 0', color: '#60a5fa' }}>integer</td>
+                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Latency jitter fluctuation in ms.</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #222' }}>
+                  <td style={{ padding: '16px 0' }}><code style={codeStyle}>packetLoss</code></td>
+                  <td style={{ padding: '16px 0', color: '#60a5fa' }}>integer</td>
+                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Packet loss percentage (0-100).</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #222' }}>
+                  <td style={{ padding: '16px 0' }}><code style={codeStyle}>distribution</code></td>
+                  <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
+                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Statistical distribution: <code style={codeStyle}>normal</code> or <code style={codeStyle}>pareto</code>.</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #222' }}>
+                  <td style={{ padding: '16px 0' }}><code style={codeStyle}>mutilationStrategy</code></td>
+                  <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
+                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Strategy for payload mutilation (e.g., <code style={codeStyle}>bitflip</code>, <code style={codeStyle}>truncate</code>).</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #222' }}>
+                  <td style={{ padding: '16px 0' }}><code style={codeStyle}>customTtl</code></td>
+                  <td style={{ padding: '16px 0', color: '#60a5fa' }}>integer</td>
+                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Token TTL in seconds (default: 600).</td>
                 </tr>
               </tbody>
             </table>
@@ -115,7 +147,8 @@ export default function Docs() {
             borderRadius: '16px', 
             border: '1px solid rgba(255,255,255,0.08)', 
             boxShadow: '0 0 30px rgba(0,255,204,0.03)',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            marginTop: '-60px' // Offset to vertically align inner payload code with left-side headers
           }}>
             <div style={{ background: '#111', padding: '12px 20px', borderBottom: '1px solid #222', display: 'flex', gap: '8px' }}>
               <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ff5f56' }} />
@@ -126,24 +159,26 @@ export default function Docs() {
             <div style={{ padding: '24px', fontFamily: 'var(--font-mono), monospace', fontSize: '0.85rem', color: '#d4d4d8', minHeight: '340px' }}>
               {activeSection === 'auth' && (
                 <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-                  <div style={{ color: '#6b7280', marginBottom: '16px' }}># Standard HTTP Header</div>
                   <span style={{ color: '#38bdf8' }}>Authorization</span>: <span style={{ color: '#a78bfa' }}>Bearer</span> <span style={{ color: '#4ade80' }}>$PANIC_TOKEN</span>
+                  
+                  <div style={{ color: '#6b7280', marginTop: '16px' }}># Inject this header into your edge router or API gateway.</div>
                 </div>
               )}
 
               {activeSection === 'injection' && (
                 <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-                  <div style={{ color: '#6b7280', marginBottom: '16px' }}># Python Requests Example</div>
                   <div style={{ lineHeight: 1.6 }}>
-                    <span style={{ color: '#f472b6' }}>import</span> requests<br/><br/>
                     <span style={{ color: '#a78bfa' }}>payload</span> = {'{'}<br/>
                     &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"targetHost"</span>: <span style={{ color: '#a3e635' }}>"api.yourbackend.com"</span>,<br/>
                     &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"fault"</span>: <span style={{ color: '#a3e635' }}>"latency_500ms"</span><br/>
-                    {'}'}<br/><br/>
+                    {'}'}<br/>
+                    <span style={{ color: '#a78bfa' }}>headers</span> = {'{"Authorization": "Bearer $PANIC_TOKEN"}'}<br/>
+                    <br/>
+                    <span style={{ color: '#f472b6' }}>import</span> requests<br/>
                     <span style={{ color: '#a78bfa' }}>response</span> = requests.post(<br/>
                     &nbsp;&nbsp;<span style={{ color: '#a3e635' }}>"https://panic.andrewwangdev.com/api/tokens/create"</span>,<br/>
                     &nbsp;&nbsp;json=payload,<br/>
-                    &nbsp;&nbsp;headers={'{"Authorization": "Bearer $PANIC_TOKEN"}'}<br/>
+                    &nbsp;&nbsp;headers=headers<br/>
                     )<br/><br/>
                     <span style={{ color: '#6b7280' }}># Returns JSON</span><br/>
                     <span style={{ color: '#a78bfa' }}>print</span>(response.json())
@@ -156,7 +191,7 @@ export default function Docs() {
       </div>
 
       {/* 3. Full-width Section */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 40px' }}>
         
         {/* Edge Error Matrix */}
         <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '32px' }}>3. Edge Error Matrix</h2>
@@ -231,6 +266,7 @@ export default function Docs() {
           div[style*="position: sticky"] {
             position: relative !important;
             top: 0 !important;
+            margin-top: 0 !important;
           }
         }
       `}} />
