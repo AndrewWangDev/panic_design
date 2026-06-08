@@ -157,8 +157,8 @@
 
 /* AIOps Tonal Chips */
 .aiopsChip {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
   color: var(--text-secondary);
   padding: 8px 16px;
   border-radius: 16px;
@@ -170,8 +170,8 @@
 }
 
 .aiopsChip:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--dash-card-hover);
+  color: var(--text-primary);
 }
 
 .aiopsChipBgp:hover:not(:disabled) {
@@ -231,8 +231,8 @@
 .aiInputWrapper {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--dash-input-bg);
+  border: 1px solid var(--dash-input-border);
   border-radius: 20px;
   padding: 8px 16px;
   margin-bottom: 20px;
@@ -243,7 +243,7 @@
 .aiInputWrapper:focus-within {
   border-color: var(--color-cyan, #06b6d4);
   box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--dash-input-bg);
 }
 
 .aiInputWrapper.disabled {
@@ -270,13 +270,13 @@
 }
 
 .aiInput::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-secondary);
 }
 
 .aiSendBtn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
