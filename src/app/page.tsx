@@ -243,8 +243,8 @@ function HomeContent() {
               </p>
             </div>
             {/* Minimal CSS Network Topology Vector */}
-            <div style={{ flex: 1, minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              <div style={{ position: 'relative', width: '240px', height: '140px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: '100px', marginTop: '16px', marginBottom: '-16px' }}>
+              <div style={{ position: 'relative', width: '240px', height: '140px', transform: 'scale(0.75)', transformOrigin: 'center' }}>
                 <svg width="100%" height="100%" viewBox="0 0 240 140" style={{ position: 'absolute', top: 0, left: 0 }}>
                   <path d="M40 70 L120 30 L200 70 L120 110 Z" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2" strokeDasharray="4 4" />
                   <line x1="40" y1="70" x2="120" y2="70" stroke="rgba(255,59,48,0.8)" strokeWidth="2" strokeDasharray="4 4" />
@@ -267,8 +267,8 @@ function HomeContent() {
               </p>
             </div>
             {/* Minimal CSS AI Vector */}
-            <div style={{ flex: 1, minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              <div style={{ position: 'relative', width: '240px', height: '140px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: '100px', marginTop: '16px', marginBottom: '-16px' }}>
+              <div style={{ position: 'relative', width: '240px', height: '140px', transform: 'scale(0.75)', transformOrigin: 'center' }}>
                 <svg width="100%" height="100%" viewBox="0 0 240 140" style={{ position: 'absolute', top: 0, left: 0 }}>
                   <path d="M40 70 Q120 10 200 70" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2" strokeDasharray="4 4" />
                   <path d="M40 70 Q120 130 200 70" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2" strokeDasharray="4 4" />
