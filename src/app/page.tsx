@@ -233,8 +233,8 @@ function HomeContent() {
         </div>
         
         <div className={styles.bentoGrid}>
-          {/* Card 1: Zero-Intrusion (Large) */}
-          <div className={`${styles.bentoCard} ${styles.large}`}>
+          {/* Card 1: Zero-Intrusion */}
+          <div className={styles.bentoCard}>
             <div>
               <Zap size={32} className={styles.bentoIcon} />
               <h3 className={styles.bentoTitle}>Absolute Zero-Intrusion</h3>
@@ -257,8 +257,8 @@ function HomeContent() {
             </div>
           </div>
 
-          {/* Card 1.5: Intent-Driven AIOps (Large) */}
-          <div className={`${styles.bentoCard} ${styles.large}`}>
+          {/* Card 1.5: Intent-Driven AIOps */}
+          <div className={styles.bentoCard}>
             <div>
               <Cpu size={32} className={styles.bentoIcon} />
               <h3 className={styles.bentoTitle}>Intent-Driven AIOps</h3>
