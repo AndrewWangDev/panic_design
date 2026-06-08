@@ -10,18 +10,21 @@ export default function Docs() {
   const injectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
-    }, { rootMargin: '-100px 0px -60% 0px' });
+    const handleScroll = () => {
+      const injRect = injectionRef.current?.getBoundingClientRect();
+      
+      // The right-side sticky container aligns at top: 39px (effectively 100px visual).
+      // Switch the code block to 'injection' ONLY when the left title comes within 150px of the viewport top.
+      if (injRect && injRect.top <= 150) {
+        setActiveSection('injection');
+      } else {
+        setActiveSection('auth');
+      }
+    };
 
-    if (authRef.current) observer.observe(authRef.current);
-    if (injectionRef.current) observer.observe(injectionRef.current);
-
-    return () => observer.disconnect();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
