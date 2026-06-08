@@ -1430,14 +1430,15 @@ export default function Dashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          target_host: targetHost,
+          targetHost,
+          scope,
           fault,
           latency,
           jitter,
           distribution,
-          packet_loss: packetLoss,
-          mutilation_strategy: mutilationStrategy,
-          ttl_hours: ttlHours,
+          packetLoss: Number(packetLoss) || 0,
+          mutilationStrategy,
+          customTtl: ttlHours,
           turnstileToken: currentToken
         })
       });
