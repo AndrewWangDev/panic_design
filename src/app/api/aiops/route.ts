@@ -100,7 +100,7 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
 }
 
 EXAMPLE 1:
-Input: "Simulate a catastrophic BGP route leak to Europe. Drop 50% of packets globally." (Assuming Baseline targetHost is "example.com", w1_colo is "SJC", w2_colo is "SJC", fault is 504)
+Input: "Trigger a massive edge node failure causing 504 Gateway Timeouts." (Assuming Baseline targetHost is "api.example.com", w1_colo is "LAX", w2_colo is "LAX", fault is 504)
 Output:
 {
   "error_code": null,
@@ -109,25 +109,25 @@ Output:
   "warning_message": null,
   "map_data": {
     "T1": 100, "T2": 0, "T3": 0,
-    "W1": null, "W2": [8.6821, 50.1109], "W3": null,
-    "w2_colo": "FRA", "flag_1": false, "flag_2": true, "flag_route_1": true, "flag_route_2": false,
-    "W1_label": "", "W2_label": "BGP Hijack", "W3_label": "Unreachable"
+    "W1": null, "W2": null, "W3": null,
+    "w2_colo": "LAX", "flag_1": false, "flag_2": true, "flag_route_1": false, "flag_route_2": false,
+    "W1_label": "", "W2_label": "Edge Timeout", "W3_label": "Unreachable"
   },
   "insight": {
-    "sloBudgetImpact": "Catastrophic global route leak violating multi-region SLA targets and risking significant projected revenue loss due to complete L4 physical layer blockade.",
-    "w1Colo": "SJC",
-    "w2Colo": "FRA",
-    "w3Ip": "example.com",
-    "packetLoss": "50%",
+    "sloBudgetImpact": "Critical edge gateway failure violating 99.99% availability SLA, blocking all ingress traffic and causing immediate revenue drop.",
+    "w1Colo": "LAX",
+    "w2Colo": "LAX",
+    "w3Ip": "api.example.com",
+    "packetLoss": "0%",
     "influence": [
       {
-        "object": "Core Network",
+        "object": "Edge Gateway",
         "severity": "🔴",
-        "content": "A massive BGP route leak hijacked traffic to Frankfurt, completely tearing down inter-region communication boundaries and resulting in severe global packet drops."
+        "content": "The edge gateway cluster suffered a catastrophic outage, severing the connection between clients and the upstream target resulting in 100% 504 Timeouts."
       }
     ],
-    "secondaryRisks": "Asymmetric routing anomalies could cascade into edge node saturation and prolonged DNS resolution failures worldwide.",
-    "suggestion": "Immediately revoke compromised ASN advertisements, deploy emergency route filtering on edge gateways, and initiate automated failover to standby BGP sessions."
+    "secondaryRisks": "Client retry storms could trigger cascading rate-limit exhaustion and DDoS mitigation lockouts.",
+    "suggestion": "Immediately restart edge proxy containers and route traffic to secondary availability zones."
   }
 }`;
 
