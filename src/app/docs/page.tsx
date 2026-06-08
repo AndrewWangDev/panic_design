@@ -14,8 +14,8 @@ export default function Docs() {
       const injRect = injectionRef.current?.getBoundingClientRect();
       
       // The right-side sticky container aligns at top: 39px (effectively 100px visual).
-      // Switch the code block to 'injection' ONLY when the left title comes within 150px of the viewport top.
-      if (injRect && injRect.top <= 150) {
+      // Switch the code block to 'injection' EXACTLY when the left title comes to 100px of the viewport top.
+      if (injRect && injRect.top <= 100) {
         setActiveSection('injection');
       } else {
         setActiveSection('auth');
@@ -57,17 +57,17 @@ export default function Docs() {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 40px', display: 'grid', gridTemplateColumns: '7fr 5fr', gap: '64px', position: 'relative' }}>
         
         {/* Left Column (Prose & Tables) */}
-        <div style={{ paddingBottom: '120px' }}>
+        <div style={{ paddingBottom: '120px', minWidth: 0 }}>
           
           <div id="auth" ref={authRef} style={{ marginBottom: '80px', scrollMarginTop: '100px' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>1. Authentication</h2>
+            <h2 style={{ marginTop: 0, fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>1. Authentication</h2>
             <p style={{ color: '#d4d4d8', lineHeight: 1.7, marginBottom: '24px' }}>
               All requests to the control plane and data plane must be authenticated using your <code style={codeStyle}>PANIC_TOKEN</code>. Pass it via the standard HTTP Authorization header.
             </p>
           </div>
 
           <div id="injection" ref={injectionRef} style={{ minHeight: '800px', scrollMarginTop: '100px' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>2. Proxy Data Plane Integration</h2>
+            <h2 style={{ marginTop: 0, fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>2. Proxy Data Plane Integration</h2>
             <p style={{ color: '#d4d4d8', lineHeight: 1.7, marginBottom: '24px' }}>
               Create an ephemeral edge token to initiate a chaos proxy session.
             </p>
@@ -142,7 +142,7 @@ export default function Docs() {
         </div>
 
         {/* Right Column (Code Snippets) */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', minWidth: 0 }}>
           <div style={{ 
             position: 'sticky', 
             top: '39px', 
