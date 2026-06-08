@@ -65,9 +65,9 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
     "T1": number,
     "T2": number,
     "T3": number,
-    "W1": [longitude, latitude],
-    "W2": [longitude, latitude],
-    "W3": [longitude, latitude],
+    "W1": [longitude, latitude] | null (Use null to keep baseline),
+    "W2": [longitude, latitude] | null (Use null to keep baseline),
+    "W3": [longitude, latitude] | null (Use null to keep baseline),
     "w2_colo": string,
     "flag_1": boolean,
     "flag_2": boolean,
@@ -105,7 +105,7 @@ Output:
   "warning_message": "⚠️ Trans-Pacific routing impossible for intra-US path.",
   "map_data": {
     "T1": 100, "T2": 0, "T3": 0,
-    "W1": [-118.24, 34.05], "W2": [-118.24, 34.05], "W3": [-118.24, 34.05],
+    "W1": null, "W2": null, "W3": null,
     "w2_colo": "LAX", "flag_1": false, "flag_2": true, "flag_route_1": false, "flag_route_2": false,
     "W1_label": "", "W2_label": "Packet Loss", "W3_label": "Unreachable"
   },
