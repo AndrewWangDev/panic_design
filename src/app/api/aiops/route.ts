@@ -79,9 +79,9 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
   },
   "insight": {
     "statusCode": string (ONLY the AFTER breakdown. e.g. "504: 50%, 444: 50%". Use baseline.fault if applicable),
-    "w1Colo": string | null (Use null to keep baseline),
-    "w2Colo": string | null (Use null to keep baseline),
-    "w3Ip": string | null (Use null to keep baseline target),
+    "w1Colo": string (Exact baseline w1_colo OR new colo if hijacked),
+    "w2Colo": string (Exact baseline w2_colo OR new colo if hijacked),
+    "w3Ip": string (Exact baseline targetHost OR new IP if hijacked),
     "packetLoss": string (ONLY the AFTER value. e.g. "50%"),
     "influence": [
       {
@@ -96,7 +96,7 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
 }
 
 EXAMPLE 1:
-Input: "Simulate trans-Pacific route leak. Drop 50% of packets." (Assuming Baseline is 504: 100%, US nodes)
+Input: "Simulate trans-Pacific route leak. Drop 50% of packets." (Assuming Baseline targetHost is "example.com", w1_colo is "SJC", w2_colo is "SJC", fault is 504)
 Output:
 {
   "error_code": null,
@@ -106,14 +106,14 @@ Output:
   "map_data": {
     "T1": 100, "T2": 0, "T3": 0,
     "W1": null, "W2": null, "W3": null,
-    "w2_colo": "LAX", "flag_1": false, "flag_2": true, "flag_route_1": false, "flag_route_2": false,
+    "w2_colo": "SJC", "flag_1": false, "flag_2": true, "flag_route_1": false, "flag_route_2": false,
     "W1_label": "", "W2_label": "Packet Loss", "W3_label": "Unreachable"
   },
   "insight": {
     "statusCode": "504: 50%, 444: 50%",
-    "w1Colo": null,
-    "w2Colo": null,
-    "w3Ip": null,
+    "w1Colo": "SJC",
+    "w2Colo": "SJC",
+    "w3Ip": "example.com",
     "packetLoss": "50%",
     "influence": [
       {
