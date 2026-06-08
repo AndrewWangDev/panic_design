@@ -95,7 +95,7 @@ export default function Docs() {
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>fault</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
                   <td style={{ padding: '16px 0', color: '#ef4444', fontSize: '0.8rem' }}>required</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Fault pattern: <code style={codeStyle}>502 Bad Gateway</code>, <code style={codeStyle}>504 Gateway Timeout</code>, <code style={codeStyle}>429 Rate Limit</code>, or <code style={codeStyle}>Traffic Degradation</code>.</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Fault pattern: <code style={codeStyle}>502</code> Bad Gateway, <code style={codeStyle}>504</code> Gateway Timeout, <code style={codeStyle}>429</code> Rate Limit, or <code style={codeStyle}>latency</code> (Traffic Degradation).</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>latency</code></td>
@@ -119,7 +119,7 @@ export default function Docs() {
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>distribution</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
                   <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Statistical distribution: <code style={codeStyle}>uniform</code>, <code style={codeStyle}>normal</code> or <code style={codeStyle}>spikes</code>.</td>
+                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Statistical distribution: <code style={codeStyle}>Uniform</code>, <code style={codeStyle}>Normal</code> or <code style={codeStyle}>Spikes</code>.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>mutilationStrategy</code></td>
@@ -142,13 +142,12 @@ export default function Docs() {
         <div style={{ position: 'relative' }}>
           <div style={{ 
             position: 'sticky', 
-            top: '40px', 
+            top: '100px', 
             background: '#000000', 
             borderRadius: '16px', 
             border: '1px solid rgba(255,255,255,0.08)', 
             boxShadow: '0 0 30px rgba(0,255,204,0.03)',
-            overflow: 'hidden',
-            marginTop: '-60px' // Offset to vertically align inner payload code with left-side headers
+            overflow: 'hidden'
           }}>
             <div style={{ background: '#111', padding: '12px 20px', borderBottom: '1px solid #222', display: 'flex', gap: '8px' }}>
               <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ff5f56' }} />
@@ -170,11 +169,11 @@ export default function Docs() {
                   <div style={{ lineHeight: 1.6 }}>
                     <span style={{ color: '#a78bfa' }}>payload</span> = {'{'}<br/>
                     &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"targetHost"</span>: <span style={{ color: '#a3e635' }}>"api.yourbackend.com"</span>,<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"fault"</span>: <span style={{ color: '#a3e635' }}>"Traffic Degradation"</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"fault"</span>: <span style={{ color: '#a3e635' }}>"latency"</span>,<br/>
                     &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"latency"</span>: <span style={{ color: '#f59e0b' }}>500</span>,<br/>
                     &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"jitter"</span>: <span style={{ color: '#f59e0b' }}>50</span>,<br/>
                     &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"packetLoss"</span>: <span style={{ color: '#f59e0b' }}>5</span>,<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"distribution"</span>: <span style={{ color: '#a3e635' }}>"normal"</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"distribution"</span>: <span style={{ color: '#a3e635' }}>"Normal"</span>,<br/>
                     &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"mutilationStrategy"</span>: <span style={{ color: '#a3e635' }}>"Type Poisoning"</span><br/>
                     {'}'}<br/>
                     <span style={{ color: '#a78bfa' }}>headers</span> = {'{"Authorization": "Bearer $PANIC_TOKEN"}'}<br/>
