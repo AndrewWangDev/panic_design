@@ -142,7 +142,7 @@ export default function Docs() {
         <div style={{ position: 'relative' }}>
           <div style={{ 
             position: 'sticky', 
-            top: '100px', 
+            top: '39px', 
             background: '#000000', 
             borderRadius: '16px', 
             border: '1px solid rgba(255,255,255,0.08)', 
