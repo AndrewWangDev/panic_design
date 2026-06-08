@@ -712,19 +712,7 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
         </div>
         <button 
           onClick={togglePlay}
-          style={{
-            background: 'rgba(0,0,0,0.4)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '4px',
-            padding: '4px 8px',
-            cursor: 'pointer',
-            color: 'var(--text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '0.75rem',
-            transition: 'all 0.2s'
-          }}
+          className={styles.pauseBtn}
           title={isPlaying ? "Pause Simulation" : "Play Simulation"}
         >
           {isPlaying ? <><Pause size={12} /> Pause</> : <><Play size={12} /> Play</>}
