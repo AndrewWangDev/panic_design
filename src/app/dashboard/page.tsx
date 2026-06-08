@@ -1859,7 +1859,7 @@ export default function Dashboard() {
                           <div className={styles.latencyLabel}>Network Jitter</div>
                           <div style={{flex: 1}} />
                           <div className={styles.inputWithUnit} style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <input 
                                 type="number" 
                                 min="0"
@@ -2058,7 +2058,7 @@ export default function Dashboard() {
                     {generatedToken ? 'PENDING INJECTION' : 'PENDING SIGNATURE'}
                   </div>
                 </div>
-                <div className={styles.codeBlock} style={{ maxHeight: '220px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', fontSize: '12px', color: '#94a3b8' }}>
+                <div className={styles.codeBlock} style={{ maxHeight: '220px', overflowY: 'auto', background: 'var(--dash-code-bg)', border: '1px solid var(--dash-code-border, rgba(255,255,255,0.05))', borderRadius: '12px', padding: '16px', fontSize: '12px', color: 'var(--dash-code-text, #94a3b8)' }}>
                   <pre style={{ margin: 0, fontFamily: 'var(--font-mono)' }} dangerouslySetInnerHTML={{
                     __html: (() => {
                       const payloadObj = {

@@ -1033,17 +1033,15 @@
 
 .latencyInput {
   width: 90px;
-  height: 34px;
   background: var(--dash-input-bg);
   border: 1px solid var(--dash-input-border);
   color: var(--dash-input-text);
   border-radius: 100px;
-  padding: 0 16px;
+  padding: 8px 12px;
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   outline: none;
   text-align: right;
-  line-height: 32px;
 }
 
 .latencyInput:focus {
