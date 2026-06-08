@@ -362,15 +362,15 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           )}
         </div>
 
+      </div>
+
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         {aiMapData && (
-          <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '6px 12px', borderRadius: '20px', zIndex: 10 }}>
+          <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '6px 12px', borderRadius: '20px', zIndex: 10, backdropFilter: 'blur(4px)' }}>
             <Sparkles size={14} color="#38bdf8" />
             <span style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase' }}>AI SIMULATED</span>
           </div>
         )}
-      </div>
-
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <svg width="100%" height="100%" viewBox="0 0 800 450" style={{ display: 'block', pointerEvents: 'none', position: 'absolute', inset: 0 }}>
           <g style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.k})`, transition: 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
           <g className="geographies">
