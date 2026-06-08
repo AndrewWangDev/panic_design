@@ -2300,7 +2300,9 @@ export default function Dashboard() {
                                 )}
                                 {typeof aiState.data.insight === 'object' && aiState.data.insight !== null ? (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
-                                    <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {aiState.baseline?.statusCodeBreakdown || '200: 100%'} ➔ {aiState.data.insight.statusCode}</div>
+                                    <div style={{ color: '#f87171', marginBottom: '4px', paddingBottom: '4px', borderBottom: '1px dashed rgba(255,255,255,0.1)' }}>
+                                      <span style={{ color: '#94a3b8', fontWeight: 'bold' }}>SLO Budget Impact:</span> {aiState.data.insight.sloBudgetImpact}
+                                    </div>
                                     <div style={{ color: '#38bdf8', marginBottom: '4px' }}>
                                       {aiState.data.insight.w1Colo || (aiState.baseline?.w1_colo !== 'UNKNOWN' ? aiState.baseline?.w1_colo : null) || 'Client (Pending)'} ➔ {aiState.data.insight.w2Colo || (aiState.baseline?.w2_colo !== 'UNKNOWN' ? aiState.baseline?.w2_colo : null) || 'Gateway (Pending)'} ➔ {aiState.data.insight.w3Ip || aiState.baseline?.resolvedIp || 'Target Host'}
                                     </div>

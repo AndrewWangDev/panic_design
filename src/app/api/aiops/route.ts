@@ -78,7 +78,7 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
     "W3_label": string
   },
   "insight": {
-    "statusCode": string (ONLY the AFTER breakdown. e.g. "504: 50%, 444: 50%". Use baseline.fault if applicable),
+    "sloBudgetImpact": string (Predict the enterprise business/SLO impact instead of raw numbers. E.g., "Critical SLA breach risking enterprise revenue and violating 99.99% availability targets"),
     "w1Colo": string (Exact baseline w1_colo OR new colo if hijacked),
     "w2Colo": string (Exact baseline w2_colo OR new colo if hijacked),
     "w3Ip": string (Exact baseline targetHost OR new IP if hijacked),
@@ -87,11 +87,11 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
       {
         "object": string,
         "severity": string (EXACTLY ONE: "🔴", "🟡", "🟢"),
-        "content": string
+        "content": string (Must be highly detailed and descriptive. DO NOT use short phrases like 'Massive failure', explain EXACTLY what the failure entails)
       }
     ],
-    "secondaryRisks": string,
-    "suggestion": string
+    "secondaryRisks": string (MUST NOT be "None" or empty. Always invent a plausible cascading failure risk),
+    "suggestion": string (Must be a detailed mitigation strategy of NO LESS THAN 10 words)
   }
 }
 
@@ -110,7 +110,7 @@ Output:
     "W1_label": "", "W2_label": "Packet Loss", "W3_label": "Unreachable"
   },
   "insight": {
-    "statusCode": "504: 50%, 444: 50%",
+    "sloBudgetImpact": "Severe disruption to inter-regional data synchronization leading to projected 0.05% drop in monthly uptime SLO and high risk of SLA penalty payouts.",
     "w1Colo": "SJC",
     "w2Colo": "SJC",
     "w3Ip": "example.com",
