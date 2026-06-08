@@ -54,6 +54,11 @@ RULES:
 3. INCOMPLETE PARAMS: If missing exact numbers (e.g., missing "50%" or "1000ms"), set "error_code": "INCOMPLETE_PARAM".
 4. LOGICAL_CONFLICT (GEOGRAPHY): If Baseline nodes are in the SAME region (e.g., all US) but instruction asks for "trans-Pacific" or "trans-Atlantic", DO NOT change coordinates! You MUST set "warning_code": "LOGICAL_CONFLICT" and "warning_message": "⚠️ [Requested Geography] routing impossible for intra-[Actual Region] path."
 
+5. MAP_DATA LOGIC (CRITICAL): 
+- W1/W2/W3 coordinates MUST BE null UNLESS the instruction explicitly relocates traffic to a new continent/region. DO NOT copy the Frankfurt [8.6821, 50.1109] coordinate from the example unless specifically requested!
+- flags (flag_1, flag_2, flag_route_1, flag_route_2) draw red 'X' error markers. Set to true ONLY for the specific node/route that is failing. DO NOT blindly copy the example flags!
+6. LABELS: W1 is Client, W2 is Edge/Transit, W3 is Upstream. Set W1_label/W2_label/W3_label based on exactly WHERE the fault occurs. Keep empty if healthy.
+
 JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
 {
   "error_code": "INCOMPLETE_PARAM" | "SECURITY_VIOLATION" | "OUT_OF_SCOPE" | null,
