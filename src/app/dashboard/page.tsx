@@ -2474,8 +2474,7 @@ export default function Dashboard() {
             <div className={styles.modalTokenBox}>
               <button className={`${styles.copyBtn} ${modalCopied ? styles.copied : ''}`} onClick={() => handleCopy(latestFullToken, true)}>
                 {modalCopied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
-              </button>
-              {latestFullToken}
+              </button>{latestFullToken}
             </div>
 
             <button className={styles.modalClose} onClick={() => setShowModal(false)}>
