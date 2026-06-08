@@ -61,17 +61,45 @@ function generateMockSignature(payloadObj: any): string {
   return btoa(deterministicString).replace(/=/g, '').padEnd(43, 'A').substring(0, 43);
 }
 
-function findClosestColo(lat: number, lng: number) {
-  let minD = Infinity;
-  let best = 'UNKNOWN';
+function calculateBearing(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const l1 = lat1 * Math.PI / 180;
+  const l2 = lat2 * Math.PI / 180;
+  const y = Math.sin(dLon) * Math.cos(l2);
+  const x = Math.cos(l1) * Math.sin(l2) - Math.sin(l1) * Math.cos(l2) * Math.cos(dLon);
+  const brng = Math.atan2(y, x);
+  return (brng * 180 / Math.PI + 360) % 360;
+}
+
+function findBestColo(w2Lat: number, w2Lng: number, w1Lat?: number, w1Lng?: number, w3Lat?: number, w3Lng?: number) {
+  let candidates: {name: string, distance: number, lat: number, lng: number}[] = [];
+  
   for (const [colo, coords] of Object.entries(EDGE_TOPOLOGY)) {
-    const d = haversineDist(lat, lng, coords.lat, coords.lng);
-    if (d < minD) {
-      minD = d;
-      best = colo;
+    const d = haversineDist(w2Lat, w2Lng, coords.lat, coords.lng);
+    candidates.push({ name: colo, distance: d, lat: coords.lat, lng: coords.lng });
+  }
+  
+  candidates.sort((a, b) => a.distance - b.distance);
+  const top1 = candidates[0];
+  const top2 = candidates[1];
+  
+  if (w1Lat !== undefined && w1Lng !== undefined && w3Lat !== undefined && w3Lng !== undefined && top2) {
+    const w1w3Dist = haversineDist(w1Lat, w1Lng, w3Lat, w3Lng);
+    if (w1w3Dist > 200 && Math.abs(top1.distance - top2.distance) < 50) {
+      const bearingTarget = calculateBearing(w1Lat, w1Lng, w3Lat, w3Lng);
+      const bearingTop1 = calculateBearing(w1Lat, w1Lng, top1.lat, top1.lng);
+      const bearingTop2 = calculateBearing(w1Lat, w1Lng, top2.lat, top2.lng);
+      
+      const diff1 = Math.min(Math.abs(bearingTarget - bearingTop1), 360 - Math.abs(bearingTarget - bearingTop1));
+      const diff2 = Math.min(Math.abs(bearingTarget - bearingTop2), 360 - Math.abs(bearingTarget - bearingTop2));
+      
+      if (diff2 < diff1) {
+        return { name: top2.name, distance: top2.distance, isArbitrated: true };
+      }
     }
   }
-  return { name: best, distance: minD };
+  
+  return { name: top1.name, distance: top1.distance, isArbitrated: false };
 }
 
 const syntaxHighlight = (json: string) => {
@@ -353,7 +381,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
             const w2Lng = (1 - alpha) * w1[0] + alpha * w3[0];
             const w2Lat = (1 - alpha) * w1[1] + alpha * w3[1];
             data.telemetry.w2 = [w2Lng, w2Lat];
-            const result = findClosestColo(w2Lat, w2Lng);
+            const result = findBestColo(w2Lat, w2Lng, w1[1], w1[0], w3[1], w3[0]);
             estimatedColo = result.name;
             minDistance = result.distance;
           } else {
