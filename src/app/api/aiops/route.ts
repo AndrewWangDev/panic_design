@@ -71,9 +71,9 @@ The JSON MUST follow this exact schema:
     "T1": number (MUST BE PROVIDED. Round-Trip Time in ms from Cloud Runner to Edge. If flag_1 is false, T1 MUST NOT be 0, you must use baseline t1_rtt or a realistic number. If flag_1 is true, T1 can be 0 or high),
     "T2": number (MUST BE PROVIDED. latency in ms injected by fault at Edge Gateway. If not related to latency injection, simulate a realistic jitter around 0, e.g. 2 or 1),
     "T3": number (Round-Trip Time in ms from Edge to Upstream. If flag_2 is false, T3 MUST NOT be 0. If flag_2 is true, the packet is dropped so T3 is 0),
-    "W1": [longitude, latitude] (Cloud Runner),
-    "W2": [longitude, latitude] (Edge Gateway),
-    "W3": [longitude, latitude] (Upstream Target),
+    "W1": [longitude, latitude] (Cloud Runner. You MUST change these coordinates to match the physical geography requested in the instruction, e.g. if the user says 'trans-Pacific', place W1 in US and W2/W3 in Asia, or vice-versa),
+    "W2": [longitude, latitude] (Edge Gateway. You MUST change these coordinates to match geographic requests),
+    "W3": [longitude, latitude] (Upstream Target. You MUST change these coordinates to match geographic requests),
     "w2_colo": string (Edge colo code, e.g., "LAX"),
     "flag_1": boolean (true ONLY if the route W1 ➔ W2 is completely broken/aborted. WARNING: For 502/504/429/444 at Edge Gateway, the packet successfully reaches Edge W2, so W1➔W2 is NOT broken, flag_1 MUST be false!),
     "flag_2": boolean (true if the route W2 ➔ W3 is broken/aborted. e.g., for 502/504 or Edge Packet Loss, the packet never reaches W3, so flag_2 MUST be true. A dashed line with a red cross will be drawn from W2 to W3),
@@ -84,7 +84,7 @@ The JSON MUST follow this exact schema:
     "W3_label": string (extra label for W3, e.g., "Unreachable", or "")
   },
   "insight": {
-    "statusCode": string (Format "BEFORE -> AFTER". e.g. "200: 100% -> 200: 50%, 444: 50%". The "before" MUST match baseline.statusCodeBreakdown exactly. The "after" 444 percentage MUST mathematically match the packetLoss percentage EXACTLY.),
+    "statusCode": string (Format "BEFORE -> AFTER". The "before" MUST match baseline.statusCodeBreakdown exactly. For the "after", if baseline.fault is '502', '504', or '429', you MUST use baseline.fault as the primary status code (e.g. "502: 50%, 444: 50%"). DO NOT hallucinate "200" if baseline.fault is an error code! The "after" 444 percentage MUST mathematically match the packetLoss percentage EXACTLY.),
     "w1Colo": string (It MUST match baseline.w1_colo exactly. Do not use '->' here),
     "w2Colo": string (e.g. "LAX"),
     "w3Ip": string (It MUST match baseline.resolvedIp exactly. Do not use '->' here),
