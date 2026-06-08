@@ -1183,13 +1183,13 @@ export default function Dashboard() {
     }, 20);
   };
 
-  const [aiState, setAiState] = useState<{ isLoading: boolean, data: any }>({ isLoading: false, data: null });
+  const [aiState, setAiState] = useState<{ isLoading: boolean, data: any, baseline?: any }>({ isLoading: false, data: null });
 
   const handleAiSubmit = async () => {
     if (!aiInputValue.trim() || !isSimulating) return;
     
     setShowAiOutput(true);
-    setAiState({ isLoading: true, data: null });
+    setAiState(prev => ({ ...prev, isLoading: true, data: null }));
 
     // Use theoretical UI values for the Baseline to prevent issues when Post-Mortem is cleared
     const theoreticalPacketLoss = Number(packetLoss) || 0;
@@ -1231,7 +1231,7 @@ export default function Dashboard() {
 
     if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
       alert('Security verification pending. Please wait.');
-      setAiState({ isLoading: false, data: null });
+      setAiState({ isLoading: false, data: null, baseline });
       return;
     }
 
@@ -1258,7 +1258,7 @@ export default function Dashboard() {
 
       if (res.status === 429) {
         setQuotaError(data.error_message || 'Rate limit exceeded');
-        setAiState({ isLoading: false, data: null });
+        setAiState(prev => ({ ...prev, isLoading: false, data: null }));
         return;
       }
 
@@ -1267,10 +1267,10 @@ export default function Dashboard() {
         throw new Error(errorMsg);
       }
 
-      setAiState({ isLoading: false, data });
+      setAiState(prev => ({ ...prev, isLoading: false, data }));
     } catch (e: any) {
       console.error('AIOps Error:', e);
-      setAiState({ isLoading: false, data: { insight: `AI Service Error: ${e.message}` } });
+      setAiState(prev => ({ ...prev, isLoading: false, data: { insight: `AI Service Error: ${e.message}` } }));
     }
   };
 
@@ -2300,12 +2300,12 @@ export default function Dashboard() {
                                 )}
                                 {typeof aiState.data.insight === 'object' && aiState.data.insight !== null ? (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
-                                    <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {telemetryData?.statusCodeBreakdown || '200: 100%'} ➔ {aiState.data.insight.statusCode}</div>
+                                    <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {aiState.baseline?.statusCodeBreakdown || '200: 100%'} ➔ {aiState.data.insight.statusCode}</div>
                                     <div style={{ color: '#38bdf8', marginBottom: '4px' }}>
-                                      {aiState.data.insight.w1Colo || telemetryData?.w1_colo || 'Cloud'} ➔ {aiState.data.insight.w2Colo || telemetryData?.w2_colo || 'Edge'} ➔ {aiState.data.insight.w3Ip || targetHost || 'Upstream Target'}
+                                      {aiState.data.insight.w1Colo || aiState.baseline?.w1_colo || 'Cloud'} ➔ {aiState.data.insight.w2Colo || aiState.baseline?.w2_colo || 'Edge'} ➔ {aiState.data.insight.w3Ip || aiState.baseline?.resolvedIp || 'Upstream Target'}
                                     </div>
                                     
-                                    <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {(telemetryData?.packetDropRate || 0).toFixed(2)}% ➔ {aiState.data.insight.packetLoss}</div>
+                                    <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {aiState.baseline?.actualPacketLossRate || '0.00%'} ➔ {aiState.data.insight.packetLoss}</div>
                                     
                                     <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
                                       <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: '4px' }}>Influence:</div>
