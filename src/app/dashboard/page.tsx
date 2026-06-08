@@ -774,85 +774,83 @@ const PostMortemPanel = ({ stats, onClear }: { stats: any, onClear: () => void }
   return (
     <div style={{ 
       marginTop: '8px', 
-      background: 'rgba(15, 23, 42, 0.6)', 
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
+      background: 'var(--dash-card-bg)', 
       borderRadius: '8px', 
       padding: '20px 24px', 
-      border: '1px solid rgba(56, 189, 248, 0.15)',
-      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
+      border: '1px solid var(--dash-card-border)',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
     }}>
-      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-cyan, #0ea5e9)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Activity size={16} /> INJECTION POST-MORTEM
         </div>
         <button 
           onClick={onClear} 
-          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#94a3b8', fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textTransform: 'uppercase', fontWeight: 600 }}
-          onMouseOver={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
-          onMouseOut={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+          style={{ background: 'transparent', border: '1px solid var(--dash-input-border)', color: 'var(--text-secondary)', fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textTransform: 'uppercase', fontWeight: 600 }}
+          onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--text-secondary)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--dash-input-border)'; }}
         >
           <RotateCcw size={12} /> CLEAR
         </button>
       </div>
       
       <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>General</div>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid var(--dash-table-border)', paddingBottom: '6px' }}>General</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Send Packets</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#38bdf8', fontWeight: 500 }}>{stats.sentCount || 0} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Send Packets</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--color-cyan, #0ea5e9)', fontWeight: 500 }}>{stats.sentCount || 0} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Received Packets</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#10b981', fontWeight: 500 }}>{stats.receivedCount || 0} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Received Packets</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#10b981', fontWeight: 500 }}>{stats.receivedCount || 0} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
         </div>
       </div>
 
       <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>L7 Application Faults</div>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid var(--dash-table-border)', paddingBottom: '6px' }}>L7 Application Faults</div>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Gateway Fast-Fail</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.fastFailCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.fastFailCount} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Gateway Fast-Fail</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.fastFailCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.fastFailCount} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
         </div>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Fail-Open Triggered</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.failOpenCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.failOpenCount} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fail-Open Triggered</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.failOpenCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.failOpenCount} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
         </div>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Payload Mutilation</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.mutilationCount > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{stats.mutilationCount} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>times</span></span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Payload Mutilation</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.mutilationCount > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{stats.mutilationCount} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
         </div>
       </div>
 
       <div>
-        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid var(--dash-table-border)', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           L3/L4 Traffic Shaping
           <span style={{ fontSize: '0.6rem', color: '#475569', letterSpacing: '0' }}>*Excl. edge-terminated</span>
         </div>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Avg Edge Network RTT</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: getLatencyColor(avgT1, 50, 100), fontWeight: 500 }}>{avgT1} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>ms</span></span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Avg Edge Network RTT</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: getLatencyColor(avgT1, 50, 100), fontWeight: 500 }}>{avgT1} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>ms</span></span>
         </div>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Avg Upstream Backhaul</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: getLatencyColor(avgT3, 100, 300), fontWeight: 500 }}>{avgT3} <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'var(--font-sans)' }}>ms</span></span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Avg Upstream Backhaul</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: getLatencyColor(avgT3, 100, 300), fontWeight: 500 }}>{avgT3} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>ms</span></span>
         </div>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.1)', padding: '10px 12px', borderRadius: '6px' }}>
-          <span style={{ fontSize: '0.8rem', color: '#e2e8f0', fontWeight: 500 }}>Avg Total RTT</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: getLatencyColor(avgTotal, 200, 500), fontWeight: 600 }}>{avgTotal} <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'var(--font-sans)', fontWeight: 400 }}>ms</span></span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', background: 'var(--dash-input-bg)', border: '1px solid var(--dash-input-border)', padding: '10px 12px', borderRadius: '6px' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>Avg Total RTT</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: getLatencyColor(avgTotal, 200, 500), fontWeight: 600 }}>{avgTotal} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)', fontWeight: 400 }}>ms</span></span>
         </div>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Packet Loss Rate</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Packet Loss Rate</span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: dropColor, fontWeight: 500 }}>
             {dropRate}% 
-            <span style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'var(--font-sans)', marginLeft: '6px' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)', marginLeft: '6px' }}>
               ({stats.packetDropCount} dropped)
             </span>
           </span>
