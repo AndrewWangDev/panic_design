@@ -2135,7 +2135,7 @@ export default function Dashboard() {
                       </div>
                     )}
                     {nxDomainTriggered && (
-                      <div className={styles.tooltipContent} style={{ width: '250px', zIndex: 10 }}>
+                      <div className={styles.tooltipContent} style={{ width: '250px', zIndex: 10, whiteSpace: 'normal' }}>
                         <strong style={{ display: 'block', marginBottom: '4px' }}>STRICT MODE</strong>
                         Invalid FQDN structure. Production target required.
                       </div>
