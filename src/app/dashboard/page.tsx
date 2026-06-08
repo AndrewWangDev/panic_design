@@ -339,6 +339,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         body: JSON.stringify({ token: fullToken })
       });
       const data = await res.json() as any;
+      const isNxDomain = data.resolvedIp === 'Unresolved';
       
       let realTelemetry = data.telemetry || { t1: t1, t2: t2, t3: t3 };
       let estimatedColo = data.telemetry?.colo || 'UNKNOWN';
@@ -411,7 +412,16 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
           totalLatency: data.totalLatency,
           status: data.status,
           responseBody: data.responseBody,
-          chaosReason: data.chaosReason
+          chaosReason: data.chaosReason,
+          isNxDomain
+        });
+      } else if (onTelemetryReceived && isNxDomain) {
+        onTelemetryReceived({
+          w1: [-118.2437, 34.0522],
+          w2: null,
+          w3: null,
+          w1_colo: 'UNKNOWN',
+          isNxDomain: true
         });
       }
       
@@ -469,57 +479,62 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       const lines = [
         `[System] Target Host: ${targetHost || 'extracted from JWT'}`,
         `[System] DNS Resolved: ${targetHost || 'Target'} -> ${data.resolvedIp || 'Unknown'}`,
-        ...lgpaLogs,
       ];
       
-      if (data.chaosReason) {
-        lines.push(`> [Security] ⚠️ INJECTION ABORTED (FAIL-OPEN TRIGGERED)`);
-        lines.push(`> [Security] Reason: ${data.chaosReason}`);
-        lines.push(`> [Security] Control Plane Identity: ${data.chaosClientContext || 'Unknown'}`);
-      }
-      
-      lines.push(`< HTTP/1.1 ${data.status} ${data.statusText || ''}`);
-      if (data.responseBody) {
-        // Try to format JSON if possible
-        let formattedBody = data.responseBody;
-        try {
-          const parsed = JSON.parse(data.responseBody);
-          formattedBody = JSON.stringify(parsed, null, 2);
-          lines.push(`< Content-Type: application/json`);
-          lines.push(`<`);
-        } catch(e) {}
-        lines.push({ type: 'payload', content: formattedBody } as any);
-      }
-      lines.push('');
-      
-      const t1_rtt = Math.round(realTelemetry.t1 * 2);
-      const t2_rtt = Math.round(realTelemetry.t2);
-      const t3_rtt = Math.round(realTelemetry.t3 * 2);
+      if (isNxDomain) {
+        lines.push(`[Fatal] ❌ NXDOMAIN: Target host unresolvable.`);
+      } else {
+        lines.push(...lgpaLogs);
+        
+        if (data.chaosReason) {
+          lines.push(`> [Security] ⚠️ INJECTION ABORTED (FAIL-OPEN TRIGGERED)`);
+          lines.push(`> [Security] Reason: ${data.chaosReason}`);
+          lines.push(`> [Security] Control Plane Identity: ${data.chaosClientContext || 'Unknown'}`);
+        }
+        
+        lines.push(`< HTTP/1.1 ${data.status} ${data.statusText || ''}`);
+        if (data.responseBody) {
+          // Try to format JSON if possible
+          let formattedBody = data.responseBody;
+          try {
+            const parsed = JSON.parse(data.responseBody);
+            formattedBody = JSON.stringify(parsed, null, 2);
+            lines.push(`< Content-Type: application/json`);
+            lines.push(`<`);
+          } catch(e) {}
+          lines.push({ type: 'payload', content: formattedBody } as any);
+        }
+        lines.push('');
+        
+        const t1_rtt = Math.round(realTelemetry.t1 * 2);
+        const t2_rtt = Math.round(realTelemetry.t2);
+        const t3_rtt = Math.round(realTelemetry.t3 * 2);
 
-      if (data.status === 444) {
-        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul (T3): -- (PACKET_DROP)`);
-        lines.push(`[System] Target Unreachable. Edge payload dropped.`);
-      } else if (fault === 'latency') {
-        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
-        lines.push(`[Telemetry] Injected Latency (T2): ${t2_rtt}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul (T3): ${t3_rtt}ms`);
-      } else if (fault === '502') {
-        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul (T3): -- (ABORTED)`);
-        lines.push(`[System] Target Unreachable. Edge payload delivered.`);
-      } else if (fault === '504') {
-        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
-        lines.push(`[Telemetry] Edge Processing (T2): ${t2_rtt}ms (Timeout Wait)`);
-        lines.push(`[Telemetry] Upstream Backhaul (T3): -- (TIMEOUT_EXCEEDED)`);
-      } else if (fault === '429') {
-        lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
-        lines.push(`[Telemetry] Upstream Backhaul (T3): -- (ABORTED)`);
-        lines.push(`[System] Target Unreachable. Edge payload delivered.`);
+        if (data.status === 444) {
+          lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+          lines.push(`[Telemetry] Upstream Backhaul (T3): -- (PACKET_DROP)`);
+          lines.push(`[System] Target Unreachable. Edge payload dropped.`);
+        } else if (fault === 'latency') {
+          lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+          lines.push(`[Telemetry] Injected Latency (T2): ${t2_rtt}ms`);
+          lines.push(`[Telemetry] Upstream Backhaul (T3): ${t3_rtt}ms`);
+        } else if (fault === '502') {
+          lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+          lines.push(`[Telemetry] Upstream Backhaul (T3): -- (ABORTED)`);
+          lines.push(`[System] Target Unreachable. Edge payload delivered.`);
+        } else if (fault === '504') {
+          lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+          lines.push(`[Telemetry] Edge Processing (T2): ${t2_rtt}ms (Timeout Wait)`);
+          lines.push(`[Telemetry] Upstream Backhaul (T3): -- (TIMEOUT_EXCEEDED)`);
+        } else if (fault === '429') {
+          lines.push(`[Telemetry] Edge Network RTT (T1): ${t1_rtt}ms`);
+          lines.push(`[Telemetry] Upstream Backhaul (T3): -- (ABORTED)`);
+          lines.push(`[System] Target Unreachable. Edge payload delivered.`);
+        }
+        
+        lines.push('');
+        lines.push(`[System] Total Round-Trip Time: ${Math.round(data.totalLatency)}ms`);
       }
-      
-      lines.push('');
-      lines.push(`[System] Total Round-Trip Time: ${Math.round(data.totalLatency)}ms`);
 
       // Simulate line by line stream
       for (const line of lines) {
@@ -563,7 +578,7 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
             }
             let color = 'var(--text-secondary)';
             if (typeof l === 'string') {
-              if (l.startsWith('< HTTP/1.1 5') || l.includes('ABORTED') || l.includes('TIMEOUT_EXCEEDED') || l.includes('Target Unreachable') || l.startsWith('< Error')) color = '#ef4444';
+              if (l.startsWith('< HTTP/1.1 5') || l.includes('ABORTED') || l.includes('TIMEOUT_EXCEEDED') || l.includes('Target Unreachable') || l.startsWith('< Error') || l.startsWith('[Fatal]')) color = '#ef4444';
               else if (l.startsWith('< HTTP/1.1 2')) color = '#10b981';
               else if (l.startsWith('< HTTP/1.1 4')) color = '#f59e0b';
               else if (l.startsWith('[System]')) color = '#38bdf8';
@@ -1048,6 +1063,7 @@ export default function Dashboard() {
   const [modalCopied, setModalCopied] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [latestFullToken, setLatestFullToken] = useState('');
+  const [nxDomainTriggered, setNxDomainTriggered] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
   const [copiedTargetId, setCopiedTargetId] = useState<string | null>(null);
   
@@ -1857,8 +1873,8 @@ export default function Dashboard() {
                           <RealTimeSimulationChart latency={latency} jitter={jitter} distribution={distribution} packetLoss={Number(packetLoss) || 0} />
                         </div>
                       </div>
+                    </div>
                   </div>
-                </div>
 
                 {fault !== 'latency' && (
                   <div className={styles.disabledOverlayMessage}>
@@ -1931,6 +1947,7 @@ export default function Dashboard() {
                         latencyParams={{ base: latency, jitter: jitter, distribution: distribution }}
                         mutilationStrategy={mutilationStrategy}
                         aiMapData={aiState.data?.map_data}
+                        isNxDomain={nxDomainTriggered}
                     />
                   )}
                 </div>
@@ -1938,7 +1955,7 @@ export default function Dashboard() {
 
               {/* Terminal Container */}
               <div className={`${styles.terminalContainer} ${isSimulating ? styles.terminalContainerSimulating : styles.terminalContainerNormal}`}>
-                <div className={styles.codeBlock} style={{ overflowY: generatedToken ? 'auto' : 'hidden' }}>
+                <div className={styles.codeBlock} style={{ overflowY: generatedToken ? 'auto' : 'hidden', color: nxDomainTriggered ? '#f87171' : '#94a3b8' }}>
                   {generatedToken && (
                     <button className={`${styles.copyBtn} ${copied ? styles.copied : ''}`} onClick={() => handleCopy(`export PANIC_TOKEN="${generatedToken}"\ncurl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"`)}>
                       {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
@@ -1961,6 +1978,7 @@ export default function Dashboard() {
                       onTelemetryReceived={(data) => {
                         setTelemetryData(data);
                         setIsTestPending(false);
+                        setNxDomainTriggered(data.isNxDomain || false);
                         setSimulationKey(prev => prev + 1);
 
                         setPostMortemStats(prev => {
@@ -2081,7 +2099,7 @@ export default function Dashboard() {
 
                   {/* AI Instruction Input */}
                   <div className={styles.tooltipWrapper} style={{ width: '100%' }}>
-                    <div className={`${styles.aiInputWrapper} ${!isSimulating ? styles.disabled : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
+                    <div className={`${styles.aiInputWrapper} ${!isSimulating ? styles.disabled : ''}`} style={nxDomainTriggered ? { filter: 'grayscale(1)', opacity: 0.5, pointerEvents: 'none', width: '100%', boxSizing: 'border-box' } : { width: '100%', boxSizing: 'border-box' }}>
                       <Sparkles size={16} color="var(--color-cyan, #06b6d4)" />
                       <textarea 
                         ref={aiInputRef}
@@ -2111,9 +2129,15 @@ export default function Dashboard() {
                         <Send size={16} />
                       </button>
                     </div>
-                    {!isSimulating && (
+                    {!isSimulating && !nxDomainTriggered && (
                       <div className={styles.tooltipContent} style={{ zIndex: 10 }}>
                         Run Cloud Injection First
+                      </div>
+                    )}
+                    {nxDomainTriggered && (
+                      <div className={styles.tooltipContent} style={{ width: '250px', zIndex: 10 }}>
+                        <strong style={{ display: 'block', marginBottom: '4px' }}>STRICT MODE</strong>
+                        Invalid FQDN structure. Production target required.
                       </div>
                     )}
                   </div>
