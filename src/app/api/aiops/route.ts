@@ -53,7 +53,6 @@ RULES:
 2. OUT OF SCOPE: For normal conversation or coding, set "error_code": "OUT_OF_SCOPE".
 3. INCOMPLETE PARAMS: If missing exact numbers (e.g., missing "50%" or "1000ms"), set "error_code": "INCOMPLETE_PARAM".
 4. LOGICAL_CONFLICT (GEOGRAPHY): If Baseline nodes are in the SAME region (e.g., all US) but instruction asks for "trans-Pacific" or "trans-Atlantic", DO NOT change coordinates! You MUST set "warning_code": "LOGICAL_CONFLICT" and "warning_message": "⚠️ [Requested Geography] routing impossible for intra-[Actual Region] path."
-5. STATUS CODE (CRITICAL): Format MUST be "BEFORE_STR -> AFTER_STR". Left side = baseline.statusCodeBreakdown. Right side MUST use baseline.fault (if 502/504/429) AND 444 (for dropped packets). NEVER use 200 on right side if baseline is an error code!
 
 JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
 {
@@ -96,34 +95,34 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
 }
 
 EXAMPLE 1:
-Input: "Simulate trans-Pacific route leak. Drop 50% of packets." (Assuming Baseline targetHost is "example.com", w1_colo is "SJC", w2_colo is "SJC", fault is 504)
+Input: "Simulate a catastrophic BGP route leak to Europe. Drop 50% of packets globally." (Assuming Baseline targetHost is "example.com", w1_colo is "SJC", w2_colo is "SJC", fault is 504)
 Output:
 {
   "error_code": null,
   "error_message": null,
-  "warning_code": "LOGICAL_CONFLICT",
-  "warning_message": "⚠️ Trans-Pacific routing impossible for intra-US path.",
+  "warning_code": null,
+  "warning_message": null,
   "map_data": {
     "T1": 100, "T2": 0, "T3": 0,
-    "W1": null, "W2": null, "W3": null,
-    "w2_colo": "SJC", "flag_1": false, "flag_2": true, "flag_route_1": false, "flag_route_2": false,
-    "W1_label": "", "W2_label": "Packet Loss", "W3_label": "Unreachable"
+    "W1": null, "W2": [8.6821, 50.1109], "W3": null,
+    "w2_colo": "FRA", "flag_1": false, "flag_2": true, "flag_route_1": true, "flag_route_2": false,
+    "W1_label": "", "W2_label": "BGP Hijack", "W3_label": "Unreachable"
   },
   "insight": {
-    "sloBudgetImpact": "Severe disruption to inter-regional data synchronization leading to projected 0.05% drop in monthly uptime SLO and high risk of SLA penalty payouts.",
+    "sloBudgetImpact": "Catastrophic global route leak violating multi-region SLA targets and risking significant projected revenue loss due to complete L4 physical layer blockade.",
     "w1Colo": "SJC",
-    "w2Colo": "SJC",
+    "w2Colo": "FRA",
     "w3Ip": "example.com",
     "packetLoss": "50%",
     "influence": [
       {
-        "object": "Client",
+        "object": "Core Network",
         "severity": "🔴",
-        "content": "Packet loss"
+        "content": "A massive BGP route leak hijacked traffic to Frankfurt, completely tearing down inter-region communication boundaries and resulting in severe global packet drops."
       }
     ],
-    "secondaryRisks": "None",
-    "suggestion": "Fix routing"
+    "secondaryRisks": "Asymmetric routing anomalies could cascade into edge node saturation and prolonged DNS resolution failures worldwide.",
+    "suggestion": "Immediately revoke compromised ASN advertisements, deploy emergency route filtering on edge gateways, and initiate automated failover to standby BGP sessions."
   }
 }`;
 
