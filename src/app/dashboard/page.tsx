@@ -2302,7 +2302,7 @@ export default function Dashboard() {
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
                                     <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {aiState.data.insight.statusCode}</div>
                                     <div style={{ color: '#38bdf8', marginBottom: '4px' }}>
-                                      {aiState.data.insight.w1Colo || baseline?.w1_colo || 'Cloud'} ➔ {aiState.data.insight.w2Colo || baseline?.w2_colo || 'Edge'} ➔ {aiState.data.insight.w3Ip || targetHost || 'Upstream Target'}
+                                      {aiState.data.insight.w1Colo || telemetryData?.w1_colo || 'Cloud'} ➔ {aiState.data.insight.w2Colo || telemetryData?.w2_colo || 'Edge'} ➔ {aiState.data.insight.w3Ip || targetHost || 'Upstream Target'}
                                     </div>
                                     
                                     <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {aiState.data.insight.packetLoss}</div>
