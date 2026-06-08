@@ -344,7 +344,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         </div>
 
         {/* Right Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'flex-end', paddingRight: aiMapData ? '140px' : '0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'flex-end' }}>
           <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto', alignItems: 'flex-start' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'left' }}>

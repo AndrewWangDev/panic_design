@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getPrisma } from '@/lib/prisma';
+import { checkAndUpdateQuota } from '@/lib/quota';
 import { SignJWT } from 'jose';
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
@@ -30,6 +31,12 @@ export async function POST(req: Request) {
       if (!isValid) return NextResponse.json({ error: 'Security verification failed' }, { status: 403 });
     }
 
+    // Check Quota Limit
+    const quota = await checkAndUpdateQuota(session.user.id);
+    if (!quota.allowed) {
+      return NextResponse.json({ error: 'QUOTA_EXCEEDED', message: quota.reason }, { status: 429 });
+    }
+
     const prisma = getPrisma();
 
     // Check concurrent active tokens
@@ -49,7 +56,7 @@ export async function POST(req: Request) {
     for (const t of unrevokedTokens) {
       try {
         const conf = JSON.parse(t.config);
-        const ttlHours = conf.ttl || 0.25;
+        const ttlHours = conf.ttlHours || conf.ttl || 0.25;
         const expiresAtMs = new Date(t.createdAt).getTime() + (ttlHours * 60 * 60 * 1000);
         if (expiresAtMs > nowMs) {
           activeCount++;
