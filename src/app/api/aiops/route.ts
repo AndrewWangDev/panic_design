@@ -78,11 +78,11 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
     "W3_label": string
   },
   "insight": {
-    "statusCode": string (e.g. "504: 100% -> 504: 50%, 444: 50%"),
+    "statusCode": string (ONLY the AFTER breakdown. e.g. "504: 50%, 444: 50%". Use baseline.fault if applicable),
     "w1Colo": string | null (Use null to keep baseline),
     "w2Colo": string | null (Use null to keep baseline),
     "w3Ip": string | null (Use null to keep baseline target),
-    "packetLoss": string (e.g. "0.00% -> 50%"),
+    "packetLoss": string (ONLY the AFTER value. e.g. "50%"),
     "influence": [
       {
         "object": string,
@@ -110,11 +110,11 @@ Output:
     "W1_label": "", "W2_label": "Packet Loss", "W3_label": "Unreachable"
   },
   "insight": {
-    "statusCode": "504: 100% -> 504: 50%, 444: 50%",
+    "statusCode": "504: 50%, 444: 50%",
     "w1Colo": null,
     "w2Colo": null,
     "w3Ip": null,
-    "packetLoss": "0.00% -> 50%",
+    "packetLoss": "50%",
     "influence": [
       {
         "object": "Client",

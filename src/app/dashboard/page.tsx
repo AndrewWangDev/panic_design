@@ -2300,12 +2300,12 @@ export default function Dashboard() {
                                 )}
                                 {typeof aiState.data.insight === 'object' && aiState.data.insight !== null ? (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
-                                    <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {aiState.data.insight.statusCode}</div>
+                                    <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {telemetryData?.statusCodeBreakdown || '200: 100%'} ➔ {aiState.data.insight.statusCode}</div>
                                     <div style={{ color: '#38bdf8', marginBottom: '4px' }}>
                                       {aiState.data.insight.w1Colo || telemetryData?.w1_colo || 'Cloud'} ➔ {aiState.data.insight.w2Colo || telemetryData?.w2_colo || 'Edge'} ➔ {aiState.data.insight.w3Ip || targetHost || 'Upstream Target'}
                                     </div>
                                     
-                                    <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {aiState.data.insight.packetLoss}</div>
+                                    <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {(telemetryData?.packetDropRate || 0).toFixed(2)}% ➔ {aiState.data.insight.packetLoss}</div>
                                     
                                     <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#e2e8f0' }}>
                                       <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: '4px' }}>Influence:</div>
