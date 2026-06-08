@@ -864,12 +864,16 @@ const AiAutofillModal = ({
   isOpen, 
   onClose, 
   currentFormState, 
-  onApply 
+  onApply,
+  turnstileToken,
+  consumeTurnstileToken
 }: { 
   isOpen: boolean, 
   onClose: () => void, 
   currentFormState: any, 
-  onApply: (data: any) => void 
+  onApply: (data: any) => void,
+  turnstileToken: string | null,
+  consumeTurnstileToken: () => string | null
 }) => {
   const [instruction, setInstruction] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'warning' | 'error'>('idle');
@@ -887,14 +891,23 @@ const AiAutofillModal = ({
 
   const handleSubmit = async () => {
     if (!instruction.trim()) return;
+
+    if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
+      setStatus('error');
+      setAiData({ error_message: "Security verification pending. Please wait for Cloudflare Turnstile to load." });
+      return;
+    }
+
     setStatus('loading');
     setAiData(null);
+
+    const currentToken = consumeTurnstileToken();
 
     try {
       const res = await fetch('/api/aiops/autofill', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, currentFormState })
+        body: JSON.stringify({ instruction, currentFormState, turnstileToken: currentToken })
       });
       const data = await res.json();
       
@@ -1015,6 +1028,15 @@ export default function Dashboard() {
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<any>(null);
+
+  const consumeTurnstileToken = () => {
+    const token = turnstileToken;
+    setTurnstileToken(null);
+    if (turnstileRef.current) {
+      turnstileRef.current.reset();
+    }
+    return token;
+  };
   const activeTokensRef = useRef<HTMLDivElement>(null);
 
   const [quotaError, setQuotaError] = useState<string | null>(null);
@@ -1214,19 +1236,17 @@ export default function Dashboard() {
     }
 
     try {
+      const currentToken = consumeTurnstileToken();
+
       const res = await fetch('/api/aiops', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           instruction: aiInputValue,
           baseline,
-          turnstileToken
+          turnstileToken: currentToken
         })
       });
-
-      if (turnstileRef.current) {
-        turnstileRef.current.reset();
-      }
 
       const textResponse = await res.text();
       let data;
@@ -1404,26 +1424,23 @@ export default function Dashboard() {
     if (ttl === 'custom') ttlHours = customTtl;
 
     try {
+      const currentToken = consumeTurnstileToken();
+
       const res = await fetch('/api/tokens/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          targetHost,
-          scope,
+          target_host: targetHost,
           fault,
           latency,
           jitter,
           distribution,
-          packetLoss: Number(packetLoss) || 0,
-          mutilationStrategy,
-          customTtl: ttlHours,
-          turnstileToken
+          packet_loss: packetLoss,
+          mutilation_strategy: mutilationStrategy,
+          ttl_hours: ttlHours,
+          turnstileToken: currentToken
         })
       });
-
-      if (turnstileRef.current) {
-        turnstileRef.current.reset();
-      }
 
       if (res.ok) {
         const data = await res.json() as any;
@@ -1671,7 +1688,9 @@ export default function Dashboard() {
               isOpen={isAiAutofillOpen} 
               onClose={() => setIsAiAutofillOpen(false)} 
               currentFormState={{ targetHostname: targetHost, scope, tokenTtl: customTtl, faultType: fault, distribution, baseLatency: latency, jitter, packetLoss }} 
-              onApply={handleAiApply} 
+              onApply={handleAiApply}
+              turnstileToken={turnstileToken}
+              consumeTurnstileToken={consumeTurnstileToken}
             />
 
             <div className={styles.inputGroup}>
