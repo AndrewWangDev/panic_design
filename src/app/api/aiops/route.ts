@@ -102,7 +102,7 @@ The JSON MUST follow this exact schema:
   }
 }`;
 
-    const response = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+    const response = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       max_tokens: 1500,
       messages: [
         { role: 'system', content: systemPrompt },
