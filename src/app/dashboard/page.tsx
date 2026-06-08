@@ -1533,7 +1533,7 @@ export default function Dashboard() {
             setTurnstileToken(null);
             setTimeout(() => turnstileRef.current?.reset(), 2000);
           }}
-          options={{ theme: 'dark', size: 'invisible' }}
+          options={{ theme: 'auto', size: 'invisible' }}
         />
       </div>
 
