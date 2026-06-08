@@ -79,9 +79,9 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
   },
   "insight": {
     "statusCode": string (e.g. "504: 100% -> 504: 50%, 444: 50%"),
-    "w1Colo": string (Exact baseline w1_colo),
-    "w2Colo": string,
-    "w3Ip": string,
+    "w1Colo": string | null (Use null to keep baseline),
+    "w2Colo": string | null (Use null to keep baseline),
+    "w3Ip": string | null (Use null to keep baseline target),
     "packetLoss": string (e.g. "0.00% -> 50%"),
     "influence": [
       {
@@ -111,9 +111,9 @@ Output:
   },
   "insight": {
     "statusCode": "504: 100% -> 504: 50%, 444: 50%",
-    "w1Colo": "LAX",
-    "w2Colo": "LAX",
-    "w3Ip": "1.1.1.1",
+    "w1Colo": null,
+    "w2Colo": null,
+    "w3Ip": null,
     "packetLoss": "0.00% -> 50%",
     "influence": [
       {
