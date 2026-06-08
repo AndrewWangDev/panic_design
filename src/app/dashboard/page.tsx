@@ -1920,6 +1920,7 @@ export default function Dashboard() {
                   setIsSimulating(false);
                   setAiInputValue('');
                   setShowAiOutput(false);
+                  setNxDomainTriggered(false);
                 }}>
                   Cancel Test
                 </button>
