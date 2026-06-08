@@ -1034,6 +1034,8 @@ export default function Dashboard() {
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState<{title: string, message: string} | null>(null);
   const [showConcurrentModal, setShowConcurrentModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   const ttlOptions = [
     { value: '15m', label: '15 Minutes' },
@@ -1303,6 +1305,10 @@ export default function Dashboard() {
   const fetchTokens = async () => {
     try {
       const res = await fetch('/api/tokens');
+      if (res.status === 401) {
+        setIsLoggedIn(false);
+        return;
+      }
       if (res.ok) {
         const data = await res.json() as any;
         const formattedTokens = data.tokens.map((t: any) => {
@@ -1390,6 +1396,10 @@ export default function Dashboard() {
   const isFormValid = targetHost.length > 0 && !targetHostError && fault !== null && (fault !== 'latency' || (packetLoss === '' || (Number.isInteger(Number(packetLoss)) && Number(packetLoss) >= 0 && Number(packetLoss) <= 100)));
 
   const handleGenerate = async () => {
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
     if (!isFormValid || isGenerating) return;
 
     if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
@@ -1579,6 +1589,26 @@ export default function Dashboard() {
                 activeTokensRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }} style={{ padding: '10px 16px', borderRadius: '8px', background: 'rgba(255,165,0,0.1)', color: '#ffa500', border: '1px solid rgba(255,165,0,0.3)', cursor: 'pointer', fontWeight: 600 }}>
                 MANAGE ACTIVE TOKENS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showAuthModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(56,189,248,0.5)', borderRadius: '16px', padding: '32px', maxWidth: '500px', width: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#38bdf8', fontSize: '1.25rem', margin: '0 0 16px 0' }}>
+              <Lock size={20} /> Authentication Required
+            </h2>
+            <p style={{ color: '#a1a1aa', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '24px' }}>
+              You are viewing the read-only sandbox. Sign in via GitHub to generate live chaos tokens and orchestrate physical edge networks.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowAuthModal(false)} style={{ padding: '10px 16px', borderRadius: '8px', background: 'transparent', color: '#94a3b8', border: '1px solid #333', cursor: 'pointer', fontWeight: 600 }}>
+                Cancel
+              </button>
+              <button onClick={() => window.location.href = '/api/auth/signin'} style={{ padding: '10px 16px', borderRadius: '8px', background: 'rgba(56,189,248,0.1)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', cursor: 'pointer', fontWeight: 600 }}>
+                Continue with GitHub
               </button>
             </div>
           </div>
