@@ -325,7 +325,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     <div ref={containerRef} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       
       {/* Top HUD */}
-      <div style={{ padding: '24px 24px 24px 24px', display: 'flex', justifyContent: 'space-between', zIndex: 10, pointerEvents: 'none' }}>
+      <div style={{ padding: '24px 24px 24px 24px', display: 'flex', gap: '120px', justifyContent: 'flex-start', zIndex: 10, pointerEvents: 'none' }}>
         {/* Left Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
@@ -344,15 +344,15 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         </div>
 
         {/* Right Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto', alignItems: 'flex-start' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>CHAOS POLICY</div>
-            <div style={{ fontSize: '1rem', fontWeight: 600, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'left' }}>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#f59e0b', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>
               {fault === 'latency' ? 'Traffic Degradation' : fault === '502' ? 'Bad Gateway (502)' : fault === '429' ? 'Rate Limit (429)' : 'Gateway Timeout (504)'}
             </div>
           </div>
 
-          {mutilationStrategy && mutilationStrategy !== 'None' && (
+          {fault === 'latency' && mutilationStrategy && mutilationStrategy !== 'None' && (
             <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto', alignItems: 'flex-start', width: '100%' }}>
               <div style={{ fontSize: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '4px' }}>MUTILATION STRATEGY</div>
               <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ef4444', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
