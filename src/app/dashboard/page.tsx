@@ -1196,14 +1196,14 @@ export default function Dashboard() {
     const actualPacketLossRate = theoreticalPacketLoss.toFixed(2) + '%';
 
     let statusCodeBreakdown = '';
-    if (fault === 'latency' && theoreticalPacketLoss > 0) {
-      statusCodeBreakdown = `200: ${(100 - theoreticalPacketLoss).toFixed(0)}%, 444: ${theoreticalPacketLoss.toFixed(0)}%`;
-    } else if (fault === '502') {
+    if (fault === '502') {
       statusCodeBreakdown = `502: 100%`;
     } else if (fault === '504') {
       statusCodeBreakdown = `504: 100%`;
     } else if (fault === '429') {
       statusCodeBreakdown = `429: 100%`;
+    } else if (theoreticalPacketLoss > 0) {
+      statusCodeBreakdown = `200: ${(100 - theoreticalPacketLoss).toFixed(0)}%, 444: ${theoreticalPacketLoss.toFixed(0)}%`;
     } else {
       statusCodeBreakdown = `200: 100%`;
     }
@@ -2302,7 +2302,7 @@ export default function Dashboard() {
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
                                     <div><span style={{ color: '#94a3b8' }}>HTTP Status Code:</span> {aiState.baseline?.statusCodeBreakdown || '200: 100%'} ➔ {aiState.data.insight.statusCode}</div>
                                     <div style={{ color: '#38bdf8', marginBottom: '4px' }}>
-                                      {aiState.data.insight.w1Colo || aiState.baseline?.w1_colo || 'Cloud'} ➔ {aiState.data.insight.w2Colo || aiState.baseline?.w2_colo || 'Edge'} ➔ {aiState.data.insight.w3Ip || aiState.baseline?.resolvedIp || 'Upstream Target'}
+                                      {aiState.data.insight.w1Colo || (aiState.baseline?.w1_colo !== 'UNKNOWN' ? aiState.baseline?.w1_colo : null) || 'Client (Pending)'} ➔ {aiState.data.insight.w2Colo || (aiState.baseline?.w2_colo !== 'UNKNOWN' ? aiState.baseline?.w2_colo : null) || 'Gateway (Pending)'} ➔ {aiState.data.insight.w3Ip || aiState.baseline?.resolvedIp || 'Target Host'}
                                     </div>
                                     
                                     <div><span style={{ color: '#94a3b8' }}>Packet Loss Rate:</span> {aiState.baseline?.actualPacketLossRate || '0.00%'} ➔ {aiState.data.insight.packetLoss}</div>
