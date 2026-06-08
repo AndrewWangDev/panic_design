@@ -228,7 +228,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     );
   };
 
-  type PinAnchor = 'top' | 'top-left' | 'bottom-right' | 'bottom';
+  type PinAnchor = 'top' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'bottom';
 
   const renderPin = (coords: [number, number], label: string, color: string, isDimmed: boolean = false, subLabel?: string, anchor: PinAnchor = 'top', forceRedSubLabel: boolean = false) => {
     const projected = projection(coords);
@@ -241,12 +241,23 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
     let subDy = 20;
 
     if (anchor === 'top-left') {
-      lblDx = -55;
+      lblDx = -65;
+      lblDy = -40;
+    } else if (anchor === 'top-right') {
+      lblDx = 65;
       lblDy = -40;
     } else if (anchor === 'bottom-right') {
-      lblDx = 55;
+      lblDx = 65;
       lblDy = 15;
       subDy = 35; // Push sublabel lower
+    } else if (anchor === 'bottom-left') {
+      lblDx = -65;
+      lblDy = 15;
+      subDy = 35;
+    } else if (anchor === 'bottom') {
+      lblDx = 0;
+      lblDy = 25;
+      subDy = 45;
     }
 
     return (
@@ -532,7 +543,28 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
           {(() => {
             let anchorW1: PinAnchor = 'top';
             let anchorW2: PinAnchor = 'top';
-            if (effW1 && effW2) {
+            let anchorW3: PinAnchor = 'top';
+            
+            if (effW1 && effW2 && effW3) {
+              const d12 = Math.sqrt(Math.pow(effW1[0]-effW2[0], 2) + Math.pow(effW1[1]-effW2[1], 2));
+              const d23 = Math.sqrt(Math.pow(effW2[0]-effW3[0], 2) + Math.pow(effW2[1]-effW3[1], 2));
+              const d13 = Math.sqrt(Math.pow(effW1[0]-effW3[0], 2) + Math.pow(effW1[1]-effW3[1], 2));
+              
+              if (d12 < 2 && d23 < 2 && d13 < 2) {
+                anchorW1 = 'top-left';
+                anchorW3 = 'top-right';
+                anchorW2 = 'bottom';
+              } else if (d12 < 2) {
+                anchorW1 = 'top-left';
+                anchorW2 = 'bottom-right';
+              } else if (d23 < 2) {
+                anchorW2 = 'bottom-right';
+                anchorW3 = 'top-right';
+              } else if (d13 < 2) {
+                anchorW1 = 'top-left';
+                anchorW3 = 'top-right';
+              }
+            } else if (effW1 && effW2) {
               const dx = effW1[0] - effW2[0];
               const dy = effW1[1] - effW2[1];
               const dist = Math.sqrt(dx*dx + dy*dy);
@@ -558,7 +590,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
                 {/* Removed visual jitter offsets to prevent map lines and pins from detaching */}
                 {!isPending && !isNxDomain && effW1 && renderPin(effW1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", t1Color, false, w1LabelOverride, anchorW1)}
                 {!isPending && !isNxDomain && effW2 && renderPin(effW2, `Edge Gateway (${colo})`, pinColor, false, w2LabelOverride, anchorW2)}
-                {!isPending && !isNxDomain && effW3 && renderPin(effW3, "Upstream Target", (flag_2 || isAbort) ? "#444" : pinColor, (flag_2 || isAbort), w3LabelOverride)}
+                {!isPending && !isNxDomain && effW3 && renderPin(effW3, "Upstream Target", (flag_2 || isAbort) ? "#444" : pinColor, (flag_2 || isAbort), w3LabelOverride, anchorW3)}
 
                 {isNxDomain && effW1 && renderPin(effW1, w1Colo !== 'UNKNOWN' ? `Cloud Runner (${w1Colo})` : "Cloud Runner", "#ef4444", false, "[ NULL DESTINATION ]", anchorW1, true)}
               </>
