@@ -2222,9 +2222,9 @@ export default function Dashboard() {
                       style={{ 
                         marginTop: '20px', 
                         padding: '16px', 
-                        background: 'rgba(0,0,0,0.2)', 
+                        background: 'var(--dash-code-bg)', 
                         borderRadius: '12px', 
-                        border: `1px solid ${aiState.data?.error_code === 'INCOMPLETE_PARAM' ? '#f59e0b' : aiState.data?.error_code === 'SECURITY_VIOLATION' ? '#ef4444' : aiState.data?.error_code === 'OUT_OF_SCOPE' ? '#64748b' : 'rgba(255,255,255,0.05)'}`,
+                        border: `1px solid ${aiState.data?.error_code === 'INCOMPLETE_PARAM' ? '#f59e0b' : aiState.data?.error_code === 'SECURITY_VIOLATION' ? '#ef4444' : aiState.data?.error_code === 'OUT_OF_SCOPE' ? '#64748b' : 'var(--dash-code-border)'}`,
                         animation: aiState.data?.error_code === 'SECURITY_VIOLATION' ? 'shakeCritical 0.4s ease-in-out' : 'none'
                       }}
                     >

@@ -198,7 +198,7 @@ export default function UserDropdown({ user }: UserDropdownProps) {
             <Link href="/docs" className={styles.menuItem}>
               <BookOpen size={16} /> API Documentation
             </Link>
-            <a href="https://github.com/placeholder/repo/issues" target="_blank" rel="noreferrer" className={styles.menuItem}>
+            <a href="https://github.com/AndrewWangDev/panic_design/issues" target="_blank" rel="noreferrer" className={styles.menuItem}>
               <Bug size={16} /> Report an Issue
             </a>
           </div>
