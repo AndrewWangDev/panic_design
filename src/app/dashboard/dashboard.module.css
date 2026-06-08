@@ -54,7 +54,7 @@
   --dash-btn-disabled-border: #e5e7eb;
   --dash-btn-ready-bg: #334155;
   --dash-btn-ready-text: #f8fafc;
-  --dash-code-bg: #1f2937;
+  --dash-code-bg: #000000;
   --dash-code-border: rgba(0, 0, 0, 0.1);
   --dash-code-text: #f3f4f6;
   --dash-table-border: rgba(0, 0, 0, 0.1);
@@ -379,14 +379,15 @@
 .label {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .labelHint {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .targetRow {

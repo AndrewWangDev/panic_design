@@ -63,11 +63,11 @@ const releases = [
 
 export default function Changelog() {
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000', color: '#ededed', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '64px 24px' }}>
         <div style={{ marginBottom: '64px' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 700, margin: '0 0 16px 0', letterSpacing: '-0.02em', color: '#fff' }}>About panic.design</h1>
-          <p style={{ color: '#a1a1aa', fontSize: '1.05rem', lineHeight: 1.6, margin: 0 }}>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 700, margin: '0 0 16px 0', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>About panic.design</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.6, margin: 0 }}>
             Built for engineering teams who understand that failure is not an option—it is a guarantee.
           </p>
         </div>
@@ -81,10 +81,10 @@ export default function Changelog() {
               {/* Timeline Dot */}
               <div style={{ position: 'absolute', top: '8px', left: '-30px', width: '12px', height: '12px', borderRadius: '50%', background: '#000', border: '2px solid #fff', zIndex: 1 }} />
               
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 6px 0', color: '#fff', letterSpacing: '-0.01em' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                 {release.version}
               </h2>
-              <div style={{ color: '#a1a1aa', fontSize: '0.85rem', marginBottom: '20px', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
                 {release.date}
               </div>
               
@@ -101,7 +101,7 @@ export default function Changelog() {
                       }}>
                         [{change.type}]
                       </span>
-                      <span style={{ color: '#d4d4d8', fontSize: '0.95rem' }}>
+                      <span style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
                         {change.text}
                       </span>
                     </li>

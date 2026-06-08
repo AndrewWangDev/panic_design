@@ -30,12 +30,12 @@ export default function Docs() {
   }, []);
 
   return (
-    <div style={{ backgroundColor: '#000', color: '#ededed', fontFamily: 'Inter, sans-serif', minHeight: '100vh', paddingBottom: '120px' }}>
+    <div style={{ backgroundColor: 'var(--bg)', color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif', minHeight: '100vh', paddingBottom: '120px' }}>
       
       {/* 1. Global Hero Section (Aligned with Dashboard) */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 40px 40px 40px' }}>
-        <h1 style={{ fontSize: '3rem', fontWeight: 800, color: '#fff', letterSpacing: '-1px', margin: '0 0 12px 0' }}>API Documentation</h1>
-        <p style={{ color: '#a1a1aa', fontSize: '1.1rem', margin: '0 0 40px 0', maxWidth: '600px' }}>
+        <h1 style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-1px', margin: '0 0 12px 0' }}>API Documentation</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', margin: '0 0 40px 0', maxWidth: '600px' }}>
           Integrating panic.design requires zero code changes.
         </p>
         
@@ -62,27 +62,27 @@ export default function Docs() {
         <div style={{ paddingBottom: '120px', minWidth: 0 }}>
           
           <div id="auth" ref={authRef} style={{ marginBottom: '80px', scrollMarginTop: '100px' }}>
-            <h2 style={{ marginTop: 0, fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>1. Authentication</h2>
-            <p style={{ color: '#d4d4d8', lineHeight: 1.7, marginBottom: '24px' }}>
+            <h2 style={{ marginTop: 0, fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>1. Authentication</h2>
+            <p style={{ color: 'var(--text-primary)', lineHeight: 1.7, marginBottom: '24px' }}>
               All requests to the control plane and data plane must be authenticated using your <code style={codeStyle}>PANIC_TOKEN</code>. Pass it via the standard HTTP Authorization header.
             </p>
           </div>
 
           <div id="injection" ref={injectionRef} style={{ minHeight: '800px', scrollMarginTop: '100px' }}>
-            <h2 style={{ marginTop: 0, fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>2. Proxy Data Plane Integration</h2>
-            <p style={{ color: '#d4d4d8', lineHeight: 1.7, marginBottom: '24px' }}>
+            <h2 style={{ marginTop: 0, fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '24px', borderBottom: '1px solid #333', paddingBottom: '12px' }}>2. Proxy Data Plane Integration</h2>
+            <p style={{ color: 'var(--text-primary)', lineHeight: 1.7, marginBottom: '24px' }}>
               Create an ephemeral edge token to initiate a chaos proxy session.
             </p>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '40px' }}>
               <span style={{ background: '#166534', color: '#4ade80', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '1px' }}>POST</span>
-              <code style={{ fontFamily: 'var(--font-mono), monospace', color: '#fff', fontSize: '1.1rem' }}>/api/tokens/create</code>
+              <code style={{ fontFamily: 'var(--font-mono), monospace', color: 'var(--text-primary)', fontSize: '1.1rem' }}>/api/tokens/create</code>
             </div>
 
-            <h3 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '16px' }}>Request Body Schema</h3>
+            <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '16px' }}>Request Body Schema</h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #333', color: '#a1a1aa' }}>
+                <tr style={{ borderBottom: '1px solid #333', color: 'var(--text-secondary)' }}>
                   <th style={{ padding: '12px 0', fontWeight: 500 }}>Field</th>
                   <th style={{ padding: '12px 0', fontWeight: 500 }}>Type</th>
                   <th style={{ padding: '12px 0', fontWeight: 500 }}>Attributes</th>
@@ -94,49 +94,49 @@ export default function Docs() {
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>targetHost</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
                   <td style={{ padding: '16px 0', color: '#ef4444', fontSize: '0.8rem' }}>required</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>The FQDN of your backend.</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-primary)', lineHeight: 1.5 }}>The FQDN of your backend.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>fault</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
                   <td style={{ padding: '16px 0', color: '#ef4444', fontSize: '0.8rem' }}>required</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Fault pattern: <code style={codeStyle}>502</code> Bad Gateway, <code style={codeStyle}>504</code> Gateway Timeout, <code style={codeStyle}>429</code> Rate Limit, or <code style={codeStyle}>latency</code> (Traffic Degradation).</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-primary)', lineHeight: 1.5 }}>Fault pattern: <code style={codeStyle}>502</code> Bad Gateway, <code style={codeStyle}>504</code> Gateway Timeout, <code style={codeStyle}>429</code> Rate Limit, or <code style={codeStyle}>latency</code> (Traffic Degradation).</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>latency</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>integer</td>
-                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Target latency in ms (required if fault is latency).</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-primary)', lineHeight: 1.5 }}>Target latency in ms (required if fault is latency).</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>jitter</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>integer</td>
-                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Latency jitter fluctuation in ms.</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-primary)', lineHeight: 1.5 }}>Latency jitter fluctuation in ms.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>packetLoss</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>integer</td>
-                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Packet loss percentage (0-100).</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-primary)', lineHeight: 1.5 }}>Packet loss percentage (0-100).</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>distribution</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
-                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Statistical distribution: <code style={codeStyle}>Uniform</code>, <code style={codeStyle}>Normal</code> or <code style={codeStyle}>Spikes</code>.</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-primary)', lineHeight: 1.5 }}>Statistical distribution: <code style={codeStyle}>Uniform</code>, <code style={codeStyle}>Normal</code> or <code style={codeStyle}>Spikes</code>.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>mutilationStrategy</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>string</td>
-                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Strategy for payload mutilation: <code style={codeStyle}>None</code>, <code style={codeStyle}>Unexpected EOF</code>, <code style={codeStyle}>Type Poisoning</code>, <code style={codeStyle}>Empty Shell</code>.</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-primary)', lineHeight: 1.5 }}>Strategy for payload mutilation: <code style={codeStyle}>None</code>, <code style={codeStyle}>Unexpected EOF</code>, <code style={codeStyle}>Type Poisoning</code>, <code style={codeStyle}>Empty Shell</code>.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #222' }}>
                   <td style={{ padding: '16px 0' }}><code style={codeStyle}>customTtl</code></td>
                   <td style={{ padding: '16px 0', color: '#60a5fa' }}>integer</td>
-                  <td style={{ padding: '16px 0', color: '#a1a1aa', fontSize: '0.8rem' }}>optional</td>
-                  <td style={{ padding: '16px 0', color: '#d4d4d8', lineHeight: 1.5 }}>Token TTL in seconds (default: 600).</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>optional</td>
+                  <td style={{ padding: '16px 0', color: 'var(--text-primary)', lineHeight: 1.5 }}>Token TTL in seconds (default: 600).</td>
                 </tr>
               </tbody>
             </table>
