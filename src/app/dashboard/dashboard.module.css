@@ -1007,7 +1007,7 @@
 
 .latencyTitle {
   font-size: 0.75rem;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 600;
@@ -1021,7 +1021,7 @@
 
 .latencyLabel {
   font-size: 0.85rem;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   min-width: 100px;
 }
 
@@ -1088,7 +1088,7 @@
 }
 
 .unitLabel {
-  color: #cbd5e1;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   font-family: var(--font-mono);
 }
@@ -1294,4 +1294,16 @@
     margin-bottom: 24px;
     padding-bottom: 24px;
   }
+}
+
+.pauseBtn {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  color: var(--text-secondary);
+}
+
+:global([data-theme='light']) .pauseBtn {
+  background: #000;
+  color: #fff;
+  border-color: #000;
 }

@@ -732,20 +732,20 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
       </div>
       <div style={{ flex: 1, position: 'relative' }}>
         <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: '100%', overflow: 'visible', fontFamily: 'var(--font-mono)' }}>
-          <line x1={paddingLeft} y1={scaleY(maxVal)} x2={w - paddingRight} y2={scaleY(maxVal)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
-          <line x1={paddingLeft} y1={scaleY(maxVal * 0.75)} x2={w - paddingRight} y2={scaleY(maxVal * 0.75)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
-          <line x1={paddingLeft} y1={scaleY(maxVal/2)} x2={w - paddingRight} y2={scaleY(maxVal/2)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
-          <line x1={paddingLeft} y1={scaleY(maxVal * 0.25)} x2={w - paddingRight} y2={scaleY(maxVal * 0.25)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
-          <line x1={paddingLeft} y1={scaleY(0)} x2={w - paddingRight} y2={scaleY(0)} stroke="rgba(255,255,255,0.1)" />
+          <line x1={paddingLeft} y1={scaleY(maxVal)} x2={w - paddingRight} y2={scaleY(maxVal)} stroke="var(--dash-table-row-border)" strokeDasharray="2,2" />
+          <line x1={paddingLeft} y1={scaleY(maxVal * 0.75)} x2={w - paddingRight} y2={scaleY(maxVal * 0.75)} stroke="var(--dash-table-row-border)" strokeDasharray="2,2" />
+          <line x1={paddingLeft} y1={scaleY(maxVal/2)} x2={w - paddingRight} y2={scaleY(maxVal/2)} stroke="var(--dash-table-row-border)" strokeDasharray="2,2" />
+          <line x1={paddingLeft} y1={scaleY(maxVal * 0.25)} x2={w - paddingRight} y2={scaleY(maxVal * 0.25)} stroke="var(--dash-table-row-border)" strokeDasharray="2,2" />
+          <line x1={paddingLeft} y1={scaleY(0)} x2={w - paddingRight} y2={scaleY(0)} stroke="var(--dash-table-border)" />
           
-          <text x={paddingLeft - 8} y={scaleY(maxVal) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal)}ms</text>
-          <text x={paddingLeft - 8} y={scaleY(maxVal * 0.75) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.75)}ms</text>
-          <text x={paddingLeft - 8} y={scaleY(maxVal/2) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal/2)}ms</text>
-          <text x={paddingLeft - 8} y={scaleY(maxVal * 0.25) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.25)}ms</text>
-          <text x={paddingLeft - 8} y={scaleY(0) + 3} fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="end">0ms</text>
+          <text x={paddingLeft - 8} y={scaleY(maxVal) + 3} fill="var(--text-secondary)" fontSize="9" textAnchor="end">{Math.round(maxVal)}ms</text>
+          <text x={paddingLeft - 8} y={scaleY(maxVal * 0.75) + 3} fill="var(--text-secondary)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.75)}ms</text>
+          <text x={paddingLeft - 8} y={scaleY(maxVal/2) + 3} fill="var(--text-secondary)" fontSize="9" textAnchor="end">{Math.round(maxVal/2)}ms</text>
+          <text x={paddingLeft - 8} y={scaleY(maxVal * 0.25) + 3} fill="var(--text-secondary)" fontSize="9" textAnchor="end">{Math.round(maxVal * 0.25)}ms</text>
+          <text x={paddingLeft - 8} y={scaleY(0) + 3} fill="var(--text-secondary)" fontSize="9" textAnchor="end">0ms</text>
 
-          <line x1={paddingLeft} y1={scaleY(latency)} x2={w - paddingRight} y2={scaleY(latency)} stroke="rgba(255,255,255,0.3)" strokeDasharray="4,2" />
-          <text x={w - paddingRight - 2} y={scaleY(latency) - 4} fill="rgba(255,255,255,0.9)" fontSize="8" textAnchor="end" fontWeight="bold">Base</text>
+          <line x1={paddingLeft} y1={scaleY(latency)} x2={w - paddingRight} y2={scaleY(latency)} stroke="var(--text-secondary)" strokeDasharray="4,2" style={{ opacity: 0.5 }} />
+          <text x={w - paddingRight - 2} y={scaleY(latency) - 4} fill="var(--text-primary)" fontSize="8" textAnchor="end" fontWeight="bold">Base</text>
 
           {pathData && <path d={pathData} stroke={color} fill="none" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />}
           
