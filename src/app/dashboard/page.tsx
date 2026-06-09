@@ -891,10 +891,12 @@ const AiAutofillModal = ({
 
   const simulateTyping = (text: string) => {
     if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+    let currentText = '';
     setInstruction('');
     let i = 0;
     typingIntervalRef.current = setInterval(() => {
-      setInstruction(prev => prev + text.charAt(i));
+      currentText += text.charAt(i);
+      setInstruction(currentText);
       i++;
       if (i >= text.length) {
         if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
