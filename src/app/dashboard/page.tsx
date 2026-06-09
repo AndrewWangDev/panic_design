@@ -1134,6 +1134,7 @@ export default function Dashboard() {
     if (data.baseLatency !== undefined && data.baseLatency !== null) setLatency(Number(data.baseLatency));
     if (data.jitter !== undefined && data.jitter !== null) setJitter(Number(data.jitter));
     if (data.packetLoss !== undefined && data.packetLoss !== null) setPacketLoss(Number(data.packetLoss));
+    if (data.mutilationStrategy !== undefined && data.mutilationStrategy !== null) setMutilationStrategy(data.mutilationStrategy);
     
     setHighlightAutofill(true);
     setTimeout(() => setHighlightAutofill(false), 2000);
