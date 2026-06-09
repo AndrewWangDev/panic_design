@@ -19,11 +19,11 @@ export async function checkAndUpdateQuota(userId: string): Promise<{ allowed: bo
   let newDaily = isNewDay ? 0 : user.dailyQuota;
   let newHourly = isNewHour ? 0 : user.hourlyQuota;
 
-  if (newDaily >= 10000) {
-    return { allowed: false, reason: 'Daily quota of 10000 requests exceeded' };
+  if (newDaily >= 100) {
+    return { allowed: false, reason: 'Daily quota of 100 requests exceeded' };
   }
-  if (newHourly >= 3000) {
-    return { allowed: false, reason: 'Hourly quota of 3000 requests exceeded' };
+  if (newHourly >= 30) {
+    return { allowed: false, reason: 'Hourly quota of 30 requests exceeded' };
   }
 
   // Increment and save

@@ -61,6 +61,12 @@
   opacity: 1;
 }
 
+@media (max-width: 768px) {
+  .links {
+    display: none;
+  }
+}
+
 .right {
   gap: 16px;
 }
