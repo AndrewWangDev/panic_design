@@ -878,23 +878,28 @@ const AiAutofillModal = ({
   const [instruction, setInstruction] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'warning' | 'error'>('idle');
   const [aiData, setAiData] = useState<any>(null);
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setInstruction('');
       setStatus('idle');
       setAiData(null);
+      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
     }
   }, [isOpen]);
 
   const simulateTyping = (text: string) => {
+    if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
     setInstruction('');
     let i = 0;
-    const interval = setInterval(() => {
+    typingIntervalRef.current = setInterval(() => {
       setInstruction(prev => prev + text.charAt(i));
       i++;
-      if (i >= text.length - 1) clearInterval(interval);
-    }, 25);
+      if (i >= text.length) {
+        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+      }
+    }, 20);
   };
 
   if (!isOpen) return null;
