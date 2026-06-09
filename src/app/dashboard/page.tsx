@@ -885,23 +885,26 @@ const AiAutofillModal = ({
       setInstruction('');
       setStatus('idle');
       setAiData(null);
-      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
     }
+    return () => {
+      // Cleanup to prevent Fast Refresh memory leaks
+      typingIntervalRef.current = null;
+    };
   }, [isOpen]);
 
-  const simulateTyping = (text: string) => {
-    if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+  const simulateTyping = async (text: string) => {
+    const runId = Date.now();
+    typingIntervalRef.current = runId as any;
+    
     let currentText = '';
     setInstruction('');
-    let i = 0;
-    typingIntervalRef.current = setInterval(() => {
+    
+    for (let i = 0; i < text.length; i++) {
+      if (typingIntervalRef.current !== runId) return; // Abort if a new typing session started or component unmounted
       currentText += text.charAt(i);
       setInstruction(currentText);
-      i++;
-      if (i >= text.length) {
-        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
-      }
-    }, 20);
+      await new Promise(resolve => setTimeout(resolve, 15));
+    }
   };
 
   if (!isOpen) return null;
