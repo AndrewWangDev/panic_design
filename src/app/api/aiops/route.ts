@@ -115,7 +115,7 @@ Analysis: 'Hijack all responses with 502 Bad Gateway' means application layer er
 Scenario C: "Simulate severe trans-Pacific cable congestion. Degrade traffic with 1000ms base latency, 3ms jitter, and apply Type Poisoning."
 Analysis: 'trans-Pacific' is a keyword. Immediately check if w1_colo, w2_colo, and w3 are in the same region. If they are, trigger LOGICAL_CONFLICT and ignore 'trans-Pacific'. No client fault? flag_1=false, flag_route_1=false. No packet drop or 502/504? flag_2=false, flag_route_2=false. 'Degrade traffic with 1000ms' is latency injection, so set T2=1000. 'Type Poisoning' is a payload mutation, set W2_label='Type Poisoning'.`;
 
-    const response = await env.AI.run('@cf/mistral/mixtral-8x7b-instruct-v0.1', {
+    const response = await env.AI.run('@cf/meta/llama-4-scout-17b-16e-instruct', {
       max_tokens: 1500,
       messages: [
         { role: 'system', content: systemPrompt },
