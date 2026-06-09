@@ -98,7 +98,8 @@ export default function UserDropdown({ user }: UserDropdownProps) {
     try {
       const res = await fetch('/api/user/delete', { method: 'POST' });
       if (res.ok) {
-        await signOut({ callbackUrl: '/' });
+        // Force a hard navigation to clear Next.js App Router cache
+        window.location.href = '/';
       } else {
         alert('Failed to delete account.');
       }
