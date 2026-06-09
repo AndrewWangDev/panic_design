@@ -52,11 +52,17 @@ RULES:
 1. SECURITY: If instruction contains real OS cyberattacks ("rm -rf", "drop table"), set "error_code": "SECURITY_VIOLATION". EXCEPTION: "hijack responses", "empty shell", "type poisoning" are VALID chaos engineering terms, DO NOT flag them as security violations!
 2. OUT OF SCOPE: For normal conversation or coding, set "error_code": "OUT_OF_SCOPE".
 3. INCOMPLETE PARAMS: If missing exact numbers (e.g., missing "50%" or "1000ms"), set "error_code": "INCOMPLETE_PARAM".
-4. LOGICAL_CONFLICT (GEOGRAPHY): If Baseline nodes are in the SAME region (e.g., all US) but instruction asks for "trans-Pacific" or "trans-Atlantic", DO NOT change coordinates! You MUST set "warning_code": "LOGICAL_CONFLICT" and "warning_message": "⚠️ [Requested Geography] routing impossible for intra-[Actual Region] path."
+4. LOGICAL_CONFLICT (GEOGRAPHY): If w1_colo, w2_colo, and w3 nodes are in the SAME region (e.g., all US) but instruction asks for "trans-Pacific" or "trans-Atlantic", DO NOT change coordinates! You MUST set "warning_code": "LOGICAL_CONFLICT" and "warning_message": "⚠️ [Requested Geography] routing impossible for intra-[Actual Region] path."
 
 5. MAP_DATA LOGIC (CRITICAL): 
-- W1/W2/W3 coordinates MUST BE null UNLESS the instruction explicitly relocates traffic to a new continent/region. DO NOT copy the Frankfurt [8.6821, 50.1109] coordinate from the example unless specifically requested!
-- flags (flag_1, flag_2, flag_route_1, flag_route_2) draw red 'X' error markers. Set to true ONLY for the specific node/route that is failing. DO NOT blindly copy the example flags!
+- W1/W2/W3 coordinates: MUST BE null UNLESS the instruction explicitly relocates traffic to a new continent/region.
+- T1, T2, T3: T1 is the latency from Client (W1) to Edge (W2). T2 is the Edge (W2) execution/injection latency (e.g., if injecting 1000ms latency, T2=1000). T3 is the latency from Edge (W2) to Upstream (W3).
+- flags:
+  * flag_1: Traffic terminates at Client (W1). Generally false, unless explicitly mentioned as a client fault.
+  * flag_2: Traffic terminates at Edge (W2). Set to true when injecting packet drop, or application layer errors like 502/504/429/444.
+  * flag_route_1: Traffic blocked on the path from W1 to W2. If you set flag_1=true, you MUST set flag_route_1=true. Otherwise, it MUST be false.
+  * flag_route_2: Traffic blocked on the path from W2 to W3. If you set flag_2=true, you MUST set flag_route_2=true. Otherwise, it MUST be false.
+
 6. LABELS: W1 is Client, W2 is Edge/Transit, W3 is Upstream. Set W1_label/W2_label/W3_label based on exactly WHERE the fault occurs. Keep empty if healthy.
 
 JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
@@ -82,7 +88,7 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
     "W3_label": string
   },
   "insight": {
-    "sloBudgetImpact": string (Predict the enterprise business/SLO impact instead of raw numbers. E.g., "Critical SLA breach risking enterprise revenue and violating 99.99% availability targets"),
+    "sloBudgetImpact": string (Predict the enterprise business/SLO impact),
     "w1Colo": string (Exact baseline w1_colo OR new colo if hijacked),
     "w2Colo": string (Exact baseline w2_colo OR new colo if hijacked),
     "w3Ip": string (Exact baseline targetHost OR new IP if hijacked),
@@ -91,47 +97,25 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
       {
         "object": string,
         "severity": string (EXACTLY ONE: "🔴", "🟡", "🟢"),
-        "content": string (Must be highly detailed and descriptive. DO NOT use short phrases like 'Massive failure', explain EXACTLY what the failure entails)
+        "content": string (Must be highly detailed and descriptive)
       }
     ],
-    "secondaryRisks": string (MUST NOT be "None" or empty. Always invent a plausible cascading failure risk),
-    "suggestion": string (Must be a detailed mitigation strategy of NO LESS THAN 10 words)
+    "secondaryRisks": string (MUST NOT be "None" or empty),
+    "suggestion": string (Detailed mitigation strategy)
   }
 }
 
-EXAMPLE 1:
-Input: "Trigger a massive edge node failure causing 504 Gateway Timeouts." (Assuming Baseline targetHost is "api.example.com", w1_colo is "LAX", w2_colo is "LAX", fault is 504)
-Output:
-{
-  "error_code": null,
-  "error_message": null,
-  "warning_code": null,
-  "warning_message": null,
-  "map_data": {
-    "T1": 100, "T2": 0, "T3": 0,
-    "W1": null, "W2": null, "W3": null,
-    "w2_colo": "LAX", "flag_1": false, "flag_2": true, "flag_route_1": false, "flag_route_2": false,
-    "W1_label": "", "W2_label": "Edge Timeout", "W3_label": "Unreachable"
-  },
-  "insight": {
-    "sloBudgetImpact": "Critical edge gateway failure violating 99.99% availability SLA, blocking all ingress traffic and causing immediate revenue drop.",
-    "w1Colo": "LAX",
-    "w2Colo": "LAX",
-    "w3Ip": "api.example.com",
-    "packetLoss": "0%",
-    "influence": [
-      {
-        "object": "Edge Gateway",
-        "severity": "🔴",
-        "content": "The edge gateway cluster suffered a catastrophic outage, severing the connection between clients and the upstream target resulting in 100% 504 Timeouts."
-      }
-    ],
-    "secondaryRisks": "Client retry storms could trigger cascading rate-limit exhaustion and DDoS mitigation lockouts.",
-    "suggestion": "Immediately restart edge proxy containers and route traffic to secondary availability zones."
-  }
-}`;
+LEARNING SCENARIOS (DO NOT OUTPUT THESE, ONLY LEARN FROM THEM):
+Scenario A: "Simulate a catastrophic BGP route leak. Drop 50% of packets globally."
+Analysis: 'Drop 50%' implies packet drop injection, so set flag_2=true. Because flag_2=true, flag_route_2 MUST be true. Since the client has no fault, flag_1=false and flag_route_1=false.
 
-    const response = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+Scenario B: "Trigger a massive edge node failure. Hijack all responses with 502 Bad Gateway and apply 'Empty Shell' mutation."
+Analysis: 'Hijack all responses with 502 Bad Gateway' means application layer error, so set flag_2=true. Because flag_2=true, flag_route_2 MUST be true. Since the client has no fault, flag_1=false and flag_route_1=false.
+
+Scenario C: "Simulate severe trans-Pacific cable congestion. Degrade traffic with 1000ms base latency, 3ms jitter, and apply Type Poisoning."
+Analysis: 'trans-Pacific' is a keyword. Immediately check if w1_colo, w2_colo, and w3 are in the same region. If they are, trigger LOGICAL_CONFLICT and ignore 'trans-Pacific'. No client fault? flag_1=false, flag_route_1=false. No packet drop or 502/504? flag_2=false, flag_route_2=false. 'Degrade traffic with 1000ms' is latency injection, so set T2=1000. 'Type Poisoning' is a payload mutation, set W2_label='Type Poisoning'.`;
+
+    const response = await env.AI.run('@cf/mistral/mixtral-8x7b-instruct-v0.1', {
       max_tokens: 1500,
       messages: [
         { role: 'system', content: systemPrompt },
