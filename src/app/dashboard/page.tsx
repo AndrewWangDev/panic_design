@@ -887,6 +887,16 @@ const AiAutofillModal = ({
     }
   }, [isOpen]);
 
+  const simulateTyping = (text: string) => {
+    setInstruction('');
+    let i = 0;
+    const interval = setInterval(() => {
+      setInstruction(prev => prev + text.charAt(i));
+      i++;
+      if (i >= text.length - 1) clearInterval(interval);
+    }, 25);
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
@@ -939,7 +949,7 @@ const AiAutofillModal = ({
           <h3 style={{ margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}><Sparkles size={16} color="#38bdf8" /> AI Control Plane Autofill</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button 
-              onClick={() => setInstruction("We are simulating a major trans-Pacific submarine cable fault. Please inject an 'unexpected EOF' payload mutation. Forcefully drop the connection for 30% of the traffic. For the remaining traffic, inject a base latency of 1200ms with a Normal distribution (and Network Jitter 300ms).")} 
+              onClick={() => simulateTyping("We are simulating a major trans-Pacific submarine cable fault. Please inject an 'unexpected EOF' payload mutation. Forcefully drop the connection for 30% of the traffic. For the remaining traffic, inject a base latency of 1200ms with a Normal distribution (and Network Jitter 300ms).")} 
               style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 'bold', transition: 'all 0.2s ease' }}
             >
               <Zap size={14} color="#22c55e" fill="#22c55e" /> Quick Demo

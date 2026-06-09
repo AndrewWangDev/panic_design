@@ -43,7 +43,7 @@ SECURITY AND INTENT VALIDATION (CRITICAL):
 You MUST validate the user's intent. If any of the following 3 conditions are met, you MUST set "status" to "error" and populate "error_message".
 1. Cyberattack or OS commands: e.g. "DDOS", "rm -rf". -> "error_message": "SECURITY_VIOLATION: [Context]".
 2. General/Conversational/Out of Scope: e.g. "Write code", "Tell me a story", "Write a newspaper". -> "error_message": "OUT_OF_SCOPE: [Reason]".
-3. Incomplete Chaos Parameters: e.g. "Make network slow" without specifying how many ms, or "Add packet loss" without a percentage. -> "error_message": "INCOMPLETE_PARAM: Missing Entity [e.g. Percentage / Latency]".
+3. Incomplete Chaos Parameters: e.g. "Make network slow" without specifying how many ms, or "Add packet loss" without a percentage. -> "error_message": "INCOMPLETE_PARAM: Missing Entity [e.g. Percentage / Latency]". NOTE: If the user requests an advanced chaos feature (like "unexpected EOF", "type poisoning") that is NOT supported by the JSON Schema below, DO NOT flag it as incomplete. Simply IGNORE the unsupported feature and successfully extract whatever IS supported (e.g. latency, packetLoss).
 
 If an error is triggered, you MUST still return a valid JSON object.
 
