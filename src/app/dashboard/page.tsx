@@ -878,7 +878,7 @@ const AiAutofillModal = ({
   const [instruction, setInstruction] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'warning' | 'error'>('idle');
   const [aiData, setAiData] = useState<any>(null);
-  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const typingIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -894,7 +894,7 @@ const AiAutofillModal = ({
 
   const simulateTyping = async (text: string) => {
     const runId = Date.now();
-    typingIntervalRef.current = runId as any;
+    typingIntervalRef.current = runId;
     
     let currentText = '';
     setInstruction('');
