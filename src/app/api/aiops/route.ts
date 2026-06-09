@@ -56,10 +56,10 @@ RULES:
 
 5. MAP_DATA LOGIC (CRITICAL): 
 - W1/W2/W3 coordinates: MUST BE null UNLESS the instruction explicitly relocates traffic to a new continent/region.
-- T1, T2, T3: T1 is the latency from Client (W1) to Edge (W2). T2 is the Edge (W2) execution/injection latency (e.g., if injecting 1000ms latency, T2=1000). T3 is the latency from Edge (W2) to Upstream (W3).
+- T1, T2, T3: T1 is the latency from Client (W1) to Edge (W2). T2 is the Edge (W2) execution/injection latency (e.g., if injecting 1000ms latency, T2=1000). T3 is the latency from Edge (W2) to Upstream (W3). If you set T3=0ms, it means W2-W3 traffic is blocked; you MUST set flag_2=true and flag_route_2=true. If you set T1=0ms (rare), it means W1-W2 traffic is blocked; you MUST set flag_1=true and flag_route_1=true.
 - flags:
-  * flag_1: Traffic terminates at Client (W1). Generally false, unless explicitly mentioned as a client fault.
-  * flag_2: Traffic terminates at Edge (W2). Set to true when injecting packet drop, or application layer errors like 502/504/429/444.
+  * flag_1: Traffic terminates at Client (W1). Generally false, unless explicitly mentioned as a client fault or T1=0.
+  * flag_2: Traffic terminates at Edge (W2). Set to true when injecting packet drop, or application layer errors like 502/504/429/444, or if T3=0.
   * flag_route_1: Traffic blocked on the path from W1 to W2. If you set flag_1=true, you MUST set flag_route_1=true. Otherwise, it MUST be false.
   * flag_route_2: Traffic blocked on the path from W2 to W3. If you set flag_2=true, you MUST set flag_route_2=true. Otherwise, it MUST be false.
 
@@ -96,8 +96,8 @@ JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
     "influence": [
       {
         "object": string,
-        "severity": string (EXACTLY ONE: "🔴", "🟡", "🟢"),
-        "content": string (Must be highly detailed and descriptive)
+        "severity": string (EXACTLY ONE: "🔴", "🟡"), // MUST be negative impact. Do NOT use 🟢!
+        "content": string (Must be highly detailed and descriptive. MUST describe a negative impact or failure, never a successful normal state.)
       }
     ],
     "secondaryRisks": string (MUST NOT be "None" or empty),
