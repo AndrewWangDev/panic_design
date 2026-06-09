@@ -65,11 +65,13 @@ RULES:
 
 6. LABELS: W1 is Client, W2 is Edge/Transit, W3 is Upstream. Set W1_label/W2_label/W3_label based on exactly WHERE the fault occurs. Keep empty if healthy.
 
+7. PARAMETER_CONFLICT_CORRECTION: If the instruction asks to inject HTTP Application Layer Errors (502, 504, 429, 444) AND simultaneously asks for ANY Traffic Degradation (e.g. Distribution, Packet Loss, Base Latency, Jitter) OR ANY Payload Mutilation Strategy (e.g. Unexpected EOF, Type Poisoning, Empty Shell), you MUST classify this as a correction warning. Set "warning_code": "CORRECTION_WARNING", set "warning_message": "⚠️ Ignored traffic/payload mutations since HTTP Error Codes terminate the request early.", and AUTOMATICALLY IGNORE and REMOVE all Traffic Degradation and Payload Mutilation parameters from your interpretation.
+
 JSON SCHEMA (ONLY OUTPUT THIS EXACT STRUCTURE):
 {
   "error_code": "INCOMPLETE_PARAM" | "SECURITY_VIOLATION" | "OUT_OF_SCOPE" | null,
   "error_message": string | null,
-  "warning_code": "LOGICAL_CONFLICT" | null,
+  "warning_code": "LOGICAL_CONFLICT" | "CORRECTION_WARNING" | null,
   "warning_message": string | null,
   "map_data": {
     "T1": number,

@@ -939,7 +939,7 @@ const AiAutofillModal = ({
           <h3 style={{ margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}><Sparkles size={16} color="#38bdf8" /> AI Control Plane Autofill</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button 
-              onClick={() => setInstruction("We are simulating a major trans-Pacific submarine cable fault. Please inject an 'unexpected EOF' payload mutation at the SJC (San Jose) edge node to forcefully drop the connection for 30% of the traffic. For the remaining traffic, inject a base latency of 1200ms with a normal jitter distribution (stddev 300ms). This simulates severe packet loss and extreme congestion, which will cause massive timeout errors and video buffering issues for our North American users connecting to the Asian origin.")} 
+              onClick={() => setInstruction("We are simulating a major trans-Pacific submarine cable fault. Please inject an 'unexpected EOF' payload mutation. Forcefully drop the connection for 30% of the traffic. For the remaining traffic, inject a base latency of 1200ms with a Normal distribution (and Network Jitter 300ms).")} 
               style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 'bold', transition: 'all 0.2s ease' }}
             >
               <Zap size={14} color="#22c55e" fill="#22c55e" /> Quick Demo
