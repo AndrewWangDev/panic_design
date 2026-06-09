@@ -61,9 +61,33 @@
   opacity: 1;
 }
 
+.mobileMenuBtn {
+  display: none;
+}
+
 @media (max-width: 768px) {
+  .mobileMenuBtn {
+    display: flex;
+  }
+  
   .links {
     display: none;
+    position: absolute;
+    top: 70px;
+    left: 0;
+    width: 100%;
+    background: var(--navbar-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--surface-border);
+    flex-direction: column;
+    padding: 24px;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  
+  .links.mobileOpen {
+    display: flex;
   }
 }
 

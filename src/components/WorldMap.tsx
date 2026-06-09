@@ -282,8 +282,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const effT2 = aiMapData?.T2 !== undefined ? aiMapData.T2 : t2;
   const effT3 = aiMapData?.T3 !== undefined ? aiMapData.T3 : t3;
 
-  const flag_1 = aiMapData?.flag_1 || false;
-  const flag_2 = aiMapData ? aiMapData.flag_2 : (fault === '502' || fault === '504' || fault === '429' || isPacketLoss);
+  const flag_1 = aiMapData?.flag_1 || effT1 === 0 || false;
+  const flag_2 = aiMapData ? (aiMapData.flag_2 || effT3 === 0) : (fault === '502' || fault === '504' || fault === '429' || isPacketLoss || effT3 === 0);
 
   // Dynamic visual timings scaled by actual latency with reasonable caps
   const baseScale = 4; // 1ms real = 4ms animation
@@ -302,8 +302,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const t1Color = isPending ? "#cbd5e1" : getLatencyColor(t1 || 0);
   const t3Color = getLatencyColor(t3 || 0);
   const pinColor = "#cbd5e1"; // Neutral slate-300
-  const flag_route_1 = aiMapData?.flag_route_1 || false;
-  const flag_route_2 = aiMapData?.flag_route_2 || false;
+  const flag_route_1 = aiMapData?.flag_route_1 || effT1 === 0 || false;
+  const flag_route_2 = aiMapData?.flag_route_2 || effT3 === 0 || false;
 
   const w1LabelOverride = aiMapData?.W1_label;
   

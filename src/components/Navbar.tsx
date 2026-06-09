@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Moon, Sun, LogIn } from 'lucide-react';
+import { Menu, Moon, Sun, LogIn } from 'lucide-react';
 import { useSession, signIn } from 'next-auth/react';
 import styles from './Navbar.module.css';
 import UserDropdown from './UserDropdown';
@@ -21,6 +21,7 @@ export default function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [isDark, setIsDark] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isLoggedIn = !!session; 
 
   useEffect(() => {
@@ -48,10 +49,13 @@ export default function Navbar() {
     <nav className={styles.navbar}>
       <div className={styles.container}>
         <div className={styles.left}>
+          <button className={`${styles.iconBtn} ${styles.mobileMenuBtn}`} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="Toggle Menu">
+            <Menu size={20} />
+          </button>
           <Link href="/" className={styles.logo}>
             <span className="glow-text">panic.</span>design
           </Link>
-          <div className={styles.links}>
+          <div className={`${styles.links} ${isMobileMenuOpen ? styles.mobileOpen : ''}`}>
             <Link href="/dashboard" className={`${styles.link} ${pathname === '/dashboard' ? styles.active : ''}`}>Dashboard</Link>
             <Link href="/docs" className={`${styles.link} ${pathname === '/docs' ? styles.active : ''}`}>Docs</Link>
             <Link href="/changelog" className={`${styles.link} ${pathname === '/changelog' ? styles.active : ''}`}>Changelog</Link>
