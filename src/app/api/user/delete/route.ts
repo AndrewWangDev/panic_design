@@ -33,7 +33,17 @@ export async function POST(req: Request) {
       data: { isRevoked: true }
     });
 
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    
+    // Explicitly wipe NextAuth cookies. Client-side signOut on Cloudflare Edge can sometimes fail.
+    response.cookies.delete('authjs.session-token');
+    response.cookies.delete('__Secure-authjs.session-token');
+    response.cookies.delete('next-auth.session-token');
+    response.cookies.delete('__Secure-next-auth.session-token');
+    response.cookies.delete('authjs.csrf-token');
+    response.cookies.delete('__Host-authjs.csrf-token');
+
+    return response;
   } catch (err) {
     console.error('Delete account error:', err);
     return NextResponse.json({ error: "Failed to delete account" }, { status: 500 });
