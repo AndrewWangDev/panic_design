@@ -68,7 +68,7 @@ The JSON MUST follow this exact schema:
     "baseLatency": "number (0-10000) | null (MUST BE null if faultType is NOT latency)",
     "jitter": "number | null (MUST BE strictly <= baseLatency. MUST BE null if faultType is NOT latency)",
     "packetLoss": "number (0-100) | null (MUST BE null if faultType is NOT latency)",
-    "mutilationStrategy": "None" | "Unexpected EOF" | "Type Poisoning" | "Empty Shell"
+    "mutilationStrategy": "None" | "Unexpected EOF" | "Type Poisoning" | "Empty Shell" (Default to "None" if not explicitly requested)
   }
 }`;
 
