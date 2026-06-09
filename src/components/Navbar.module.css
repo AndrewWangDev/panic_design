@@ -62,12 +62,12 @@
 }
 
 .mobileMenuBtn {
-  display: none;
+  display: none !important;
 }
 
 @media (max-width: 768px) {
   .mobileMenuBtn {
-    display: flex;
+    display: flex !important;
   }
   
   .links {
