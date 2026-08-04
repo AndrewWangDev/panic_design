@@ -39,7 +39,7 @@ function HomeContent() {
   const isLoggedIn = !!session;
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = React.useRef<any>(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   useEffect(() => {
@@ -48,37 +48,43 @@ function HomeContent() {
     }
   }, [searchParams]);
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     setIsLoggingIn(true);
-    if (!turnstileToken) {
-      // If we don't have a token, we might have to wait for it or just fail gracefully if in dev
-      if (process.env.NODE_ENV !== 'development') {
-        alert('Security verification pending. Please wait a second and try again.');
-        setIsLoggingIn(false);
-        return;
-      }
-    }
-
-    if (turnstileToken) {
-      try {
-        const res = await fetch('/api/turnstile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: turnstileToken })
-        });
-        const data = await res.json();
-        if (!data.success) {
-          alert('Security verification failed.');
-          setIsLoggingIn(false);
-          return;
+    // Yield to the browser to paint the "Redirecting..." UI, then trigger PoW calculation
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (turnstileRef.current) {
+          turnstileRef.current.execute();
+        } else {
+          if (process.env.NODE_ENV === 'development') {
+            signIn('github', { callbackUrl: '/dashboard' });
+          } else {
+            alert('Security component not loaded.');
+            setIsLoggingIn(false);
+          }
         }
-      } catch (e) {
+      }, 50);
+    });
+  };
+
+  const onTurnstileSuccess = async (token: string) => {
+    try {
+      const res = await fetch('/api/turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert('Security verification failed.');
         setIsLoggingIn(false);
         return;
       }
+      signIn('github', { callbackUrl: '/dashboard' });
+    } catch (e) {
+      alert('Security verification error.');
+      setIsLoggingIn(false);
     }
-
-    signIn('github', { callbackUrl: '/dashboard' });
   };
 
   useEffect(() => {
@@ -160,11 +166,15 @@ function HomeContent() {
               {/* Invisible Turnstile */}
               <div>
                 <Turnstile
+                  ref={turnstileRef}
                   siteKey="0x4AAAAAADgKGlhfvExJwp8F"
-                  onSuccess={(token) => setTurnstileToken(token)}
-                  onExpire={() => setTurnstileToken(null)}
-                  onError={() => setTurnstileToken(null)}
-                  options={{ theme: 'dark', size: 'invisible' }}
+                  onSuccess={onTurnstileSuccess}
+                  onExpire={() => setIsLoggingIn(false)}
+                  onError={() => {
+                    alert('Security challenge encountered an error.');
+                    setIsLoggingIn(false);
+                  }}
+                  options={{ theme: 'dark', size: 'invisible', execution: 'execute' }}
                 />
               </div>
             </div>
