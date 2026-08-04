@@ -945,6 +945,9 @@ const AiAutofillModal = ({
           if (data.status) {
             setStatus(data.status);
             setAiData(data);
+          } else if (data.error) {
+            setStatus('error');
+            setAiData({ error_message: data.error });
           } else {
             setStatus('error');
             setAiData({ error_message: 'Failed to parse AI output structure.' });

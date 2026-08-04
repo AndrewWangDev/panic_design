@@ -74,7 +74,7 @@ The JSON MUST follow this exact schema:
   }
 }`;
 
-    const response = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+    const response = await env.AI.run('@cf/meta/llama-4-scout-17b-16e-instruct', {
       max_tokens: 1500,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -109,6 +109,6 @@ The JSON MUST follow this exact schema:
 
   } catch (error: any) {
     console.error('AI Ops AutoFill Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message, stack: error.stack }, { status: 418 });
   }
 }
