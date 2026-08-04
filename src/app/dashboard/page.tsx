@@ -879,7 +879,7 @@ const AiAutofillModal = ({
   requestTurnstileToken: () => Promise<string>
 }) => {
   const [instruction, setInstruction] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'warning' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'turnstile' | 'loading' | 'success' | 'warning' | 'error'>('idle');
   const [aiData, setAiData] = useState<any>(null);
   const typingIntervalRef = useRef<number | null>(null);
 
@@ -915,39 +915,46 @@ const AiAutofillModal = ({
   const handleSubmit = async () => {
     if (!instruction.trim()) return;
 
-    setStatus('loading');
+    setStatus('turnstile');
     setAiData(null);
 
-    try {
-      let currentToken: string | null = null;
-      if (process.env.NODE_ENV !== 'development') {
+    // Yield to let React paint the static 'turnstile' UI before blocking the main/GPU thread
+    requestAnimationFrame(() => {
+      setTimeout(async () => {
         try {
-          currentToken = await requestTurnstileToken();
-        } catch {
-          setStatus('error');
-          setAiData({ error_message: "Security verification failed. Please check your network and try again." });
-          return;
-        }
-      }
+          let currentToken: string | null = null;
+          if (process.env.NODE_ENV !== 'development') {
+            try {
+              currentToken = await requestTurnstileToken();
+            } catch {
+              setStatus('error');
+              setAiData({ error_message: "Security verification failed. Please check your network and try again." });
+              return;
+            }
+          }
 
-      const res = await fetch('/api/aiops/autofill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, currentFormState, turnstileToken: currentToken })
-      });
-      const data = await res.json();
-      
-      if (data.status) {
-        setStatus(data.status);
-        setAiData(data);
-      } else {
-        setStatus('error');
-        setAiData({ error_message: 'Failed to parse AI output structure.' });
-      }
-    } catch (e: any) {
-      setStatus('error');
-      setAiData({ error_message: e.message || 'Network error occurred.' });
-    }
+          setStatus('loading');
+
+          const res = await fetch('/api/aiops/autofill', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instruction, currentFormState, turnstileToken: currentToken })
+          });
+          const data = await res.json();
+          
+          if (data.status) {
+            setStatus(data.status);
+            setAiData(data);
+          } else {
+            setStatus('error');
+            setAiData({ error_message: 'Failed to parse AI output structure.' });
+          }
+        } catch (e: any) {
+          setStatus('error');
+          setAiData({ error_message: e.message || 'Network error occurred.' });
+        }
+      }, 50);
+    });
   };
 
   const handleApply = () => {
@@ -979,9 +986,16 @@ const AiAutofillModal = ({
             placeholder="E.g., Inject 200ms latency and 5% packet loss for Asia region..."
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
-            disabled={status === 'loading'}
+            disabled={status === 'loading' || status === 'turnstile'}
             style={{ width: '100%', height: '100px', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '12px', color: '#f8fafc', fontFamily: 'var(--font-sans)', fontSize: '14px', resize: 'none', marginBottom: '16px' }}
           />
+
+          {status === 'turnstile' && (
+            <div style={{ padding: '16px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '8px', color: '#38bdf8', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Lock size={16} />
+              <div style={{ fontWeight: 'bold' }}>Verifying Security Clearance...</div>
+            </div>
+          )}
 
           {status === 'loading' && (
             <div style={{ padding: '16px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '8px', color: '#38bdf8', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1230,6 +1244,7 @@ export default function Dashboard() {
   });
   const [isTestPending, setIsTestPending] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingTurnstile, setIsGeneratingTurnstile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [enableAnimation, setEnableAnimation] = useState(false);
   const [showMobileWarning, setShowMobileWarning] = useState(false);
@@ -1260,63 +1275,68 @@ export default function Dashboard() {
     }, 20);
   };
 
-  const [aiState, setAiState] = useState<{ isLoading: boolean, data: any, baseline?: any }>({ isLoading: false, data: null });
+  const [aiState, setAiState] = useState<{ isLoading: boolean, isTurnstile?: boolean, data: any, baseline?: any }>({ isLoading: false, isTurnstile: false, data: null });
 
   const handleAiSubmit = async () => {
     if (!aiInputValue.trim() || !isSimulating) return;
     
     setShowAiOutput(true);
-    setAiState(prev => ({ ...prev, isLoading: true, data: null }));
+    setAiState(prev => ({ ...prev, isLoading: true, isTurnstile: true, data: null }));
 
-    // Use theoretical UI values for the Baseline to prevent issues when Post-Mortem is cleared
-    const theoreticalPacketLoss = Number(packetLoss) || 0;
-    const actualPacketLossRate = theoreticalPacketLoss.toFixed(2) + '%';
+    // Yield to allow React to paint the static UI before Turnstile blocks the GPU thread
+    requestAnimationFrame(() => {
+      setTimeout(async () => {
+        // Use theoretical UI values for the Baseline to prevent issues when Post-Mortem is cleared
+        const theoreticalPacketLoss = Number(packetLoss) || 0;
+        const actualPacketLossRate = theoreticalPacketLoss.toFixed(2) + '%';
 
-    let statusCodeBreakdown = '';
-    if (fault === '502') {
-      statusCodeBreakdown = `502: 100%`;
-    } else if (fault === '504') {
-      statusCodeBreakdown = `504: 100%`;
-    } else if (fault === '429') {
-      statusCodeBreakdown = `429: 100%`;
-    } else if (theoreticalPacketLoss > 0) {
-      statusCodeBreakdown = `200: ${(100 - theoreticalPacketLoss).toFixed(0)}%, 444: ${theoreticalPacketLoss.toFixed(0)}%`;
-    } else {
-      statusCodeBreakdown = `200: 100%`;
-    }
-
-    const baseline = {
-      targetHost,
-      fault,
-      latency,
-      jitter,
-      distribution,
-      packetLoss,
-      actualPacketLossRate,
-      statusCodeBreakdown,
-      resolvedIp: telemetryData?.resolvedIp && telemetryData.resolvedIp !== 'Unknown IP' ? telemetryData.resolvedIp : targetHost,
-      telemetry: telemetryData,
-      w1_colo: telemetryData?.w1_colo || 'UNKNOWN',
-      w2_colo: telemetryData?.w2_colo || telemetryData?.colo || 'UNKNOWN',
-      t1_rtt: telemetryData?.t1 ? Math.round(telemetryData.t1 * 2) : 0,
-      t2: fault === 'latency' ? latency : 0,
-      t3_rtt: telemetryData?.t3 ? Math.round(telemetryData.t3 * 2) : 0,
-      w1: telemetryData?.w1,
-      w2: telemetryData?.w2,
-      w3: telemetryData?.w3
-    };
-
-    try {
-      let currentToken: string | null = null;
-      if (process.env.NODE_ENV !== 'development') {
-        try {
-          currentToken = await requestTurnstileToken();
-        } catch {
-          alert('Security verification failed. Please try again.');
-          setAiState({ isLoading: false, data: null, baseline });
-          return;
+        let statusCodeBreakdown = '';
+        if (fault === '502') {
+          statusCodeBreakdown = `502: 100%`;
+        } else if (fault === '504') {
+          statusCodeBreakdown = `504: 100%`;
+        } else if (fault === '429') {
+          statusCodeBreakdown = `429: 100%`;
+        } else if (theoreticalPacketLoss > 0) {
+          statusCodeBreakdown = `200: ${(100 - theoreticalPacketLoss).toFixed(0)}%, 444: ${theoreticalPacketLoss.toFixed(0)}%`;
+        } else {
+          statusCodeBreakdown = `200: 100%`;
         }
-      }
+
+        const baseline = {
+          targetHost,
+          fault,
+          latency,
+          jitter,
+          distribution,
+          packetLoss,
+          actualPacketLossRate,
+          statusCodeBreakdown,
+          resolvedIp: telemetryData?.resolvedIp && telemetryData.resolvedIp !== 'Unknown IP' ? telemetryData.resolvedIp : targetHost,
+          telemetry: telemetryData,
+          w1_colo: telemetryData?.w1_colo || 'UNKNOWN',
+          w2_colo: telemetryData?.w2_colo || telemetryData?.colo || 'UNKNOWN',
+          t1_rtt: telemetryData?.t1 ? Math.round(telemetryData.t1 * 2) : 0,
+          t2: fault === 'latency' ? latency : 0,
+          t3_rtt: telemetryData?.t3 ? Math.round(telemetryData.t3 * 2) : 0,
+          w1: telemetryData?.w1,
+          w2: telemetryData?.w2,
+          w3: telemetryData?.w3
+        };
+
+        try {
+          let currentToken: string | null = null;
+          if (process.env.NODE_ENV !== 'development') {
+            try {
+              currentToken = await requestTurnstileToken();
+            } catch {
+              alert('Security verification failed. Please try again.');
+              setAiState({ isLoading: false, isTurnstile: false, data: null, baseline });
+              return;
+            }
+          }
+          
+          setAiState(prev => ({ ...prev, isTurnstile: false }));
 
       const res = await fetch('/api/aiops', {
         method: 'POST',
@@ -1349,9 +1369,11 @@ export default function Dashboard() {
 
       setAiState(prev => ({ ...prev, isLoading: false, data }));
     } catch (e: any) {
-      console.error('AIOps Error:', e);
-      setAiState(prev => ({ ...prev, isLoading: false, data: { insight: `AI Service Error: ${e.message}` } }));
+      setAiState({ isLoading: false, isTurnstile: false, data: null });
+      setGlobalError({ title: 'AIOps Error', message: e.message || 'Simulation failed' });
     }
+      }, 50);
+    });
   };
 
   // Load state from localStorage on initial render
@@ -1489,26 +1511,34 @@ export default function Dashboard() {
     if (!isFormValid || isGenerating) return;
 
     setIsGenerating(true);
+    setIsGeneratingTurnstile(true);
+
     let ttlHours = 0.25;
     if (ttl === '1h') ttlHours = 1;
     if (ttl === '12h') ttlHours = 12;
     if (ttl === '24h') ttlHours = 24;
     if (ttl === 'custom') ttlHours = customTtl;
 
-    try {
-      let currentToken: string | null = null;
-      if (process.env.NODE_ENV !== 'development') {
+    // Yield to let React paint the static 'turnstile' UI before blocking the main/GPU thread
+    requestAnimationFrame(() => {
+      setTimeout(async () => {
         try {
-          currentToken = await requestTurnstileToken();
-        } catch {
-          setGlobalError({
-            title: 'SECURITY CHECK FAILED',
-            message: 'The anti-bot verification failed or timed out. Please check your network connection, disable ad-blockers, and try again.'
-          });
-          setIsGenerating(false);
-          return;
-        }
-      }
+          let currentToken: string | null = null;
+          if (process.env.NODE_ENV !== 'development') {
+            try {
+              currentToken = await requestTurnstileToken();
+            } catch {
+              setGlobalError({
+                title: 'SECURITY CHECK FAILED',
+                message: 'The anti-bot verification failed or timed out. Please check your network connection, disable ad-blockers, and try again.'
+              });
+              setIsGenerating(false);
+              setIsGeneratingTurnstile(false);
+              return;
+            }
+          }
+          
+          setIsGeneratingTurnstile(false);
 
       const res = await fetch('/api/tokens/create', {
         method: 'POST',
@@ -1556,6 +1586,8 @@ export default function Dashboard() {
     } finally {
       setIsGenerating(false);
     }
+      }, 50);
+    });
   };
 
   const handleCopy = (text: string, isModal: boolean = false) => {
@@ -2024,7 +2056,12 @@ export default function Dashboard() {
                 disabled={!isFormValid || isGenerating}
                 onClick={handleGenerate}
               >
-                {isGenerating ? (
+                {isGeneratingTurnstile ? (
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '8px', textTransform: 'uppercase' }}>
+                    <Lock size={16} />
+                    Verifying Security...
+                  </span>
+                ) : isGenerating ? (
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '8px', textTransform: 'uppercase' }}>
                     <div className={styles.spinner} />
                     Compiling...
@@ -2340,10 +2377,17 @@ export default function Dashboard() {
                       </div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                         {aiState.isLoading ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div className={styles.spinner} style={{ width: '12px', height: '12px', borderTopColor: 'var(--color-cyan)' }} />
-                            <LoadingCycleText />
-                          </div>
+                          aiState.isTurnstile ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-cyan)' }}>
+                              <Lock size={14} />
+                              <span style={{ fontWeight: 600 }}>Verifying Security Clearance...</span>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div className={styles.spinner} style={{ width: '12px', height: '12px', borderTopColor: 'var(--color-cyan)' }} />
+                              <LoadingCycleText />
+                            </div>
+                          )
                         ) : aiState.data ? (
                           <div style={{ lineHeight: 1.5 }}>
                             {aiState.data.error ? (
