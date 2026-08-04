@@ -127,33 +127,36 @@ Analysis: 'trans-Pacific' is a keyword. Immediately check if w1_colo, w2_colo, a
       ]
     });
 
-    let aiResponse = '';
-    if (typeof response === 'string') {
-      aiResponse = response;
-    } else if (response && typeof response === 'object') {
-      if (typeof response.response === 'string') {
-        aiResponse = response.response;
-      } else {
-        aiResponse = JSON.stringify(response);
-      }
-    } else {
-      aiResponse = String(response || '');
-    }
-    
-    // Attempt to extract JSON if the model hallucinated wrapper text
-    let jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     let parsedJson = null;
 
-    if (jsonMatch) {
-      try {
-        parsedJson = JSON.parse(jsonMatch[0]);
-      } catch (e) {
-        console.error('Failed to parse AI output:', jsonMatch[0]);
+    if (response && typeof response === 'object' && response.response && typeof response.response === 'object') {
+      parsedJson = response.response;
+    } else {
+      let aiResponse = '';
+      if (typeof response === 'string') {
+        aiResponse = response;
+      } else if (response && typeof response === 'object') {
+        if (typeof response.response === 'string') {
+          aiResponse = response.response;
+        } else {
+          aiResponse = JSON.stringify(response);
+        }
+      } else {
+        aiResponse = String(response || '');
+      }
+      
+      let jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsedJson = JSON.parse(jsonMatch[0]);
+        } catch (e) {
+          console.error('Failed to parse AI output:', jsonMatch[0]);
+        }
       }
     }
 
     if (!parsedJson) {
-      console.error('Failed to parse AI response, fallback to OUT_OF_SCOPE', aiResponse);
+      console.error('Failed to parse AI response, fallback to OUT_OF_SCOPE');
       parsedJson = {
         error_code: "OUT_OF_SCOPE",
         error_message: "The Engine rejected a malformed or conversational response.",
