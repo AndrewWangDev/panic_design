@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Search, Lock, MonitorSmartphone, Sparkles, Send, RotateCcw, X } from 'lucide-react';
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
@@ -1060,7 +1060,7 @@ export default function Dashboard() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationKey, setSimulationKey] = useState(0);
 
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileTokenRef = useRef<string | null>(null);
   const turnstileRef = useRef<any>(null);
   const [showTurnstile, setShowTurnstile] = useState(false);
   const turnstileResolveRef = useRef<((token: string) => void) | null>(null);
@@ -1072,31 +1072,37 @@ export default function Dashboard() {
   }, []);
 
   // Called by Turnstile onSuccess — resolves pending Promise if any
-  const handleTurnstileSuccess = (token: string) => {
-    setTurnstileToken(token);
+  const handleTurnstileSuccess = useCallback((token: string) => {
     if (turnstileResolveRef.current) {
       turnstileResolveRef.current(token);
       turnstileResolveRef.current = null;
+      // Reset after a delay to prepare for the next request without breaking the current one
+      setTimeout(() => turnstileRef.current?.reset(), 500);
+    } else {
+      turnstileTokenRef.current = token;
     }
-  };
+  }, []);
 
   // On-demand: triggers .execute() and returns a Promise<string> for the token
-  const requestTurnstileToken = (): Promise<string> => {
-    // If we already have a valid token, return it immediately
-    if (turnstileToken) {
-      const t = turnstileToken;
-      setTurnstileToken(null);
+  const requestTurnstileToken = useCallback((): Promise<string> => {
+    // If we already have a valid token waiting (spontaneous solve), consume it
+    if (turnstileTokenRef.current) {
+      const t = turnstileTokenRef.current;
+      turnstileTokenRef.current = null;
+      setTimeout(() => turnstileRef.current?.reset(), 500);
       return Promise.resolve(t);
     }
+    
     // Otherwise trigger execution and wait for onSuccess callback
     return new Promise<string>((resolve, reject) => {
       turnstileResolveRef.current = resolve;
       if (turnstileRef.current) {
-        turnstileRef.current.reset();
+        // DO NOT call reset() here! It destroys the iframe and causes execute() to hang!
         turnstileRef.current.execute();
       } else {
         reject(new Error('Turnstile not mounted'));
       }
+      
       // Timeout safety: reject after 10s
       setTimeout(() => {
         if (turnstileResolveRef.current === resolve) {
@@ -1105,16 +1111,8 @@ export default function Dashboard() {
         }
       }, 10000);
     });
-  };
+  }, []);
 
-  const consumeTurnstileToken = () => {
-    const token = turnstileToken;
-    setTurnstileToken(null);
-    if (turnstileRef.current) {
-      turnstileRef.current.reset();
-    }
-    return token;
-  };
   const activeTokensRef = useRef<HTMLDivElement>(null);
 
   const [quotaError, setQuotaError] = useState<string | null>(null);
@@ -1617,10 +1615,10 @@ export default function Dashboard() {
             siteKey="0x4AAAAAADgKGlhfvExJwp8F"
             onSuccess={handleTurnstileSuccess}
             onExpire={() => {
-              setTurnstileToken(null);
+              turnstileTokenRef.current = null;
             }}
             onError={() => {
-              setTurnstileToken(null);
+              turnstileTokenRef.current = null;
               if (turnstileResolveRef.current) {
                 turnstileResolveRef.current = null;
               }
