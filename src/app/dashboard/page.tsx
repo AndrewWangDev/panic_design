@@ -870,15 +870,13 @@ const AiAutofillModal = ({
   onClose, 
   currentFormState, 
   onApply,
-  turnstileToken,
-  consumeTurnstileToken
+  requestTurnstileToken
 }: { 
   isOpen: boolean, 
   onClose: () => void, 
   currentFormState: any, 
   onApply: (data: any) => void,
-  turnstileToken: string | null,
-  consumeTurnstileToken: () => string | null
+  requestTurnstileToken: () => Promise<string>
 }) => {
   const [instruction, setInstruction] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'warning' | 'error'>('idle');
@@ -917,18 +915,21 @@ const AiAutofillModal = ({
   const handleSubmit = async () => {
     if (!instruction.trim()) return;
 
-    if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
-      setStatus('error');
-      setAiData({ error_message: "Security verification pending. Please wait for Cloudflare Turnstile to load." });
-      return;
-    }
-
     setStatus('loading');
     setAiData(null);
 
-    const currentToken = consumeTurnstileToken();
-
     try {
+      let currentToken: string | null = null;
+      if (process.env.NODE_ENV !== 'development') {
+        try {
+          currentToken = await requestTurnstileToken();
+        } catch {
+          setStatus('error');
+          setAiData({ error_message: "Security verification failed. Please check your network and try again." });
+          return;
+        }
+      }
+
       const res = await fetch('/api/aiops/autofill', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1062,12 +1063,49 @@ export default function Dashboard() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<any>(null);
   const [showTurnstile, setShowTurnstile] = useState(false);
+  const turnstileResolveRef = useRef<((token: string) => void) | null>(null);
 
-  // Defer Turnstile mount to prevent WebGL/WebGPU probe from blocking first paint
+  // Defer Turnstile mount — only loads iframe skeleton, NO PoW computation
   useEffect(() => {
-    const timer = setTimeout(() => setShowTurnstile(true), 1500);
+    const timer = setTimeout(() => setShowTurnstile(true), 800);
     return () => clearTimeout(timer);
   }, []);
+
+  // Called by Turnstile onSuccess — resolves pending Promise if any
+  const handleTurnstileSuccess = (token: string) => {
+    setTurnstileToken(token);
+    if (turnstileResolveRef.current) {
+      turnstileResolveRef.current(token);
+      turnstileResolveRef.current = null;
+    }
+  };
+
+  // On-demand: triggers .execute() and returns a Promise<string> for the token
+  const requestTurnstileToken = (): Promise<string> => {
+    // If we already have a valid token, return it immediately
+    if (turnstileToken) {
+      const t = turnstileToken;
+      setTurnstileToken(null);
+      return Promise.resolve(t);
+    }
+    // Otherwise trigger execution and wait for onSuccess callback
+    return new Promise<string>((resolve, reject) => {
+      turnstileResolveRef.current = resolve;
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+        turnstileRef.current.execute();
+      } else {
+        reject(new Error('Turnstile not mounted'));
+      }
+      // Timeout safety: reject after 10s
+      setTimeout(() => {
+        if (turnstileResolveRef.current === resolve) {
+          turnstileResolveRef.current = null;
+          reject(new Error('Turnstile verification timeout'));
+        }
+      }, 10000);
+    });
+  };
 
   const consumeTurnstileToken = () => {
     const token = turnstileToken;
@@ -1270,14 +1308,17 @@ export default function Dashboard() {
       w3: telemetryData?.w3
     };
 
-    if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
-      alert('Security verification pending. Please wait.');
-      setAiState({ isLoading: false, data: null, baseline });
-      return;
-    }
-
     try {
-      const currentToken = consumeTurnstileToken();
+      let currentToken: string | null = null;
+      if (process.env.NODE_ENV !== 'development') {
+        try {
+          currentToken = await requestTurnstileToken();
+        } catch {
+          alert('Security verification failed. Please try again.');
+          setAiState({ isLoading: false, data: null, baseline });
+          return;
+        }
+      }
 
       const res = await fetch('/api/aiops', {
         method: 'POST',
@@ -1449,14 +1490,6 @@ export default function Dashboard() {
     }
     if (!isFormValid || isGenerating) return;
 
-    if (process.env.NODE_ENV !== 'development' && !turnstileToken) {
-      setGlobalError({
-        title: 'SECURITY CHECK PENDING',
-        message: 'The anti-bot verification has not completed or failed to load. Please check your network connection, disable ad-blockers, and try again.'
-      });
-      return;
-    }
-
     setIsGenerating(true);
     let ttlHours = 0.25;
     if (ttl === '1h') ttlHours = 1;
@@ -1465,7 +1498,19 @@ export default function Dashboard() {
     if (ttl === 'custom') ttlHours = customTtl;
 
     try {
-      const currentToken = consumeTurnstileToken();
+      let currentToken: string | null = null;
+      if (process.env.NODE_ENV !== 'development') {
+        try {
+          currentToken = await requestTurnstileToken();
+        } catch {
+          setGlobalError({
+            title: 'SECURITY CHECK FAILED',
+            message: 'The anti-bot verification failed or timed out. Please check your network connection, disable ad-blockers, and try again.'
+          });
+          setIsGenerating(false);
+          return;
+        }
+      }
 
       const res = await fetch('/api/tokens/create', {
         method: 'POST',
@@ -1570,16 +1615,18 @@ export default function Dashboard() {
           <Turnstile
             ref={turnstileRef}
             siteKey="0x4AAAAAADgKGlhfvExJwp8F"
-            onSuccess={(token: string) => setTurnstileToken(token)}
+            onSuccess={handleTurnstileSuccess}
             onExpire={() => {
               setTurnstileToken(null);
-              turnstileRef.current?.reset();
             }}
             onError={() => {
               setTurnstileToken(null);
+              if (turnstileResolveRef.current) {
+                turnstileResolveRef.current = null;
+              }
               setTimeout(() => turnstileRef.current?.reset(), 2000);
             }}
-            options={{ theme: 'auto', size: 'invisible' }}
+            options={{ theme: 'auto', size: 'invisible', execution: 'execute' }}
           />
         )}
       </div>
@@ -1733,8 +1780,7 @@ export default function Dashboard() {
               onClose={() => setIsAiAutofillOpen(false)} 
               currentFormState={{ targetHostname: targetHost, scope, tokenTtl: customTtl, faultType: fault, distribution, baseLatency: latency, jitter, packetLoss }} 
               onApply={handleAiApply}
-              turnstileToken={turnstileToken}
-              consumeTurnstileToken={consumeTurnstileToken}
+              requestTurnstileToken={requestTurnstileToken}
             />
 
             <div className={styles.inputGroup}>
