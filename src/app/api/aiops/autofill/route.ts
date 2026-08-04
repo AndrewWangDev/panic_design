@@ -82,7 +82,18 @@ The JSON MUST follow this exact schema:
       ]
     });
 
-    let aiResponse = response.response || '';
+    let aiResponse = '';
+    if (typeof response === 'string') {
+      aiResponse = response;
+    } else if (response && typeof response === 'object') {
+      if (typeof response.response === 'string') {
+        aiResponse = response.response;
+      } else {
+        aiResponse = JSON.stringify(response);
+      }
+    } else {
+      aiResponse = String(response || '');
+    }
     
     // Extract JSON if model hallucinated wrappers
     let jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
