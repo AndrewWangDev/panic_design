@@ -5,7 +5,12 @@ import { Copy, Check, ChevronLeft, ChevronRight, Activity, Play, Pause, Zap, Sea
 import styles from './dashboard.module.css';
 import CustomSelect from './CustomSelect';
 import WorldMap from '@/components/WorldMap';
-import { Turnstile } from '@marsidev/react-turnstile';
+import dynamic from 'next/dynamic';
+
+const Turnstile = dynamic(
+  () => import('@marsidev/react-turnstile').then(mod => mod.Turnstile),
+  { ssr: false }
+);
 
 const MOCK_LOGS = [
   "[SYSTEM] Initiating global telemetry stream...",
@@ -1056,6 +1061,13 @@ export default function Dashboard() {
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<any>(null);
+  const [showTurnstile, setShowTurnstile] = useState(false);
+
+  // Defer Turnstile mount to prevent WebGL/WebGPU probe from blocking first paint
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTurnstile(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const consumeTurnstileToken = () => {
     const token = turnstileToken;
@@ -1554,20 +1566,22 @@ export default function Dashboard() {
   return (
     <div className={styles.dashboard}>
       <div>
-        <Turnstile
-          ref={turnstileRef}
-          siteKey="0x4AAAAAADgKGlhfvExJwp8F"
-          onSuccess={(token) => setTurnstileToken(token)}
-          onExpire={() => {
-            setTurnstileToken(null);
-            turnstileRef.current?.reset();
-          }}
-          onError={() => {
-            setTurnstileToken(null);
-            setTimeout(() => turnstileRef.current?.reset(), 2000);
-          }}
-          options={{ theme: 'auto', size: 'invisible' }}
-        />
+        {showTurnstile && (
+          <Turnstile
+            ref={turnstileRef}
+            siteKey="0x4AAAAAADgKGlhfvExJwp8F"
+            onSuccess={(token: string) => setTurnstileToken(token)}
+            onExpire={() => {
+              setTurnstileToken(null);
+              turnstileRef.current?.reset();
+            }}
+            onError={() => {
+              setTurnstileToken(null);
+              setTimeout(() => turnstileRef.current?.reset(), 2000);
+            }}
+            options={{ theme: 'auto', size: 'invisible' }}
+          />
+        )}
       </div>
 
       {quotaError && (
