@@ -12,7 +12,7 @@ import UserDropdown from './UserDropdown';
 const MOCK_USER = {
   name: "Lin Yu",
   email: "linyu@example.com",
-  avatarUrl: "https://github.com/shadcn.png",
+  avatarUrl: "https://cdn.andrewwangdev.com/img/124599.webp",
   tokens: 14,
   usage: 142
 };
