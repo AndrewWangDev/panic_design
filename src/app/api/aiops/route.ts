@@ -127,7 +127,18 @@ Analysis: 'trans-Pacific' is a keyword. Immediately check if w1_colo, w2_colo, a
       ]
     });
 
-    let aiResponse = response.response || '';
+    let aiResponse = '';
+    if (typeof response === 'string') {
+      aiResponse = response;
+    } else if (response && typeof response === 'object') {
+      if (typeof response.response === 'string') {
+        aiResponse = response.response;
+      } else {
+        aiResponse = JSON.stringify(response);
+      }
+    } else {
+      aiResponse = String(response || '');
+    }
     
     // Attempt to extract JSON if the model hallucinated wrapper text
     let jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
