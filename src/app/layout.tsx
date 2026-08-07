@@ -27,6 +27,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://cdn.andrewwangdev.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href="https://cdn.andrewwangdev.com/fonts/css2" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
