@@ -47,18 +47,15 @@
   font-size: 0.9rem;
   font-weight: 500;
   transition: all 0.2s;
-  opacity: 0.6;
 }
 
 .link:hover {
   color: var(--text-primary);
-  opacity: 1;
 }
 
 .link.active {
   color: var(--text-primary);
   font-weight: 700;
-  opacity: 1;
 }
 
 .mobileMenuBtn {
