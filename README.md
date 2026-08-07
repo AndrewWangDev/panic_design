@@ -137,9 +137,8 @@ alt-svc: h3=":443"; ma=86400
 
 ---
 
-## 🏆 Hackathon Notice
+## 🏆 Notice
 
-This project is an official prototype submission for the **[DeveloperWeek New York 2026 Hackathon](https://dwny-2026-hackathon.devpost.com/)**.
 
 Our goal is to explore the ultimate possibilities of Serverless computing and AIOps in next-generation network Chaos Engineering.
 **Please DO NOT use this tool for malicious attacks or unauthorized DDoS simulations.** 
@@ -149,4 +148,4 @@ By using `panic.design`, you acknowledge and agree to our terms.
 - **Privacy Policy**: [https://panic.andrewwangdev.com/privacy](https://panic.andrewwangdev.com/privacy)
 - **Terms of Service**: [https://panic.andrewwangdev.com/terms](https://panic.andrewwangdev.com/terms)
 
-Built with 🔥 by Andrew Wang & Lin Yu.
+Built with 🔥 by Andrew Wang Dev
