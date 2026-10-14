@@ -62,9 +62,9 @@ export default function Navbar() {
             <div className={styles.avatarSkeleton} />
           ) : isLoggedIn && session?.user ? (
             <UserDropdown user={{
-              name: (session.user as any).username || session.user.name || "User",
+              name: ((session.user as Record<string, unknown>).username as string) || session.user.name || "User",
               email: session.user.email || "",
-              avatarUrl: (session.user as any).avatarUrl || session.user.image || "",
+              avatarUrl: ((session.user as Record<string, unknown>).avatarUrl as string) || session.user.image || "",
               tokens: 0,
               usage: 0
             }} />

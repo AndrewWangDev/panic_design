@@ -4,10 +4,10 @@ import { getPrisma } from "@/lib/prisma"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 
 function getAuthInstance() {
-  let env: any = process.env;
+  let env: Record<string, string | undefined> = process.env;
   try {
-    env = getCloudflareContext().env || process.env;
-  } catch (e) {
+    env = (getCloudflareContext().env as unknown as Record<string, string | undefined>) || process.env;
+  } catch {
     // Fallback to process.env if not in Cloudflare context
   }
 
@@ -66,7 +66,7 @@ function getAuthInstance() {
       }
       return true;
     },
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, account, profile }) {
       if (account && profile) {
         const prisma = getPrisma();
         const dbUser = await prisma.user.findUnique({ 
@@ -98,11 +98,14 @@ function getAuthInstance() {
   })
 }
 
-export const handlers = {
-  GET: (req: any) => getAuthInstance().handlers.GET(req),
-  POST: (req: any) => getAuthInstance().handlers.POST(req),
+type AuthHandlers = ReturnType<typeof getAuthInstance>["handlers"];
+export const handlers: AuthHandlers = {
+  GET: (req) => getAuthInstance().handlers.GET(req),
+  POST: (req) => getAuthInstance().handlers.POST(req),
 };
-export const signIn = (...args: any[]) => (getAuthInstance().signIn as any)(...args);
-export const signOut = (...args: any[]) => (getAuthInstance().signOut as any)(...args);
-export const auth = (...args: any[]) => (getAuthInstance().auth as any)(...args);
+export const signIn: ReturnType<typeof NextAuth>["signIn"] = (...args: any[]) => (getAuthInstance().signIn as any)(...args);
+export const signOut: ReturnType<typeof NextAuth>["signOut"] = (...args: any[]) => (getAuthInstance().signOut as any)(...args);
+export const auth: ReturnType<typeof NextAuth>["auth"] = (...args: any[]) => (getAuthInstance().auth as any)(...args);
+
+
 
