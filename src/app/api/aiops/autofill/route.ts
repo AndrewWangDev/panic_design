@@ -100,7 +100,7 @@ The JSON MUST follow this exact schema:
         aiResponse = String(response || '');
       }
       
-      let jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           parsedJson = JSON.parse(jsonMatch[0]);

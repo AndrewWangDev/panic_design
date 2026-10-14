@@ -24,88 +24,7 @@ const MOCK_LOGS = [
   "[SYSTEM] Awaiting control plane commands...",
   "[SYSTEM] Syncing with Cloudflare D1 distributed database... OK."
 ];
-const EDGE_TOPOLOGY: Record<string, { lat: number, lng: number }> = {
-  'SFO': { lat: 37.7697, lng: -122.3933 },
-  'SJC': { lat: 37.3382, lng: -121.8863 },
-  'LAX': { lat: 34.0522, lng: -118.2437 },
-  'FRA': { lat: 50.1109, lng: 8.6821 },
-  'HKG': { lat: 22.3964, lng: 114.1095 },
-  'NRT': { lat: 35.6895, lng: 139.6917 },
-  'LHR': { lat: 51.5074, lng: -0.1278 },
-  'CDG': { lat: 48.8566, lng: 2.3522 },
-  'SIN': { lat: 1.3521, lng: 103.8198 },
-  'SYD': { lat: -33.8688, lng: 151.2093 },
-  'IAD': { lat: 38.9072, lng: -77.0369 },
-  'EWR': { lat: 40.6895, lng: -74.1745 },
-  'AMS': { lat: 52.3676, lng: 4.9041 },
-  'BOM': { lat: 19.0760, lng: 72.8777 },
-  'GRU': { lat: -23.5505, lng: -46.6333 }
-};
-
-function haversineDist(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
-function generateMockSignature(payloadObj: any): string {
-  const str = JSON.stringify(payloadObj);
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  const hexHash = Math.abs(hash).toString(16).padStart(8, '0');
-  const deterministicString = `panic_v2_${hexHash}_edje_signature_payload`;
-  return btoa(deterministicString).replace(/=/g, '').padEnd(43, 'A').substring(0, 43);
-}
-
-function calculateBearing(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const l1 = lat1 * Math.PI / 180;
-  const l2 = lat2 * Math.PI / 180;
-  const y = Math.sin(dLon) * Math.cos(l2);
-  const x = Math.cos(l1) * Math.sin(l2) - Math.sin(l1) * Math.cos(l2) * Math.cos(dLon);
-  const brng = Math.atan2(y, x);
-  return (brng * 180 / Math.PI + 360) % 360;
-}
-
-function findBestColo(w2Lat: number, w2Lng: number, w1Lat?: number, w1Lng?: number, w3Lat?: number, w3Lng?: number) {
-  let candidates: {name: string, distance: number, lat: number, lng: number}[] = [];
-  
-  for (const [colo, coords] of Object.entries(EDGE_TOPOLOGY)) {
-    const d = haversineDist(w2Lat, w2Lng, coords.lat, coords.lng);
-    candidates.push({ name: colo, distance: d, lat: coords.lat, lng: coords.lng });
-  }
-  
-  candidates.sort((a, b) => a.distance - b.distance);
-  const top1 = candidates[0];
-  const top2 = candidates[1];
-  
-  if (w1Lat !== undefined && w1Lng !== undefined && w3Lat !== undefined && w3Lng !== undefined && top2) {
-    const w1w3Dist = haversineDist(w1Lat, w1Lng, w3Lat, w3Lng);
-    if (w1w3Dist > 200 && Math.abs(top1.distance - top2.distance) < 50) {
-      const bearingTarget = calculateBearing(w1Lat, w1Lng, w3Lat, w3Lng);
-      const bearingTop1 = calculateBearing(w1Lat, w1Lng, top1.lat, top1.lng);
-      const bearingTop2 = calculateBearing(w1Lat, w1Lng, top2.lat, top2.lng);
-      
-      const diff1 = Math.min(Math.abs(bearingTarget - bearingTop1), 360 - Math.abs(bearingTarget - bearingTop1));
-      const diff2 = Math.min(Math.abs(bearingTarget - bearingTop2), 360 - Math.abs(bearingTarget - bearingTop2));
-      
-      if (diff2 < diff1) {
-        return { name: top2.name, distance: top2.distance, isArbitrated: true };
-      }
-    }
-  }
-  
-  return { name: top1.name, distance: top1.distance, isArbitrated: false };
-}
+import { EDGE_TOPOLOGY, haversineDist, calculateBearing, findBestColo, generateMockSignature } from '@/lib/lgpa';
 
 const syntaxHighlight = (json: string) => {
   const sanitized = json
@@ -149,60 +68,15 @@ const renderFaultBadges = (config: any, isRevoked?: boolean) => {
     );
   }
   
-  let faultName = config.fault === '429' ? '429 Rate Limit'
+  const faultName = config.fault === '429' ? '429 Rate Limit'
                 : config.fault === '504' ? '504 Gateway Timeout'
                 : `${config.fault} Bad Gateway`;
                 
   return <span className={getBadgeClass(styles.badgeRed)}>{faultName}</span>;
 };
 
-const RollingLogs = () => {
-  // Use objects with unique IDs for React keys to ensure smooth CSS animations on enter
-  const [logs, setLogs] = useState<{id: string, text: string}[]>(
-    MOCK_LOGS.slice(0, 5).map((text, i) => ({ id: `init-${i}`, text }))
-  );
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let i = 5;
-    const interval = setInterval(() => {
-      setLogs(prev => {
-        // push 1 or 2 lines
-        const linesToAddCount = Math.random() > 0.5 ? 2 : 1;
-        const newLines = [];
-        for (let j = 0; j < linesToAddCount; j++) {
-          newLines.push({
-            id: `log-${Date.now()}-${j}`,
-            text: MOCK_LOGS[(i + j) % MOCK_LOGS.length]
-          });
-        }
-        i += linesToAddCount;
-        
-        const newLogs = [...prev, ...newLines];
-        if (newLogs.length > 12) return newLogs.slice(newLogs.length - 12);
-        return newLogs;
-      });
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <>
-      <div className={styles.rollingLogHeader}>Background Telemetry - View Only</div>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {logs.map((log) => {
-          const match = log.text.match(/^(\[.*?\])(.*)$/);
-          if (!match) return <div key={log.id} className={styles.logLine}>{log.text}</div>;
-          return (
-            <div key={log.id} className={styles.logLine}>
-              <span className={styles.logPrefix}>{match[1]}</span>{match[2]}
-            </div>
-          );
-        })}
-      </div>
-    </>
-  );
-};
+import { RollingLogs } from '@/components/dashboard/RollingLogs';
+import { PostMortemPanel } from '@/components/dashboard/PostMortemPanel';
 
 const ExpandablePayload = ({ payload }: { payload: string }) => {
   const [expanded, setExpanded] = useState(false);
@@ -640,7 +514,7 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
       let u = 0, v = 0;
       while(u === 0) u = Math.random();
       while(v === 0) v = Math.random();
-      let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+      const num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
       val = baseLat + num * (jit / 2);
     } else if (dist === 'Spikes') {
       val = baseLat + (Math.random() > 0.85 ? Math.random() * jit : 0);
@@ -762,109 +636,6 @@ const RealTimeSimulationChart = ({ latency, jitter, distribution, packetLoss }: 
             return null;
           })}
         </svg>
-      </div>
-    </div>
-  );
-};
-const PostMortemPanel = ({ stats, onClear }: { stats: any, onClear: () => void }) => {
-
-  const getLatencyColor = (val: number, threshold1: number = 200, threshold2: number = 500) => {
-    if (val < threshold1) return '#10b981'; // Green
-    if (val < threshold2) return '#f59e0b'; // Amber
-    return '#ef4444'; // Red
-  };
-
-  const avgT1 = stats.t1Count > 0 ? Math.round(stats.t1Sum / stats.t1Count) : 0;
-  const avgT3 = stats.t3Count > 0 ? Math.round(stats.t3Sum / stats.t3Count) : 0;
-  const avgTotal = stats.totalRttCount > 0 ? Math.round(stats.totalRttSum / stats.totalRttCount) : 0;
-  
-  const dropRate = stats.totalRequests > 0 ? ((stats.packetDropCount / stats.totalRequests) * 100).toFixed(2) : '0.00';
-  const dropColor = stats.packetDropCount > 0 ? '#ef4444' : '#10b981';
-
-  return (
-    <div style={{ 
-      marginTop: '8px', 
-      background: 'var(--dash-card-bg)', 
-      borderRadius: '8px', 
-      padding: '20px 24px', 
-      border: '1px solid var(--dash-card-border)',
-      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
-    }}>
-      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-cyan, #0ea5e9)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Activity size={16} /> INJECTION POST-MORTEM
-        </div>
-        <button 
-          onClick={onClear} 
-          style={{ background: 'transparent', border: '1px solid var(--dash-input-border)', color: 'var(--text-secondary)', fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textTransform: 'uppercase', fontWeight: 600 }}
-          onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--text-secondary)'; }}
-          onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--dash-input-border)'; }}
-        >
-          <RotateCcw size={12} /> CLEAR
-        </button>
-      </div>
-      
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid var(--dash-table-border)', paddingBottom: '6px' }}>General</div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Send Packets</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--color-cyan, #0ea5e9)', fontWeight: 500 }}>{stats.sentCount || 0} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Received Packets</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#10b981', fontWeight: 500 }}>{stats.receivedCount || 0} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
-        </div>
-      </div>
-
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid var(--dash-table-border)', paddingBottom: '6px' }}>L7 Application Faults</div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Gateway Fast-Fail</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.fastFailCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.fastFailCount} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fail-Open Triggered</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.failOpenCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 500 }}>{stats.failOpenCount} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Payload Mutilation</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: stats.mutilationCount > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{stats.mutilationCount} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>times</span></span>
-        </div>
-      </div>
-
-      <div>
-        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 600, letterSpacing: '0.5px', borderBottom: '1px solid var(--dash-table-border)', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          L3/L4 Traffic Shaping
-          <span style={{ fontSize: '0.6rem', color: '#475569', letterSpacing: '0' }}>*Excl. edge-terminated</span>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Avg Edge Network RTT</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: getLatencyColor(avgT1, 50, 100), fontWeight: 500 }}>{avgT1} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>ms</span></span>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Avg Upstream Backhaul</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: getLatencyColor(avgT3, 100, 300), fontWeight: 500 }}>{avgT3} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>ms</span></span>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', background: 'var(--dash-input-bg)', border: '1px solid var(--dash-input-border)', padding: '10px 12px', borderRadius: '6px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>Avg Total RTT</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', color: getLatencyColor(avgTotal, 200, 500), fontWeight: 600 }}>{avgTotal} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)', fontWeight: 400 }}>ms</span></span>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Packet Loss Rate</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: dropColor, fontWeight: 500 }}>
-            {dropRate}% 
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)', marginLeft: '6px' }}>
-              ({stats.packetDropCount} dropped)
-            </span>
-          </span>
-        </div>
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ export function getPrisma(): PrismaClient {
     return globalForPrisma.prisma;
   }
 
-  const { env } = getCloudflareContext() as { env?: { DB?: any } };
+  const { env } = getCloudflareContext() as unknown as { env?: { DB?: ConstructorParameters<typeof PrismaD1>[0] } };
   
   if (!env || !env.DB) {
     throw new Error('Cloudflare D1 environment not found.');

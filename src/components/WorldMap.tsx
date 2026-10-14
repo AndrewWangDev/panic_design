@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import * as d3Geo from 'd3-geo';
 import * as topojson from 'topojson-client';
 import { Sparkles } from 'lucide-react';
@@ -32,7 +32,6 @@ function getLatencyColor(ms: number) {
 
 export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, mutilationStrategy, isPending = false, animKey = 0, colo = 'UNKNOWN', w1Colo = 'UNKNOWN', aiMapData, isNxDomain = false }: WorldMapProps) {
   const [geographies, setGeographies] = useState<any[]>([]);
-  const [viewport, setViewport] = useState({ x: 0, y: 0, k: 1 });
   const containerRef = useRef<HTMLDivElement>(null);
   
   const width = 800;
@@ -55,15 +54,17 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   }, []);
 
   // Mock Anycast W3 to central US if it's placed near Equator [0,0]
-  const visualW3 = w3 && Math.abs(w3[0]) < 1 && Math.abs(w3[1]) < 1 
-    ? [-97.822, 37.751] as [number, number] 
-    : w3;
+  const visualW3 = useMemo(() => {
+    return w3 && Math.abs(w3[0]) < 1 && Math.abs(w3[1]) < 1 
+      ? [-97.822, 37.751] as [number, number] 
+      : w3;
+  }, [w3]);
 
   const projection = d3Geo.geoEquirectangular()
     .scale(140)
     .translate([width / 2 - 45, height / 2 + 70]);
 
-  useEffect(() => {
+  const viewport = useMemo(() => {
     if (!isPending && w1 && w2 && visualW3) {
       const p1 = projection(w1);
       const p2 = projection(w2);
@@ -102,12 +103,11 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
         const tx = width / 2 - cx * k;
         const ty = height / 2 - cy * k;
 
-        setViewport({ x: tx, y: ty, k });
+        return { x: tx, y: ty, k };
       }
-    } else {
-      setViewport({ x: 0, y: 0, k: 1 });
     }
-  }, [isPending, w1, w2, visualW3]);
+    return { x: 0, y: 0, k: 1 };
+  }, [isPending, w1, w2, visualW3, projection, width, height]);
 
   const pathGenerator = d3Geo.geoPath().projection(projection);
 
@@ -237,7 +237,7 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
 
     let lblDx = 0;
     let lblDy = -30;
-    let subDx = 0;
+    const subDx = 0;
     let subDy = 20;
 
     if (anchor === 'top-left') {

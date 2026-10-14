@@ -85,11 +85,11 @@ function getAuthInstance() {
     async session({ session, token }) {
       if (token?.internalId) {
         session.user.id = token.internalId as string;
-        // @ts-ignore
+        // @ts-expect-error Custom session properties
         session.user.jwtSalt = token.jwtSalt as number;
-        // @ts-ignore
+        // @ts-expect-error Custom session properties
         session.user.username = token.githubUsername as string;
-        // @ts-ignore
+        // @ts-expect-error Custom session properties
         session.user.avatarUrl = token.avatarUrl as string;
       }
       return session;
