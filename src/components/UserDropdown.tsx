@@ -16,6 +16,16 @@ interface UserDropdownProps {
   }
 }
 
+interface UserStatsData {
+  tokens: number;
+  dailyUsage: number;
+  dailyLimit: number;
+  hourlyUsage: number;
+  hourlyLimit: number;
+  nextHourReset: string;
+  nextDayReset: string;
+}
+
 export default function UserDropdown({ user }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [stats, setStats] = useState({ 
@@ -47,8 +57,8 @@ export default function UserDropdown({ user }: UserDropdownProps) {
   useEffect(() => {
     if (isOpen) {
       fetch('/api/user/stats')
-        .then(res => res.ok ? res.json() : null)
-        .then((data: any) => {
+        .then(res => res.ok ? (res.json() as Promise<UserStatsData>) : null)
+        .then((data: UserStatsData | null) => {
           if (data) setStats({ 
             tokens: data.tokens, 
             dailyUsage: data.dailyUsage, 

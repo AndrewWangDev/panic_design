@@ -173,19 +173,19 @@ export default function Docs() {
                 <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
                   <div style={{ lineHeight: 1.6 }}>
                     <span style={{ color: '#a78bfa' }}>payload</span> = {'{'}<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"targetHost"</span>: <span style={{ color: '#a3e635' }}>"api.yourbackend.com"</span>,<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"fault"</span>: <span style={{ color: '#a3e635' }}>"latency"</span>,<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"latency"</span>: <span style={{ color: '#f59e0b' }}>500</span>,<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"jitter"</span>: <span style={{ color: '#f59e0b' }}>50</span>,<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"packetLoss"</span>: <span style={{ color: '#f59e0b' }}>5</span>,<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"distribution"</span>: <span style={{ color: '#a3e635' }}>"Normal"</span>,<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>"mutilationStrategy"</span>: <span style={{ color: '#a3e635' }}>"Type Poisoning"</span><br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>&quot;targetHost&quot;</span>: <span style={{ color: '#a3e635' }}>&quot;api.yourbackend.com&quot;</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>&quot;fault&quot;</span>: <span style={{ color: '#a3e635' }}>&quot;latency&quot;</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>&quot;latency&quot;</span>: <span style={{ color: '#f59e0b' }}>500</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>&quot;jitter&quot;</span>: <span style={{ color: '#f59e0b' }}>50</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>&quot;packetLoss&quot;</span>: <span style={{ color: '#f59e0b' }}>5</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>&quot;distribution&quot;</span>: <span style={{ color: '#a3e635' }}>&quot;Normal&quot;</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#38bdf8' }}>&quot;mutilationStrategy&quot;</span>: <span style={{ color: '#a3e635' }}>&quot;Type Poisoning&quot;</span><br/>
                     {'}'}<br/>
                     <span style={{ color: '#a78bfa' }}>headers</span> = {'{"Authorization": "Bearer $PANIC_TOKEN"}'}<br/>
                     <br/>
                     <span style={{ color: '#f472b6' }}>import</span> requests<br/>
                     <span style={{ color: '#a78bfa' }}>response</span> = requests.post(<br/>
-                    &nbsp;&nbsp;<span style={{ color: '#a3e635' }}>"https://panic.andrewwangdev.com/api/tokens/create"</span>,<br/>
+                    &nbsp;&nbsp;<span style={{ color: '#a3e635' }}>&quot;https://panic.andrewwangdev.com/api/tokens/create&quot;</span>,<br/>
                     &nbsp;&nbsp;json=payload,<br/>
                     &nbsp;&nbsp;headers=headers<br/>
                     )<br/><br/>

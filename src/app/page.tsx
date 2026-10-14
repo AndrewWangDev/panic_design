@@ -6,9 +6,18 @@ import { useSession, signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 
-const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "", isFloat = false, initial = 0 }: any) => {
+interface AnimatedCounterProps {
+  end: number;
+  duration?: number;
+  prefix?: string;
+  suffix?: string;
+  isFloat?: boolean;
+  initial?: number;
+}
+
+const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "", isFloat = false, initial = 0 }: AnimatedCounterProps) => {
   const [count, setCount] = useState(initial);
   
   useEffect(() => {
@@ -32,21 +41,16 @@ const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "", isFlo
 };
 
 function HomeContent() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [terminalStep, setTerminalStep] = useState(0);
   const isLoggedIn = !!session;
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const turnstileRef = React.useRef<any>(null);
-  const [showLimitModal, setShowLimitModal] = useState(false);
-
-  useEffect(() => {
-    if (searchParams?.get('error') === 'EnrollmentFull') {
-      setShowLimitModal(true);
-    }
-  }, [searchParams]);
+  const turnstileRef = React.useRef<TurnstileInstance>(null);
+  const [dismissedLimitModal, setDismissedLimitModal] = useState(false);
+  const showLimitModal = (searchParams?.get('error') === 'EnrollmentFull') && !dismissedLimitModal;
 
   const handleLogin = () => {
     setIsLoggingIn(true);
@@ -123,7 +127,7 @@ function HomeContent() {
               The panic.design sandbox has reached its maximum compliance allocation. Current platform access is restricted to 100 total participants to enforce strict network infrastructure sandboxing.
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowLimitModal(false)} style={{ padding: '10px 16px', borderRadius: '8px', background: 'transparent', color: '#a1a1aa', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+              <button onClick={() => setDismissedLimitModal(true)} style={{ padding: '10px 16px', borderRadius: '8px', background: 'transparent', color: '#a1a1aa', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
                 DISMISS
               </button>
               <a href="mailto:support@andrewwangdev.com?subject=panic.design Beta Access Request" style={{ padding: '10px 16px', borderRadius: '8px', background: 'rgba(255,59,48,0.1)', color: '#ff3b30', border: '1px solid rgba(255,59,48,0.3)', textDecoration: 'none', fontWeight: 600, display: 'inline-block' }}>
@@ -316,11 +320,11 @@ function HomeContent() {
         <h2 className={styles.sectionTitle}>One line of code. Infinite chaos.</h2>
         <div className={styles.codeBlock}>
           <span className={styles.highlight}>const</span> apiClient = new ApiClient(&#123;<br/>
-          {'  '}baseUrl: process.env.NODE_ENV === <span className={styles.string}>'test'</span> <br/>
-          {'    '}? <span className={styles.string}>'https://proxy.panic.design'</span> <br/>
-          {'    '}: <span className={styles.string}>'https://api.production.com'</span>,<br/>
+          {'  '}baseUrl: process.env.NODE_ENV === <span className={styles.string}>&apos;test&apos;</span> <br/>
+          {'    '}? <span className={styles.string}>&apos;https://proxy.panic.design&apos;</span> <br/>
+          {'    '}: <span className={styles.string}>&apos;https://api.production.com&apos;</span>,<br/>
           {'  '}headers: &#123;<br/>
-          {'    '}<span className={styles.string}>'Authorization'</span>: <span className={styles.string}>`Bearer $&#123;process.env.PANIC_TOKEN&#125;`</span><br/>
+          {'    '}<span className={styles.string}>&apos;Authorization&apos;</span>: <span className={styles.string}>`Bearer $&#123;process.env.PANIC_TOKEN&#125;`</span><br/>
           {'  '}&#125;<br/>
           &#125;);
         </div>

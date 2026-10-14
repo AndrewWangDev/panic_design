@@ -5,6 +5,23 @@ import * as d3Geo from 'd3-geo';
 import * as topojson from 'topojson-client';
 import { Sparkles } from 'lucide-react';
 
+export interface AiMapData {
+  W1?: [number, number] | null;
+  W2?: [number, number] | null;
+  W3?: [number, number] | null;
+  T1?: number;
+  T2?: number;
+  T3?: number;
+  flag_1?: boolean;
+  flag_2?: boolean;
+  flag_route_1?: boolean;
+  flag_route_2?: boolean;
+  W1_label?: string;
+  W2_label?: string;
+  W3_label?: string;
+  [key: string]: unknown;
+}
+
 interface WorldMapProps {
   w1?: [number, number] | null; // [lon, lat]
   w2?: [number, number] | null;
@@ -20,7 +37,7 @@ interface WorldMapProps {
   animKey?: number;
   colo?: string;
   w1Colo?: string;
-  aiMapData?: any;
+  aiMapData?: AiMapData;
   isNxDomain?: boolean;
 }
 
@@ -31,7 +48,7 @@ function getLatencyColor(ms: number) {
 }
 
 export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', targetHost, latencyParams, mutilationStrategy, isPending = false, animKey = 0, colo = 'UNKNOWN', w1Colo = 'UNKNOWN', aiMapData, isNxDomain = false }: WorldMapProps) {
-  const [geographies, setGeographies] = useState<any[]>([]);
+  const [geographies, setGeographies] = useState<d3Geo.GeoPermissibleObjects[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const width = 800;
@@ -46,8 +63,9 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   useEffect(() => {
     fetch('/world-110m.json')
       .then(res => res.json())
-      .then((data: any) => {
-        const parsed = topojson.feature(data, data.objects.countries) as any;
+      .then((data: unknown) => {
+        const topology = data as Parameters<typeof topojson.feature>[0];
+        const parsed = topojson.feature(topology, topology.objects.countries as Parameters<typeof topojson.feature>[1]) as unknown as { features: d3Geo.GeoPermissibleObjects[] };
         setGeographies(parsed.features);
       })
       .catch(err => console.error("Failed to load map data", err));
@@ -278,9 +296,9 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const effW1 = aiMapData?.W1 || w1;
   const effW2 = aiMapData?.W2 || w2;
   const effW3 = aiMapData?.W3 || visualW3;
-  const effT1 = aiMapData?.T1 !== undefined ? aiMapData.T1 : t1;
-  const effT2 = aiMapData?.T2 !== undefined ? aiMapData.T2 : t2;
-  const effT3 = aiMapData?.T3 !== undefined ? aiMapData.T3 : t3;
+  const effT1 = (aiMapData?.T1 !== undefined ? aiMapData.T1 : t1) ?? 0;
+  const effT2 = (aiMapData?.T2 !== undefined ? aiMapData.T2 : t2) ?? 0;
+  const effT3 = (aiMapData?.T3 !== undefined ? aiMapData.T3 : t3) ?? 0;
 
   const flag_1 = aiMapData?.flag_1 || effT1 === 0 || false;
   const flag_2 = aiMapData ? (aiMapData.flag_2 || effT3 === 0) : (fault === '502' || fault === '504' || fault === '429' || isPacketLoss || effT3 === 0);
@@ -302,8 +320,8 @@ export default function WorldMap({ w1, w2, w3, t1, t2, t3, fault = 'latency', ta
   const t1Color = isPending ? "#cbd5e1" : getLatencyColor(t1 || 0);
   const t3Color = getLatencyColor(t3 || 0);
   const pinColor = "#cbd5e1"; // Neutral slate-300
-  const flag_route_1 = aiMapData?.flag_route_1 || effT1 === 0 || false;
-  const flag_route_2 = aiMapData?.flag_route_2 || effT3 === 0 || false;
+  const flag_route_1 = Boolean(aiMapData?.flag_route_1 || effT1 === 0);
+  const flag_route_2 = Boolean(aiMapData?.flag_route_2 || effT3 === 0);
 
   const w1LabelOverride = aiMapData?.W1_label;
   
