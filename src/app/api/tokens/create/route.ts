@@ -158,6 +158,7 @@ export async function POST(req: Request) {
       packetLoss,
       mutilationStrategy,
       userId: session.user.id,
+      jwtSalt: user.jwtSalt,
       w3
     })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })

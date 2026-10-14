@@ -1,6 +1,4 @@
 import NextAuth from "next-auth"
-export let lastAuthError = "";
-
 import GitHub from "next-auth/providers/github"
 import { getPrisma } from "@/lib/prisma"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
@@ -18,7 +16,7 @@ function getAuthInstance() {
   return NextAuth({
     logger: {
       error(error) {
-        lastAuthError = String(error?.message || error?.name || error) + " | PROCESS_ENV_KEYS: " + Object.keys(processEnv).join(",") + " | CF_ENV_KEYS: " + Object.keys(env).join(",");
+        console.error("[NextAuth Error]", error);
       }
     },
     trustHost: true,
