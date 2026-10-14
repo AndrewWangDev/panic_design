@@ -6,13 +6,19 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-export function getPrisma() {
-  const { env } = getCloudflareContext() as any
-  
-  if (!env || !env.DB) {
-    throw new Error('Cloudflare D1 environment not found.')
+export function getPrisma(): PrismaClient {
+  if (globalForPrisma.prisma) {
+    return globalForPrisma.prisma;
   }
 
-  const adapter = new PrismaD1(env.DB)
-  return new PrismaClient({ adapter })
+  const { env } = getCloudflareContext() as { env?: { DB?: any } };
+  
+  if (!env || !env.DB) {
+    throw new Error('Cloudflare D1 environment not found.');
+  }
+
+  const adapter = new PrismaD1(env.DB);
+  const client = new PrismaClient({ adapter });
+  globalForPrisma.prisma = client;
+  return client;
 }

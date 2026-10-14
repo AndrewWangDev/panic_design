@@ -41,3 +41,15 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# SQLite databases & journals
+*.db
+*.db-journal
+
+# Cloudflare OpenNext build artifacts
+.open-next/
+
+# Temporary dumps and scripts
+ec2.txt
+append-css*.js
+update-css.js
