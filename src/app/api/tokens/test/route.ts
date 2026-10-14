@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 
 import { auth } from '@/auth';
+import { isPrivateIp } from '@/lib/security';
 
 function decodeJwt(token: string) {
   try {
@@ -106,7 +107,7 @@ export async function POST(req: Request) {
       if (payload.targetHost) {
         try {
           const address = await resolveHostIp(payload.targetHost);
-          if (address) {
+          if (address && !isPrivateIp(address)) {
             const geoRes = await fetch(`http://ip-api.com/json/${address}`);
             const geoData = await geoRes.json() as { lon?: number; lat?: number };
             if (geoData && typeof geoData.lon === 'number' && typeof geoData.lat === 'number') {

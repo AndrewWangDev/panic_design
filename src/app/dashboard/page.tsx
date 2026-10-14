@@ -1439,6 +1439,8 @@ export default function Dashboard() {
             issuedAt: new Date(t.createdAt).toLocaleString(),
             issuedAtFull: new Date(t.createdAt).toLocaleString(),
             isRevoked: t.isRevoked,
+            isExpired: t.isExpired,
+            status: t.status,
             issuedWithSalt: t.issuedWithSalt,
             lastUsedAt: t.lastUsedAt ? new Date(t.lastUsedAt).toLocaleString() : 'Never'
           };
@@ -2538,8 +2540,10 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTokens.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((token) => (
-                      <tr key={token.id} className={token.isRevoked ? styles.rowRevoked : ''}>
+                    {filteredTokens.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((token) => {
+                      const isInactive = token.isRevoked || token.isExpired;
+                      return (
+                      <tr key={token.id} className={isInactive ? styles.rowRevoked : ''}>
                         <td className={styles.tokenCell}>
                           {token.tokenHint}
                         </td>
@@ -2551,19 +2555,19 @@ export default function Dashboard() {
                             <Copy size={12} style={{ opacity: 0.5, marginLeft: '6px' }} />
                           )}
                         </td>
-                        <td className={styles.faultCell}>{renderFaultBadges(token.fault, token.isRevoked)}</td>
+                        <td className={styles.faultCell}>{renderFaultBadges(token.fault, isInactive)}</td>
                         <td title={`Last used: ${token.issuedAtFull}`}>{token.issuedAt}</td>
                         <td>
                           <button 
                             className={styles.revokeBtn}
                             onClick={() => handleRevoke(token.id)}
-                            disabled={token.isRevoked}
+                            disabled={isInactive}
                           >
-                            {token.isRevoked ? 'Revoked' : 'Revoke'}
+                            {token.isRevoked ? 'Revoked' : (token.isExpired ? 'Expired' : 'Revoke')}
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    );})}
                   </tbody>
                 </table>
                 

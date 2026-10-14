@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { getPrisma } from '@/lib/prisma';
 import { checkAndUpdateQuota } from '@/lib/quota';
 import { SignJWT } from 'jose';
+import { isPrivateIp } from '@/lib/security';
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
@@ -134,7 +135,7 @@ export async function POST(req: Request) {
         address = dnsData.Answer.find((a: any) => a.type === 1)?.data || dnsData.Answer[0].data;
       }
       
-      if (address) {
+      if (address && !isPrivateIp(address)) {
         // Get geo coordinates
         const geoRes = await fetch(`https://ipapi.co/${address}/json/`);
         const geoData = await geoRes.json() as any;

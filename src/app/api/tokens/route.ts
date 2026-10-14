@@ -12,39 +12,36 @@ export async function GET() {
 
     const prisma = getPrisma();
     
-    let tokens = await prisma.token.findMany({
+    const dbTokens = await prisma.token.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' }
     });
 
-    const now = new Date();
-    const expiredIds: string[] = [];
+    const now = Date.now();
 
-    tokens.forEach(t => {
-      if (t.isRevoked) return;
+    const tokens = dbTokens.map(t => {
+      let isExpired = false;
       try {
         const config = JSON.parse(t.config);
         const ttlHours = parseFloat(config.ttlHours) || 0.25;
-        const expiresAt = new Date(t.createdAt.getTime() + ttlHours * 60 * 60 * 1000);
-        if (expiresAt <= now) {
-          expiredIds.push(t.id);
-        }
-      } catch (e) {
-        // ignore
+        const expiresAt = t.createdAt.getTime() + ttlHours * 60 * 60 * 1000;
+        isExpired = expiresAt <= now;
+      } catch {
+        // ignore JSON parse error
       }
-    });
 
-    if (expiredIds.length > 0) {
-      await prisma.token.updateMany({
-        where: { id: { in: expiredIds } },
-        data: { isRevoked: true }
-      });
-      tokens = tokens.map(t => expiredIds.includes(t.id) ? { ...t, isRevoked: true } : t);
-    }
+      const status = t.isRevoked ? 'revoked' : (isExpired ? 'expired' : 'active');
+
+      return {
+        ...t,
+        isExpired,
+        status
+      };
+    });
 
     return NextResponse.json({ tokens });
   } catch (error) {
     console.error('Fetch Tokens Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error', details: String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
