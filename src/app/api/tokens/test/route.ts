@@ -84,7 +84,7 @@ export async function POST(req: Request) {
     const hdrT3 = resHeaders.get('x-panic-t3');
 
     let w1 = [0, 0];
-    let w2 = [0, 0];
+    const w2 = [0, 0];
     let w3 = [0, 0];
     let t2 = 0;
     let t3 = 0;
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
       }
     }
     // Calculate Final Timings
-    let t1_total_net = t1_total;
+    const t1_total_net = t1_total;
     
     // Calculate one-way trips for visual map scaling
     const t3_visual = t3 / 2; // W2 -> W3 single trip

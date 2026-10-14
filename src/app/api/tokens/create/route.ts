@@ -160,6 +160,7 @@ export async function POST(req: Request) {
       mutilationStrategy,
       userId: session.user.id,
       jwtSalt: user.jwtSalt,
+      issuedWithSalt: user.jwtSalt,
       w3
     })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })

@@ -35,8 +35,8 @@ export async function GET() {
                      
     const isNewHour = isNewDay || now.getUTCHours() !== lastReset.getUTCHours();
 
-    let dailyUsage = isNewDay ? 0 : (user?.dailyQuota || 0);
-    let hourlyUsage = isNewHour ? 0 : (user?.hourlyQuota || 0);
+    const dailyUsage = isNewDay ? 0 : (user?.dailyQuota || 0);
+    const hourlyUsage = isNewHour ? 0 : (user?.hourlyQuota || 0);
 
     const nextHourReset = new Date(now);
     nextHourReset.setUTCHours(now.getUTCHours() + 1, 0, 0, 0);

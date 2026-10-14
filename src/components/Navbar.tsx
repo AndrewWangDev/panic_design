@@ -3,19 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Moon, Sun, LogIn } from 'lucide-react';
+import { Menu, Moon, Sun } from 'lucide-react';
 import { useSession, signIn } from 'next-auth/react';
 import styles from './Navbar.module.css';
 import UserDropdown from './UserDropdown';
-
-// Mock auth state for demonstration
-const MOCK_USER = {
-  name: "Lin Yu",
-  email: "linyu@example.com",
-  avatarUrl: "https://cdn.andrewwangdev.com/img/124599.webp",
-  tokens: 14,
-  usage: 142
-};
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -25,9 +16,9 @@ export default function Navbar() {
   const isLoggedIn = !!session; 
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem('theme');
-    if (storedTheme === 'light' || (!storedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
-      setIsDark(false);
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    if (isLight) {
+      requestAnimationFrame(() => setIsDark(false));
     }
   }, []);
 

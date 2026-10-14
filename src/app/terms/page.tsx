@@ -49,7 +49,7 @@ export default function TermsOfService() {
           <section>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: 'var(--text-primary)' }}>4. Disclaimer of Warranties (Force Majeure)</h2>
             <p style={{ color: 'var(--text-primary)' }}>This service relies on global BGP routing, Anycast networks, and complex L4/L7 edge logic. While we strive for high fidelity, the internet is inherently volatile.</p>
-            <p style={{ color: 'var(--text-primary)', marginTop: '12px' }}>panic.design is provided on an "AS IS" and "AS AVAILABLE" basis.</p>
+            <p style={{ color: 'var(--text-primary)', marginTop: '12px' }}>panic.design is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis.</p>
             <p style={{ color: 'var(--text-primary)', marginTop: '12px' }}>We do not warrant or guarantee 100% service uptime or absolute accuracy in telemetry, as our infrastructure is subject to network latency, upstream routing blackholes, and other force majeure events beyond our control.</p>
           </section>
         </div>

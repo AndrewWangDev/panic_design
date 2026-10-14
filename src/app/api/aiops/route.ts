@@ -145,7 +145,7 @@ Analysis: 'trans-Pacific' is a keyword. Immediately check if w1_colo, w2_colo, a
         aiResponse = String(response || '');
       }
       
-      let jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           parsedJson = JSON.parse(jsonMatch[0]);
