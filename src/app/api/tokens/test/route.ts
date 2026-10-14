@@ -12,6 +12,21 @@ function decodeJwt(token: string) {
   }
 }
 
+async function resolveHostIp(hostname: string): Promise<string | null> {
+  try {
+    const dnsRes = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`, {
+      headers: { 'accept': 'application/dns-json' }
+    });
+    const dnsData = await dnsRes.json() as { Status?: number; Answer?: Array<{ type: number; data: string }> };
+    if (dnsData.Status === 0 && dnsData.Answer && dnsData.Answer.length > 0) {
+      return dnsData.Answer.find(a => a.type === 1)?.data || dnsData.Answer[0].data;
+    }
+  } catch (err) {
+    console.warn('DoH resolution error:', err);
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -90,12 +105,15 @@ export async function POST(req: Request) {
       // Decode JWT to find targetHost dynamically
       if (payload.targetHost) {
         try {
-          const dns = await import('dns/promises');
-          const { address } = await dns.lookup(payload.targetHost);
-          const geoRes = await fetch(`http://ip-api.com/json/${address}`);
-          const geoData = await geoRes.json();
-          if (geoData && typeof geoData.lon === 'number' && typeof geoData.lat === 'number') {
-            w3 = [geoData.lon, geoData.lat];
+          const address = await resolveHostIp(payload.targetHost);
+          if (address) {
+            const geoRes = await fetch(`http://ip-api.com/json/${address}`);
+            const geoData = await geoRes.json() as { lon?: number; lat?: number };
+            if (geoData && typeof geoData.lon === 'number' && typeof geoData.lat === 'number') {
+              w3 = [geoData.lon, geoData.lat];
+            } else {
+              w3 = [0, 0];
+            }
           } else {
             w3 = [0, 0];
           }
@@ -124,9 +142,8 @@ export async function POST(req: Request) {
     let resolvedIp = 'Unknown IP';
     if (payload.targetHost) {
       try {
-        const dns = await import('dns/promises');
-        const { address } = await dns.lookup(payload.targetHost);
-        resolvedIp = address;
+        const address = await resolveHostIp(payload.targetHost);
+        resolvedIp = address || 'Unresolved';
       } catch (e) {
         resolvedIp = 'Unresolved';
       }

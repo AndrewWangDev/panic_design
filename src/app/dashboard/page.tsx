@@ -108,7 +108,12 @@ function findBestColo(w2Lat: number, w2Lng: number, w1Lat?: number, w1Lng?: numb
 }
 
 const syntaxHighlight = (json: string) => {
-  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+  const sanitized = json
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  return sanitized.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
     let cls = 'color: #38bdf8;'; // string color
     if (/^"/.test(match)) {
       if (/:$/.test(match)) {

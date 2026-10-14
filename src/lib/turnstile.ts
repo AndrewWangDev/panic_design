@@ -1,8 +1,27 @@
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+
 export async function verifyTurnstileToken(token: string): Promise<boolean> {
-  const secretKey = (process.env as any).TURNSTILE_SECRET_KEY;
+  let secretKey: string | undefined = process.env.TURNSTILE_SECRET_KEY;
+  try {
+    const cf = getCloudflareContext();
+    if (cf?.env && typeof (cf.env as Record<string, unknown>).TURNSTILE_SECRET_KEY === 'string') {
+      secretKey = (cf.env as Record<string, string>).TURNSTILE_SECRET_KEY;
+    }
+  } catch {
+    // Outside Cloudflare context (e.g. local development or unit test)
+  }
+
   if (!secretKey) {
-    console.warn('TURNSTILE_SECRET_KEY is not defined. Skipping verification in dev.');
-    return true; // Bypass if not configured
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('TURNSTILE_SECRET_KEY is not defined. Skipping verification in dev.');
+      return true;
+    }
+    console.error('TURNSTILE_SECRET_KEY is missing in production environment. Rejecting verification.');
+    return false;
+  }
+
+  if (!token) {
+    return false;
   }
 
   try {
@@ -14,10 +33,11 @@ export async function verifyTurnstileToken(token: string): Promise<boolean> {
       body: `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(token)}`
     });
 
-    const data = await res.json();
-    return data.success;
+    const data = await res.json() as { success?: boolean };
+    return Boolean(data?.success);
   } catch (error) {
     console.error('Turnstile verification failed:', error);
     return false;
   }
 }
+
