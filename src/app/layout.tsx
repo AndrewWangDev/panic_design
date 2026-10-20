@@ -5,8 +5,11 @@ import { SessionProvider } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "panic.design | Edge-Native Chaos Gateway",
-  description: "A zero-intrusion chaos engineering API. Inject latency, 502s, and packet drops at the network edge before your users experience them in production.",
+  title: {
+    default: "Panic Design | AI-Driven Edge Chaos Gateway Console",
+    template: "%s | Panic Design",
+  },
+  description: "Zero-intrusion AIOps edge gateway. Automated chaos parameter generation and visualized physical routing trajectories.",
   icons: {
     icon: [
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },

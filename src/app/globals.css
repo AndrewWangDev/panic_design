@@ -126,3 +126,18 @@ ul {
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 48px;
+  font-size: 0.9rem;
+  transition: color var(--transition-fast);
+}
+
+.back-link:hover {
+  color: var(--text-primary);
+}

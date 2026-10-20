@@ -1,14 +1,26 @@
-"use client";
-
+import type { Metadata } from 'next';
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, FileText } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Terms of Service for panic.design",
+  robots: {
+    index: false,
+    follow: true,
+    googleBot: {
+      index: false,
+      follow: true,
+    },
+  },
+};
 
 export default function TermsOfService() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '64px 24px' }}>
-        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '48px', fontSize: '0.9rem', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#ededed'} onMouseOut={e => e.currentTarget.style.color = '#a1a1aa'}>
+        <Link href="/" className="back-link">
           <ArrowLeft size={16} /> Back to Home
         </Link>
         
