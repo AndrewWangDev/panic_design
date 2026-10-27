@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getPrisma } from '@/lib/prisma';
-import { checkAndUpdateQuota } from '@/lib/quota';
+import { checkAndUpdateQuota, refundQuota } from '@/lib/quota';
 import { SignJWT } from 'jose';
 import { isPrivateIp, isValidTargetHost } from '@/lib/security';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export async function POST(req: Request) {
+  let userId: string | null = null;
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    userId = session.user.id;
 
     const body = await req.json() as any;
     const { targetHost, scope, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, customTtl, turnstileToken } = body;
@@ -76,6 +78,7 @@ export async function POST(req: Request) {
     }
 
     if (activeCount >= 5) {
+      await refundQuota(session.user.id);
       return NextResponse.json({ error: 'CONCURRENT_CAP_EXCEEDED' }, { status: 403 });
     }
 
@@ -86,6 +89,7 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
+      await refundQuota(session.user.id);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -150,6 +154,7 @@ export async function POST(req: Request) {
         where: { id: token.id },
         data: { isRevoked: true }
       });
+      await refundQuota(session.user.id);
       return NextResponse.json({
         error: 'CONCURRENT_CAP_EXCEEDED',
         message: 'Maximum limit of 5 concurrent active tokens reached.'
@@ -161,6 +166,7 @@ export async function POST(req: Request) {
     const authSecret = (env as any)?.AUTH_SECRET || process.env.AUTH_SECRET;
 
     if (!authSecret) {
+      await refundQuota(session.user.id);
       console.error('Missing AUTH_SECRET in environment');
       return NextResponse.json({ error: 'Server misconfiguration: missing AUTH_SECRET' }, { status: 500 });
     }
@@ -186,11 +192,12 @@ export async function POST(req: Request) {
       
       if (address) {
         if (isPrivateIp(address)) {
-          // Rollback newly created token and block
+          // Rollback newly created token, refund quota, and block
           await prisma.token.update({
             where: { id: token.id },
             data: { isRevoked: true }
           });
+          await refundQuota(session.user.id);
           return NextResponse.json({
             error: 'SSRF_DETECTED',
             message: 'Target host resolves to a private or restricted IP address.'
@@ -247,6 +254,9 @@ export async function POST(req: Request) {
       }
     });
   } catch (error) {
+    if (userId) {
+      await refundQuota(userId);
+    }
     console.error('Create Token Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }

@@ -97,17 +97,16 @@ export async function POST(req: Request) {
     const t1_total = Date.now() - startTime;
 
     // Check if the gateway actually processed the request with chaos headers
-    const hasChaosTelemetry = resHeaders.has('x-panic-colo');
-    const isAuthError = status === 401 || status === 403;
-    const isGatewayError = status === 503 || !hasChaosTelemetry;
+    const hasChaosTelemetry = resHeaders.has('x-panic-colo') && resHeaders.get('x-panic-colo') !== 'UNKNOWN';
+    const isGatewayRejection = !hasChaosTelemetry && (status === 401 || status === 403);
 
-    // If gateway rejected the token or is unavailable, do not fabricate telemetry
-    if (!hasChaosTelemetry || isAuthError || isGatewayError) {
+    // If gateway itself rejected the token or is unreachable, do not fabricate telemetry
+    if (!hasChaosTelemetry) {
       return NextResponse.json({
         success: false,
-        status,
-        statusText,
-        isAuthError,
+        status: status || 503,
+        statusText: statusText || 'Service Unavailable',
+        isAuthError: isGatewayRejection,
         isGatewayError: true,
         totalLatency: t1_total,
         telemetry: null,

@@ -172,22 +172,36 @@ function isPrivateIpv4Octets(b0: number, b1: number, b2: number, b3: number): bo
   return false;
 }
 
+function isValidIpv6(ip: string): boolean {
+  if (!ip || !ip.includes(':')) return false;
+  if (ip.includes(':::')) return false;
+  if ((ip.match(/::/g) || []).length > 1) return false;
+
+  const parts = ip.split(':');
+  if (parts.length < 3 || parts.length > 8) return false;
+
+  for (const part of parts) {
+    if (part.length > 4) return false;
+    if (part.length > 0 && !/^[0-9a-fA-F]+$/.test(part)) return false;
+  }
+  return true;
+}
+
 /**
  * Validates a target host string to prevent SSRF, internal network scanning,
- * and command/protocol injection.
+ * and command/protocol injection. Supports FQDNs, public IPv4, and public IPv6.
  */
 export function isValidTargetHost(rawHost: string): boolean {
   if (!rawHost || typeof rawHost !== 'string') return false;
 
   let host = rawHost.trim().toLowerCase();
 
-  // Strip port if present (e.g., example.com:8080)
+  // Strip port if present (e.g., example.com:8080 or [2001:db8::1]:8080)
   if (host.includes(':')) {
-    // If IPv6 enclosed in brackets, e.g. [2001:db8::1]:8080
+    // If IPv6 enclosed in brackets, e.g. [2606:4700:4700::1111]:8080 or [2606:4700:4700::1111]
     if (host.startsWith('[') && host.includes(']')) {
       const closingBracket = host.indexOf(']');
       const ipv6Part = host.substring(1, closingBracket);
-      if (isPrivateIp(ipv6Part)) return false;
       host = ipv6Part;
     } else if (host.split(':').length === 2 && !host.includes('::')) {
       // Standard hostname:port or ipv4:port
@@ -238,12 +252,20 @@ export function isValidTargetHost(rawHost: string): boolean {
     if (host.endsWith(suffix)) return false;
   }
 
-  // Check if it's an IP address directly
-  if (!host.includes(':') && /^[0-9.]+$/.test(host)) {
-    // If it's a numeric IP, verify it is NOT private
+  // Check IPv6 address
+  if (host.includes(':')) {
     if (isPrivateIp(host)) return false;
-  } else if (host.includes(':')) {
-    if (isPrivateIp(host)) return false;
+    return isValidIpv6(host);
+  }
+
+  // Check IPv4 address
+  if (/^[0-9.]+$/.test(host)) {
+    const octets = host.split('.');
+    if (octets.length !== 4) return false;
+    if (octets.some(o => o.length === 0 || isNaN(Number(o)) || Number(o) < 0 || Number(o) > 255)) {
+      return false;
+    }
+    return !isPrivateIp(host);
   }
 
   // Hostname syntax validation (RFC 1123)

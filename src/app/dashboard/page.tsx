@@ -290,8 +290,8 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         realTelemetry = data.telemetry;
       }
       
-      const isGatewayRejection = data.isAuthError || data.status === 401 || data.status === 403;
-      const isGatewayOffline = data.status === 503 || (!data.telemetry && !isNxDomain && !isGatewayRejection);
+      const isGatewayRejection = !!data.isAuthError;
+      const isGatewayOffline = !!data.isGatewayError && !data.isAuthError && !isNxDomain;
 
       if (isGatewayRejection || isGatewayOffline) {
         if (onTelemetryReceived) {

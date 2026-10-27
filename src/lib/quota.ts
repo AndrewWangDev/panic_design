@@ -50,7 +50,10 @@ export async function checkAndUpdateQuota(userId: string): Promise<{ allowed: bo
         return { allowed: false, reason: 'Quota exceeded (Max 30 requests/hour, 100 requests/day)' };
       }
 
-      // Timestamp collision with another worker, retry
+      // Timestamp collision with another worker; backoff before retrying
+      if (attempt < MAX_RETRIES - 1) {
+        await new Promise(r => setTimeout(r, 20 + Math.random() * 30));
+      }
       continue;
     }
 
@@ -80,8 +83,35 @@ export async function checkAndUpdateQuota(userId: string): Promise<{ allowed: bo
     if (updated.count > 0) {
       return { allowed: true };
     }
-    // Concurrent reset conflict at boundary, retry with fresh user state
+
+    // Concurrent reset conflict at boundary; backoff before retrying
+    if (attempt < MAX_RETRIES - 1) {
+      await new Promise(r => setTimeout(r, 20 + Math.random() * 30));
+    }
   }
 
   return { allowed: false, reason: 'Concurrent request conflict, please retry' };
+}
+
+/**
+ * Atomically refunds 1 request to user daily/hourly quota in case downstream
+ * Token creation fails or is aborted.
+ */
+export async function refundQuota(userId: string): Promise<void> {
+  const prisma = getPrisma();
+  try {
+    await prisma.user.updateMany({
+      where: {
+        id: userId,
+        dailyQuota: { gt: 0 },
+        hourlyQuota: { gt: 0 }
+      },
+      data: {
+        dailyQuota: { decrement: 1 },
+        hourlyQuota: { decrement: 1 }
+      }
+    });
+  } catch (err) {
+    console.error('Failed to refund quota for user:', userId, err);
+  }
 }

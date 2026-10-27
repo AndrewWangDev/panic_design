@@ -88,4 +88,21 @@ describe('Security: isValidTargetHost', () => {
     expect(isValidTargetHost('httpbin.org')).toBe(true);
     expect(isValidTargetHost('cloudflare.com')).toBe(true);
   });
+
+  it('should accept valid public IPv4 and IPv6 target hosts', () => {
+    expect(isValidTargetHost('1.1.1.1')).toBe(true);
+    expect(isValidTargetHost('8.8.8.8:443')).toBe(true);
+    expect(isValidTargetHost('2606:4700:4700::1111')).toBe(true);
+    expect(isValidTargetHost('[2606:4700:4700::1111]')).toBe(true);
+    expect(isValidTargetHost('[2606:4700:4700::1111]:443')).toBe(true);
+    expect(isValidTargetHost('[2001:4860:4860::8888]')).toBe(true);
+  });
+
+  it('should reject private IPv6 hosts in brackets or bare', () => {
+    expect(isValidTargetHost('::1')).toBe(false);
+    expect(isValidTargetHost('[::1]')).toBe(false);
+    expect(isValidTargetHost('[::1]:8080')).toBe(false);
+    expect(isValidTargetHost('fe80::1')).toBe(false);
+    expect(isValidTargetHost('fc00::1')).toBe(false);
+  });
 });
