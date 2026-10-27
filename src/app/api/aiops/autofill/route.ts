@@ -123,6 +123,9 @@ The JSON MUST follow this exact schema:
 
   } catch (error: any) {
     console.error('AI Ops AutoFill Error:', error);
-    return NextResponse.json({ error: error.message, stack: error.stack }, { status: 418 });
+    return NextResponse.json(
+      { error: 'Internal server error while evaluating chaos intent parameters' },
+      { status: 500 }
+    );
   }
 }

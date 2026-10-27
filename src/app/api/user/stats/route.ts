@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getPrisma } from '@/lib/prisma';
 
-
 export async function GET() {
   try {
     const session = await auth();
@@ -12,13 +11,32 @@ export async function GET() {
 
     const prisma = getPrisma();
 
-    // 1. Get active tokens count
-    const activeTokens = await prisma.token.count({
+    // 1. Get truly active tokens count (unrevoked AND not yet expired by TTL)
+    const unrevokedTokens = await prisma.token.findMany({
       where: {
         userId: session.user.id,
         isRevoked: false
+      },
+      select: {
+        createdAt: true,
+        config: true
       }
     });
+
+    const nowMs = Date.now();
+    let activeTokens = 0;
+    for (const t of unrevokedTokens) {
+      try {
+        const config = JSON.parse(t.config);
+        const ttlHours = parseFloat(config.ttlHours || config.ttl) || 0.25;
+        const expiresAt = t.createdAt.getTime() + ttlHours * 60 * 60 * 1000;
+        if (expiresAt > nowMs) {
+          activeTokens++;
+        }
+      } catch {
+        // Ignore JSON parse errors for corrupted configs
+      }
+    }
 
     // 2. Get quota usage from User table
     const user = await prisma.user.findUnique({

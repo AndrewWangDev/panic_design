@@ -29,7 +29,7 @@ const releases = [
     version: "v1.2.0 - Introducing AIOps Copilot & Semantic Guardrails",
     date: "June 2, 2026",
     changes: [
-      { type: "Feature", text: "Deeply integrated Cloudflare Workers AI (llama-3.1-8b-instruct) to power the AIOps Copilot, enabling complex network fault orchestration via natural language directives." },
+      { type: "Feature", text: "Deeply integrated Cloudflare Workers AI (Llama 4 Scout 17B - @cf/meta/llama-4-scout-17b-16e-instruct) to power the AIOps Copilot, enabling complex network fault orchestration via natural language directives." },
       { type: "Feature", text: "Forged strict AI Semantic Guardrails to proactively intercept and nullify malicious network attack intents, such as DDoS or privilege escalation attempts, at the source." },
       { type: "Feature", text: "Launched the Copilot Insight module, automatically generating comprehensive \"Pre- vs. Post-Injection\" qualitative assessments and network state post-mortems." },
       { type: "Bugfix", text: "Fortified underlying JSON Schema validation and T1/T3 routing constraints, categorically eliminating AI state hallucinations when processing conflicting fault parameters." },

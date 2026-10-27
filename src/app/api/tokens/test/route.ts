@@ -1,22 +1,14 @@
 import { NextResponse } from 'next/server';
-
-
 import { auth } from '@/auth';
 import { isPrivateIp } from '@/lib/security';
-
-function decodeJwt(token: string) {
-  try {
-    const payload = token.split('.')[1];
-    return JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
-  } catch (e) {
-    return {};
-  }
-}
+import { jwtVerify } from 'jose';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 async function resolveHostIp(hostname: string): Promise<string | null> {
   try {
     const dnsRes = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`, {
-      headers: { 'accept': 'application/dns-json' }
+      headers: { 'accept': 'application/dns-json' },
+      signal: AbortSignal.timeout(3000)
     });
     const dnsData = await dnsRes.json() as { Status?: number; Answer?: Array<{ type: number; data: string }> };
     if (dnsData.Status === 0 && dnsData.Answer && dnsData.Answer.length > 0) {
@@ -36,8 +28,35 @@ export async function POST(req: Request) {
     }
 
     const { token } = await req.json() as any;
-    if (!token) {
+    if (!token || typeof token !== 'string') {
       return NextResponse.json({ error: 'Missing token' }, { status: 400 });
+    }
+
+    // Cryptographic JWT verification using AUTH_SECRET
+    const { env } = getCloudflareContext();
+    const authSecret = (env as any)?.AUTH_SECRET || process.env.AUTH_SECRET;
+    if (!authSecret) {
+      return NextResponse.json({ error: 'Server misconfiguration: missing AUTH_SECRET' }, { status: 500 });
+    }
+
+    let payload: any;
+    try {
+      const secret = new TextEncoder().encode(authSecret);
+      const verified = await jwtVerify(token, secret);
+      payload = verified.payload;
+    } catch {
+      return NextResponse.json({
+        error: 'INVALID_TOKEN',
+        message: 'Chaos Token signature is invalid or expired.'
+      }, { status: 400 });
+    }
+
+    // Verify token ownership
+    if (payload.userId !== session.user.id) {
+      return NextResponse.json({
+        error: 'FORBIDDEN',
+        message: 'Token does not belong to current authenticated session.'
+      }, { status: 403 });
     }
 
     // Check rate limiting quota
@@ -48,7 +67,7 @@ export async function POST(req: Request) {
     }
 
     const baseUrl = process.env.DATA_PLANE_URL || 'https://gateway.andrewwangdev.com';
-    const gatewayUrl = `${baseUrl.replace(/\/$/, '')}/?token=${token}`;
+    const gatewayUrl = `${baseUrl.replace(/\/$/, '')}/?token=${encodeURIComponent(token)}`;
     
     const startTime = Date.now();
     let status = 0;
@@ -62,7 +81,8 @@ export async function POST(req: Request) {
         headers: {
           'Accept': '*/*'
         },
-        redirect: 'manual'
+        redirect: 'manual',
+        signal: AbortSignal.timeout(10000)
       });
       status = res.status;
       statusText = res.statusText;
@@ -78,54 +98,51 @@ export async function POST(req: Request) {
 
     // Extract headers
     const hdrW1 = resHeaders.get('x-panic-w1');
-    const hdrW2 = resHeaders.get('x-panic-w2');
     const hdrW3 = resHeaders.get('x-panic-w3');
     const hdrT2 = resHeaders.get('x-panic-t2');
     const hdrT3 = resHeaders.get('x-panic-t3');
 
     let w1 = [0, 0];
-    const w2 = [0, 0];
     let w3 = [0, 0];
     let t2 = 0;
     let t3 = 0;
 
     if (hdrW1) w1 = hdrW1.split(',').map(Number);
-    
-    const payload = decodeJwt(token);
-
     if (hdrT2) t2 = Number(hdrT2);
     if (hdrT3) t3 = Number(hdrT3);
 
-    // Fallbacks if data plane headers are missing (e.g. gateway offline or not deployed yet)
+    // Fallbacks if data plane headers are missing
     if (!hdrW1) w1 = [-118.2437, 34.0522]; // Mock CF LAX
 
-    // W3 fallback for legacy tokens or missing data plane
+    // W3 fallback for missing data plane headers
     if (hdrW3 && hdrW3 !== '0,0') {
       w3 = hdrW3.split(',').map(Number);
-    } else {
-      // Decode JWT to find targetHost dynamically
-      if (payload.targetHost) {
-        try {
-          const address = await resolveHostIp(payload.targetHost);
-          if (address && !isPrivateIp(address)) {
-            const geoRes = await fetch(`http://ip-api.com/json/${address}`);
-            const geoData = await geoRes.json() as { lon?: number; lat?: number };
-            if (geoData && typeof geoData.lon === 'number' && typeof geoData.lat === 'number') {
-              w3 = [geoData.lon, geoData.lat];
-            } else {
-              w3 = [0, 0];
-            }
+    } else if (payload.w3 && Array.isArray(payload.w3) && payload.w3.length === 2) {
+      w3 = payload.w3;
+    } else if (payload.targetHost) {
+      try {
+        const address = await resolveHostIp(payload.targetHost);
+        if (address && !isPrivateIp(address)) {
+          const geoRes = await fetch(`https://ipapi.co/${address}/json/`, {
+            signal: AbortSignal.timeout(3000)
+          });
+          const geoData = await geoRes.json() as { longitude?: number; latitude?: number };
+          if (geoData && typeof geoData.longitude === 'number' && typeof geoData.latitude === 'number') {
+            w3 = [geoData.longitude, geoData.latitude];
           } else {
             w3 = [0, 0];
           }
-        } catch (geoErr) {
-          console.warn('Fallback W3 resolution failed:', geoErr);
+        } else {
           w3 = [0, 0];
         }
-      } else {
-        w3 = [0, 0]; // Fallback to 0,0
+      } catch (geoErr) {
+        console.warn('Fallback W3 resolution failed:', geoErr);
+        w3 = [0, 0];
       }
+    } else {
+      w3 = [0, 0];
     }
+
     // Calculate Final Timings
     const t1_total_net = t1_total;
     
@@ -139,13 +156,13 @@ export async function POST(req: Request) {
     const chaosReason = resHeaders.get('X-Chaos-Reason');
     const chaosClientContext = resHeaders.get('X-Chaos-Client-Context');
 
-    // Resolve IP purely for terminal visual logging (does not affect timing since timer is stopped)
+    // Resolve IP purely for terminal visual logging
     let resolvedIp = 'Unknown IP';
     if (payload.targetHost) {
       try {
         const address = await resolveHostIp(payload.targetHost);
         resolvedIp = address || 'Unresolved';
-      } catch (e) {
+      } catch {
         resolvedIp = 'Unresolved';
       }
     }

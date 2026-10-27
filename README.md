@@ -27,8 +27,8 @@ Achieve true **Zero-Intrusion fault injection** at the Cloudflare edge. Neither 
 - **L7 Application Layer Mutilation**: Supports 429/502/504 status code overwrites, Type Poisoning, Empty Shell responses, and Unexpected EOF truncations.
 
 ### 🌍 Global Spatial Sandbox
-Powered by our proprietary **LGPA (Localized Geodesic Proximity Algorithm)**, we visualize physical node spatial drift and network degradation trajectories in real-time on a 3D SVG World Map.
-By clearly dissecting the latency segments into `T1` (Client to Edge), `T2` (Edge Injection Delay), and `T3` (Edge to Origin), we deliver an intuitive visual animation that puts an end to blind, black-box fault injections.
+Powered by our **LGPA (Latency-Guided Proximity Arbitration)** heuristic engine, we visualize physical node spatial drift and network degradation trajectories in real-time on a 3D SVG World Map.
+Using spherical trigonometry (Haversine great-circle distance) and forward geodesic azimuth vector alignment across tier-1 edge PoPs, LGPA deterministically arbitrates the optimal interception node along the packet flight path. By clearly dissecting the latency segments into `T1` (Client to Edge), `T2` (Edge Injection Delay), and `T3` (Edge to Origin), we deliver an intuitive visual animation that puts an end to blind, black-box fault injections.
 
 ### 💻 Immersive SRE Console
 Features a cyberpunk-style interactive terminal that prints edge interception logs and AI arbitration chain-of-thought processes in real-time. Combined with multi-dimensional quota and usage statistics panels, it enables precise control over the distribution and global, sub-second revocation of JWT Chaos Tokens.
@@ -44,10 +44,12 @@ panic.design utilizes a completely **Control Plane & Data Plane separated**, clo
     (W1 Ingress)                 (Global W2 Proxy Nodes)                (Upstream)
 ```
 
-- **Control Plane (`new_website`)**:
-  Built with the Next.js 16.2 App Router. It manages OAuth authentication, D1 database interactions, Token quotas, generation, and AIOps prompt engineering. The Control Plane uses the Web Crypto API to sign high-security JWTs offline, embedding the fault configurations (Payload) and target coordinates.
-- **Data Plane (`new_website_data`)**:
-  Built as a pure, stateless reverse proxy using the ultra-lightweight **Hono** framework. Deployed across Cloudflare's 300+ global edge nodes, it performs JWT signature verification and extracts chaos configurations in under 1ms per request. It injects L4/L7 interceptions, mutilations, and delays, then asynchronously writes telemetry logs to SQLite (D1), ensuring zero interference with normal request latency.
+- **Control Plane ([panic_design](https://github.com/AndrewWangDev/panic_design))**:
+  Built with Next.js 16.2 App Router, OpenNext for Cloudflare Workers, NextAuth v5, and Prisma ORM on Cloudflare D1. It manages developer authentication, token quotas, zero-trust cryptographic signing, and AIOps prompt deduction powered by Cloudflare Workers AI (`@cf/meta/llama-4-scout-17b-16e-instruct`).
+- **Data Plane ([Panic_Design_Gateway](https://github.com/AndrewWangDev/Panic_Design_Gateway))**:
+  An independent, open-source high-performance reverse proxy built on **Hono v4**. Deployed across Cloudflare's 300+ global edge locations, it implements a **dual-layer hybrid verification architecture**:
+  1. **Fast-Path Cryptographic Filtering**: Verifies JWT HS256 signatures, user salts, and expiration in memory (< 1ms) with zero database roundtrips.
+  2. **Consistent State Synchronization (Edge D1)**: Performs instant token revocation checks and records asynchronous telemetry logs via `executionCtx.waitUntil`, guaranteeing zero overhead on downstream proxy latencies.
 
 ---
 
@@ -59,10 +61,17 @@ panic.design utilizes a completely **Control Plane & Data Plane separated**, clo
 - GitHub OAuth App (for Control Plane login)
 
 ### Deployment
-1. Clone the repository.
-2. Configure your `.dev.vars` in the Control Plane (`new_website`) directory (including `AUTH_SECRET`, `GITHUB_ID`, `TURNSTILE_SECRET_KEY`, etc.).
-3. Initialize the database using `npx wrangler d1 execute DB --local --file=./prisma/schema.sql`, then run `npm run dev` to start the console.
-4. Navigate to the `new_website_data` directory and deploy the edge worker proxy using `wrangler`.
+
+#### 1. Control Plane Setup (`panic_design`)
+1. Clone this repository: `git clone https://github.com/AndrewWangDev/panic_design.git`
+2. Configure `.dev.vars` (or Cloudflare Worker secrets via `wrangler secret put`): `AUTH_SECRET`, `AUTH_CLIENT_ID`, `AUTH_CLIENT_SECRET`, `TURNSTILE_SECRET_KEY`.
+3. Initialize the D1 schema: `npx wrangler d1 execute DB --local --file=./prisma/schema.sql`.
+4. Run locally: `npm run dev` or deploy via `npm run build && npx wrangler deploy`.
+
+#### 2. Data Plane Setup (`Panic_Design_Gateway`)
+1. Clone the Data Plane repository: `git clone https://github.com/AndrewWangDev/Panic_Design_Gateway.git`
+2. Bind the shared D1 database (`panic_design`) and `AUTH_SECRET` in `wrangler.toml`.
+3. Deploy the gateway Worker: `npx wrangler deploy`.
 
 ---
 

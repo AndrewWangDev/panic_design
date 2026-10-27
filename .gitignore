@@ -49,6 +49,8 @@ next-env.d.ts
 
 # Cloudflare OpenNext build artifacts
 .open-next/
+.wrangler/
+.wrangler
 
 # Temporary dumps and scripts
 ec2.txt

@@ -171,6 +171,6 @@ Analysis: 'trans-Pacific' is a keyword. Immediately check if w1_colo, w2_colo, a
 
   } catch (error: any) {
     console.error('AI Ops Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error while processing AIOps request' }, { status: 500 });
   }
 }

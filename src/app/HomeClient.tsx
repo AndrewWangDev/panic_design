@@ -277,7 +277,7 @@ function HomeContent() {
               <Cpu size={32} className={styles.bentoIcon} />
               <h3 className={styles.bentoTitle}>Intent-Driven AIOps</h3>
               <p className={styles.bentoDesc}>
-                Powered by Cloudflare AI. Describe your disaster scenario in natural language. Our embedded Llama-3.1 engine instantly translates semantic intent into deterministic L4/L7 fault parameters, fully sandboxed by strict edge guardrails.
+                Powered by Cloudflare AI. Describe your disaster scenario in natural language. Our embedded Llama 4 Scout 17B engine instantly translates semantic intent into deterministic L4/L7 fault parameters, fully sandboxed by strict edge guardrails.
               </p>
             </div>
             {/* Minimal CSS AI Vector */}

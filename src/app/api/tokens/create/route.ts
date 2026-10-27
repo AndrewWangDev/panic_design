@@ -3,10 +3,8 @@ import { auth } from '@/auth';
 import { getPrisma } from '@/lib/prisma';
 import { checkAndUpdateQuota } from '@/lib/quota';
 import { SignJWT } from 'jose';
-import { isPrivateIp } from '@/lib/security';
-
+import { isPrivateIp, isValidTargetHost } from '@/lib/security';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-
 
 export async function POST(req: Request) {
   try {
@@ -18,8 +16,18 @@ export async function POST(req: Request) {
     const body = await req.json() as any;
     const { targetHost, scope, fault, latency, jitter, distribution, packetLoss, mutilationStrategy, customTtl, turnstileToken } = body;
 
-    if (!targetHost || !fault) {
+    const cleanHost = typeof targetHost === 'string' ? targetHost.trim().toLowerCase() : '';
+
+    if (!cleanHost || !fault) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+    }
+
+    // SSRF & Host format protection
+    if (!isValidTargetHost(cleanHost)) {
+      return NextResponse.json({
+        error: 'INVALID_TARGET_HOST',
+        message: 'Target host is invalid or resolves to a private, loopback, or restricted network.'
+      }, { status: 400 });
     }
 
     // Turnstile Check
@@ -40,7 +48,7 @@ export async function POST(req: Request) {
 
     const prisma = getPrisma();
 
-    // Check concurrent active tokens
+    // Check concurrent active tokens before creation
     const unrevokedTokens = await prisma.token.findMany({
       where: {
         userId: session.user.id,
@@ -62,7 +70,7 @@ export async function POST(req: Request) {
         if (expiresAtMs > nowMs) {
           activeCount++;
         }
-      } catch(e) {
+      } catch {
         activeCount++;
       }
     }
@@ -100,14 +108,54 @@ export async function POST(req: Request) {
     const token = await prisma.token.create({
       data: {
         userId: session.user.id,
-        targetHost,
+        targetHost: cleanHost,
         config,
         tokenHint: '', // Will update later after signing
         issuedWithSalt: user.jwtSalt
       }
     });
 
-    // Generate JWT
+    // Post-creation TOCTOU concurrency check: verify active count does not exceed limit
+    const postCheckTokens = await prisma.token.findMany({
+      where: {
+        userId: session.user.id,
+        isRevoked: false
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        config: true
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    let verifiedActive = 0;
+    const postNowMs = Date.now();
+    for (const t of postCheckTokens) {
+      try {
+        const conf = JSON.parse(t.config);
+        const ttlH = conf.ttlHours || conf.ttl || 0.25;
+        const expMs = new Date(t.createdAt).getTime() + (ttlH * 60 * 60 * 1000);
+        if (expMs > postNowMs) {
+          verifiedActive++;
+        }
+      } catch {
+        verifiedActive++;
+      }
+    }
+
+    if (verifiedActive > 5) {
+      // Revert/revoke the token immediately to maintain strict 5-token cap
+      await prisma.token.update({
+        where: { id: token.id },
+        data: { isRevoked: true }
+      });
+      return NextResponse.json({
+        error: 'CONCURRENT_CAP_EXCEEDED',
+        message: 'Maximum limit of 5 concurrent active tokens reached.'
+      }, { status: 403 });
+    }
+
     // Generate JWT
     const { env } = getCloudflareContext();
     const authSecret = (env as any)?.AUTH_SECRET || process.env.AUTH_SECRET;
@@ -122,11 +170,12 @@ export async function POST(req: Request) {
     // Convert ttlHours to seconds string for expiration
     const expSeconds = Math.floor(ttlHours * 3600);
 
-    // Resolve W3 (Target Host) coordinates using Edge-compatible fetch
+    // Resolve W3 (Target Host) coordinates using Edge-compatible fetch with timeout
     let w3: [number, number] | undefined = undefined;
     try {
-      const dnsRes = await fetch(`https://cloudflare-dns.com/dns-query?name=${targetHost}&type=A`, {
-        headers: { 'accept': 'application/dns-json' }
+      const dnsRes = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(cleanHost)}&type=A`, {
+        headers: { 'accept': 'application/dns-json' },
+        signal: AbortSignal.timeout(3000)
       });
       const dnsData = await dnsRes.json() as any;
       
@@ -135,9 +184,23 @@ export async function POST(req: Request) {
         address = dnsData.Answer.find((a: any) => a.type === 1)?.data || dnsData.Answer[0].data;
       }
       
-      if (address && !isPrivateIp(address)) {
+      if (address) {
+        if (isPrivateIp(address)) {
+          // Rollback newly created token and block
+          await prisma.token.update({
+            where: { id: token.id },
+            data: { isRevoked: true }
+          });
+          return NextResponse.json({
+            error: 'SSRF_DETECTED',
+            message: 'Target host resolves to a private or restricted IP address.'
+          }, { status: 400 });
+        }
+
         // Get geo coordinates
-        const geoRes = await fetch(`https://ipapi.co/${address}/json/`);
+        const geoRes = await fetch(`https://ipapi.co/${address}/json/`, {
+          signal: AbortSignal.timeout(3000)
+        });
         const geoData = await geoRes.json() as any;
         if (geoData && typeof geoData.longitude === 'number' && typeof geoData.latitude === 'number') {
           w3 = [geoData.longitude, geoData.latitude];
@@ -150,7 +213,7 @@ export async function POST(req: Request) {
 
     const jwt = await new SignJWT({
       tokenId: token.id,
-      targetHost,
+      targetHost: cleanHost,
       scope,
       fault,
       latency,
@@ -185,6 +248,6 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error('Create Token Error:', error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

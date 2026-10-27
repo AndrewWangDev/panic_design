@@ -3,7 +3,11 @@ import GitHub from "next-auth/providers/github"
 import { getPrisma } from "@/lib/prisma"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 
+let cachedAuth: ReturnType<typeof NextAuth> | null = null;
+
 function getAuthInstance() {
+  if (cachedAuth) return cachedAuth;
+
   let env: Record<string, string | undefined> = process.env;
   try {
     env = (getCloudflareContext().env as unknown as Record<string, string | undefined>) || process.env;
@@ -13,7 +17,7 @@ function getAuthInstance() {
 
   const processEnv = process["env"] || {};
 
-  return NextAuth({
+  cachedAuth = NextAuth({
     logger: {
       error(error) {
         console.error("[NextAuth Error]", error);
@@ -95,7 +99,9 @@ function getAuthInstance() {
       return session;
     }
   }
-  })
+  });
+
+  return cachedAuth;
 }
 
 type AuthHandlers = ReturnType<typeof getAuthInstance>["handlers"];
