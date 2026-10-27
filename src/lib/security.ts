@@ -196,34 +196,39 @@ export function isValidTargetHost(rawHost: string): boolean {
 
   let host = rawHost.trim().toLowerCase();
 
-  // Strip port if present (e.g., example.com:8080 or [2001:db8::1]:8080)
-  if (host.includes(':')) {
-    // If IPv6 enclosed in brackets, e.g. [2606:4700:4700::1111]:8080 or [2606:4700:4700::1111]
-    if (host.startsWith('[') && host.includes(']')) {
-      const closingBracket = host.indexOf(']');
-      const ipv6Part = host.substring(1, closingBracket);
-      host = ipv6Part;
-    } else if (host.split(':').length === 2 && !host.includes('::')) {
-      // Standard hostname:port or ipv4:port
-      host = host.split(':')[0];
-    }
-  }
-
-  // Length checks (RFC 1035: 1 to 253 characters)
-  if (host.length === 0 || host.length > 253) return false;
-
-  // Disallow protocols / schemes, paths, queries, fragments, credentials
-  if (
-    host.includes('/') ||
-    host.includes('?') ||
-    host.includes('#') ||
-    host.includes('@') ||
-    host.includes('\\')
-  ) {
+  // 1. Strict rejection of protocols / schemes, paths, queries, fragments, credentials
+  if (/[/?#@\\]/.test(host)) {
     return false;
   }
 
-  // Disallowed private/special hostnames & TLDs
+  // 2. Bracketed IPv6 validation with optional port (e.g. [2606:4700:4700::1111] or [2606:4700:4700::1111]:8080)
+  if (host.startsWith('[')) {
+    const match = host.match(/^\[([0-9a-f:]+)\](?::(\d{1,5}))?$/);
+    if (!match) return false;
+    if (match[2]) {
+      const port = Number(match[2]);
+      if (isNaN(port) || port < 1 || port > 65535) return false;
+    }
+    const ip = match[1];
+    if (isPrivateIp(ip)) return false;
+    return isValidIpv6(ip);
+  }
+
+  // 3. Strip port for standard hostname / IPv4 if present (e.g., example.com:8080 or 1.1.1.1:443)
+  if (host.includes(':')) {
+    if (!host.includes('::') && host.split(':').length === 2) {
+      const parts = host.split(':');
+      if (!/^\d+$/.test(parts[1])) return false;
+      const port = Number(parts[1]);
+      if (isNaN(port) || port < 1 || port > 65535) return false;
+      host = parts[0];
+    }
+  }
+
+  // 4. Length checks (RFC 1035: 1 to 253 characters)
+  if (host.length === 0 || host.length > 253) return false;
+
+  // 5. Disallowed private/special hostnames & TLDs
   const forbiddenExact = new Set([
     'localhost',
     'metadata',
@@ -252,13 +257,13 @@ export function isValidTargetHost(rawHost: string): boolean {
     if (host.endsWith(suffix)) return false;
   }
 
-  // Check IPv6 address
+  // 6. Check bare IPv6 address (e.g. 2606:4700:4700::1111)
   if (host.includes(':')) {
     if (isPrivateIp(host)) return false;
     return isValidIpv6(host);
   }
 
-  // Check IPv4 address
+  // 7. Check IPv4 address
   if (/^[0-9.]+$/.test(host)) {
     const octets = host.split('.');
     if (octets.length !== 4) return false;
@@ -268,7 +273,7 @@ export function isValidTargetHost(rawHost: string): boolean {
     return !isPrivateIp(host);
   }
 
-  // Hostname syntax validation (RFC 1123)
+  // 8. Hostname syntax validation (RFC 1123)
   // Must have at least one dot (e.g. domain.tld) to prevent querying single-word internal hosts
   if (!host.includes('.')) return false;
 

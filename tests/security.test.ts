@@ -84,6 +84,8 @@ describe('Security: isValidTargetHost', () => {
 
   it('should accept valid public domain names', () => {
     expect(isValidTargetHost('example.com')).toBe(true);
+    expect(isValidTargetHost('example.com:8080')).toBe(true);
+    expect(isValidTargetHost('sub.domain.org:3000')).toBe(true);
     expect(isValidTargetHost('api.panic.design')).toBe(true);
     expect(isValidTargetHost('httpbin.org')).toBe(true);
     expect(isValidTargetHost('cloudflare.com')).toBe(true);
@@ -104,5 +106,20 @@ describe('Security: isValidTargetHost', () => {
     expect(isValidTargetHost('[::1]:8080')).toBe(false);
     expect(isValidTargetHost('fe80::1')).toBe(false);
     expect(isValidTargetHost('fc00::1')).toBe(false);
+  });
+
+  it('should reject path, query, credential, or invalid port truncation bypass attempts', () => {
+    expect(isValidTargetHost('example.com:/admin')).toBe(false);
+    expect(isValidTargetHost('example.com/admin')).toBe(false);
+    expect(isValidTargetHost('example.com?query=1')).toBe(false);
+    expect(isValidTargetHost('example.com#hash')).toBe(false);
+    expect(isValidTargetHost('admin@example.com')).toBe(false);
+    expect(isValidTargetHost('example.com:invalidPort')).toBe(false);
+    expect(isValidTargetHost('example.com:999999')).toBe(false);
+    expect(isValidTargetHost('example.com:0')).toBe(false);
+    expect(isValidTargetHost('[2606:4700:4700::1111]/admin')).toBe(false);
+    expect(isValidTargetHost('[2606:4700:4700::1111]@evil.com')).toBe(false);
+    expect(isValidTargetHost('[2606:4700:4700::1111]:999999')).toBe(false);
+    expect(isValidTargetHost('[2606:4700:4700::1111]:0')).toBe(false);
   });
 });

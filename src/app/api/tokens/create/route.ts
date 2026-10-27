@@ -8,6 +8,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export async function POST(req: Request) {
   let userId: string | null = null;
+  let quotaDeducted = false;
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
     if (!quota.allowed) {
       return NextResponse.json({ error: 'QUOTA_EXCEEDED', message: quota.reason }, { status: 429 });
     }
+    quotaDeducted = true;
 
     const prisma = getPrisma();
 
@@ -78,7 +80,10 @@ export async function POST(req: Request) {
     }
 
     if (activeCount >= 5) {
-      await refundQuota(session.user.id);
+      if (quotaDeducted && userId) {
+        await refundQuota(userId);
+        quotaDeducted = false;
+      }
       return NextResponse.json({ error: 'CONCURRENT_CAP_EXCEEDED' }, { status: 403 });
     }
 
@@ -89,7 +94,10 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      await refundQuota(session.user.id);
+      if (quotaDeducted && userId) {
+        await refundQuota(userId);
+        quotaDeducted = false;
+      }
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -154,7 +162,10 @@ export async function POST(req: Request) {
         where: { id: token.id },
         data: { isRevoked: true }
       });
-      await refundQuota(session.user.id);
+      if (quotaDeducted && userId) {
+        await refundQuota(userId);
+        quotaDeducted = false;
+      }
       return NextResponse.json({
         error: 'CONCURRENT_CAP_EXCEEDED',
         message: 'Maximum limit of 5 concurrent active tokens reached.'
@@ -166,7 +177,10 @@ export async function POST(req: Request) {
     const authSecret = (env as any)?.AUTH_SECRET || process.env.AUTH_SECRET;
 
     if (!authSecret) {
-      await refundQuota(session.user.id);
+      if (quotaDeducted && userId) {
+        await refundQuota(userId);
+        quotaDeducted = false;
+      }
       console.error('Missing AUTH_SECRET in environment');
       return NextResponse.json({ error: 'Server misconfiguration: missing AUTH_SECRET' }, { status: 500 });
     }
@@ -197,7 +211,10 @@ export async function POST(req: Request) {
             where: { id: token.id },
             data: { isRevoked: true }
           });
-          await refundQuota(session.user.id);
+          if (quotaDeducted && userId) {
+            await refundQuota(userId);
+            quotaDeducted = false;
+          }
           return NextResponse.json({
             error: 'SSRF_DETECTED',
             message: 'Target host resolves to a private or restricted IP address.'
@@ -254,8 +271,9 @@ export async function POST(req: Request) {
       }
     });
   } catch (error) {
-    if (userId) {
+    if (quotaDeducted && userId) {
       await refundQuota(userId);
+      quotaDeducted = false;
     }
     console.error('Create Token Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
