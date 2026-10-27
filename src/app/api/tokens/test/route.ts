@@ -96,7 +96,29 @@ export async function POST(req: Request) {
     
     const t1_total = Date.now() - startTime;
 
-    // Extract headers
+    // Check if the gateway actually processed the request with chaos headers
+    const hasChaosTelemetry = resHeaders.has('x-panic-colo');
+    const isAuthError = status === 401 || status === 403;
+    const isGatewayError = status === 503 || !hasChaosTelemetry;
+
+    // If gateway rejected the token or is unavailable, do not fabricate telemetry
+    if (!hasChaosTelemetry || isAuthError || isGatewayError) {
+      return NextResponse.json({
+        success: false,
+        status,
+        statusText,
+        isAuthError,
+        isGatewayError: true,
+        totalLatency: t1_total,
+        telemetry: null,
+        chaosReason: null,
+        chaosClientContext: null,
+        resolvedIp: payload.targetHost ? (await resolveHostIp(payload.targetHost).catch(() => 'Unresolved')) || 'Unresolved' : 'Unresolved',
+        responseBody
+      });
+    }
+
+    // Extract headers for valid edge chaos telemetry
     const hdrW1 = resHeaders.get('x-panic-w1');
     const hdrW3 = resHeaders.get('x-panic-w3');
     const hdrT2 = resHeaders.get('x-panic-t2');
@@ -174,6 +196,8 @@ export async function POST(req: Request) {
       success: true,
       status,
       statusText,
+      isAuthError: false,
+      isGatewayError: false,
       totalLatency: t1_total_net,
       telemetry: {
          w1, w3,

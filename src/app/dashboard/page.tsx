@@ -290,7 +290,22 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
         realTelemetry = data.telemetry;
       }
       
-      if (onTelemetryReceived && data.telemetry) {
+      const isGatewayRejection = data.isAuthError || data.status === 401 || data.status === 403;
+      const isGatewayOffline = data.status === 503 || (!data.telemetry && !isNxDomain && !isGatewayRejection);
+
+      if (isGatewayRejection || isGatewayOffline) {
+        if (onTelemetryReceived) {
+          onTelemetryReceived({
+            w1: [-118.2437, 34.0522],
+            w2: null,
+            w3: null,
+            w1_colo: 'UNKNOWN',
+            status: data.status,
+            isAuthError: isGatewayRejection,
+            isNxDomain: false
+          });
+        }
+      } else if (onTelemetryReceived && data.telemetry) {
         onTelemetryReceived({
           ...data.telemetry,
           totalLatency: data.totalLatency,
@@ -367,6 +382,27 @@ curl -i "https://gateway.andrewwangdev.com/?token=$PANIC_TOKEN"
       
       if (isNxDomain) {
         lines.push(`[Fatal] ❌ NXDOMAIN: Target host unresolvable.`);
+      } else if (isGatewayRejection) {
+        lines.push(`> [Gateway] Ingress Gatekeeper: Verifying Chaos JWT & Cryptographic Signature...`);
+        lines.push(`> [Security] ❌ Authentication Rejected (${data.status} ${data.statusText || 'Unauthorized'})`);
+        lines.push(`> [Security] Reason: ${data.responseBody || 'Invalid or Expired Chaos Token'}`);
+        lines.push(`> [Security] Pipeline Aborted: Fault injection bypassed due to invalid or expired credentials.`);
+        lines.push(`< HTTP/1.1 ${data.status} ${data.statusText || 'Unauthorized'}`);
+        if (data.responseBody) {
+          lines.push(`< ${data.responseBody}`);
+        }
+        lines.push('');
+        lines.push(`[System] Ingress Verification: FAILED (Token rejected at Edge boundary)`);
+        lines.push(`[System] Total Round-Trip Time: ${Math.round(data.totalLatency || 0)}ms`);
+      } else if (isGatewayOffline) {
+        lines.push(`> [Gateway] ❌ Data Plane Gateway offline or unreachable.`);
+        lines.push(`> [Gateway] Host: gateway.andrewwangdev.com`);
+        lines.push(`< HTTP/1.1 503 Service Unavailable`);
+        if (data.responseBody) {
+          lines.push(`< ${data.responseBody}`);
+        }
+        lines.push('');
+        lines.push(`[System] Total Round-Trip Time: ${Math.round(data.totalLatency || 0)}ms`);
       } else {
         lines.push(...lgpaLogs);
         
